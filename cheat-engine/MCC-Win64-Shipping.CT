@@ -15,9 +15,14 @@ registerSymbol(__ENTITY_ARRAY__)
 define(__ENTITY_LIST__,halo1.dll+1C42248)
 registerSymbol(__ENTITY_LIST__)
 
+define(getTagDataPointer,halo1.dll+A9B648)
+registerSymbol(getTagDataPointer)
+
 [DISABLE]
 unregisterSymbol(__ENTITY_ARRAY__)
 unregisterSymbol(__ENTITY_LIST__)
+unregisterSymbol(getTagDataPointer)
+
 </AssemblerScript>
     </CheatEntry>
     <CheatEntry>
@@ -1504,6 +1509,13 @@ halo1.dll+B48CDA: 48 89 74 24 18        - mov [rsp+18],rsi
           </CheatEntries>
         </CheatEntry>
       </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>199</ID>
+      <Description>"No description"</Description>
+      <ShowAsSigned>0</ShowAsSigned>
+      <VariableType>Float</VariableType>
+      <Address>22F513B8070+9C</Address>
     </CheatEntry>
   </CheatEntries>
   <CheatCodes>
@@ -3978,6 +3990,31 @@ halo1.dll+B48CDA: 48 89 74 24 18        - mov [rsp+18],rsi
         <Byte>12</Byte>
       </After>
     </CodeEntry>
+    <CodeEntry>
+      <Description>Call render UI</Description>
+      <AddressString>halo1.dll+B32106</AddressString>
+      <Before>
+        <Byte>E8</Byte>
+        <Byte>EA</Byte>
+        <Byte>5D</Byte>
+        <Byte>F9</Byte>
+        <Byte>FF</Byte>
+      </Before>
+      <Actual>
+        <Byte>E8</Byte>
+        <Byte>FD</Byte>
+        <Byte>09</Byte>
+        <Byte>FE</Byte>
+        <Byte>FF</Byte>
+      </Actual>
+      <After>
+        <Byte>E8</Byte>
+        <Byte>60</Byte>
+        <Byte>FF</Byte>
+        <Byte>F6</Byte>
+        <Byte>FF</Byte>
+      </After>
+    </CodeEntry>
     <CodeEntry GroupHeader="1">
       <Description/>
     </CodeEntry>
@@ -4903,6 +4940,33 @@ halo1.dll+B48CDA: 48 89 74 24 18        - mov [rsp+18],rsi
         <Byte>26</Byte>
       </After>
     </CodeEntry>
+    <CodeEntry>
+      <Description>Code :lea rdx,[halo1.dll+189BE88]</Description>
+      <AddressString>halo1.dll+B9F946</AddressString>
+      <Before>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+        <Byte>EB</Byte>
+        <Byte>3A</Byte>
+      </Before>
+      <Actual>
+        <Byte>48</Byte>
+        <Byte>8D</Byte>
+        <Byte>15</Byte>
+        <Byte>3B</Byte>
+        <Byte>C5</Byte>
+        <Byte>CF</Byte>
+        <Byte>00</Byte>
+      </Actual>
+      <After>
+        <Byte>48</Byte>
+        <Byte>8B</Byte>
+        <Byte>CE</Byte>
+        <Byte>FF</Byte>
+        <Byte>15</Byte>
+      </After>
+    </CodeEntry>
     <CodeEntry GroupHeader="1">
       <Description/>
     </CodeEntry>
@@ -4981,8 +5045,66 @@ halo1.dll+B48CDA: 48 89 74 24 18        - mov [rsp+18],rsi
         <Byte>00</Byte>
       </After>
     </CodeEntry>
+    <CodeEntry>
+      <Description>Change of call halo1.dll+B04C78</Description>
+      <AddressString>halo1.dll+C05043</AddressString>
+      <Before>
+        <Byte>8B</Byte>
+        <Byte>D6</Byte>
+        <Byte>89</Byte>
+        <Byte>46</Byte>
+        <Byte>20</Byte>
+      </Before>
+      <Actual>
+        <Byte>E8</Byte>
+        <Byte>30</Byte>
+        <Byte>FC</Byte>
+        <Byte>EF</Byte>
+        <Byte>FF</Byte>
+      </Actual>
+      <After>
+        <Byte>48</Byte>
+        <Byte>8D</Byte>
+        <Byte>56</Byte>
+        <Byte>2C</Byte>
+        <Byte>45</Byte>
+      </After>
+    </CodeEntry>
   </CheatCodes>
-  <UserdefinedSymbols/>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>__BSP_POINTER_POINTER__</Name>
+      <Address>halo1.dll+1C55C68</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>__TAG_ARRAY__</Name>
+      <Address>halo1.dll+1C34FB0</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>__MAP_BASE__</Name>
+      <Address>halo1.dll+2EA3410</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>__MAP_BASE_RELOCATED__</Name>
+      <Address>halo1.dll+2D9CE10</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>getTagDataPointer</Name>
+      <Address>halo1.dll+A9B648</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>__ENTITY_RECORDS_</Name>
+      <Address>halo1.dll+2D9CDF8</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>__ENTITIES__</Name>
+      <Address>halo1.dll+1C42248</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>damageEntity</Name>
+      <Address>halo1.dll+B9FBD0</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
   <Structures StructVersion="2">
     <Structure Name="Entity" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" RLECompression="1" AutoCreateStructsize="4096">
       <Elements>
@@ -7620,10 +7742,11 @@ halo1.dll+B48CDA: 48 89 74 24 18        - mov [rsp+18],rsi
         <Element Offset="4" Vartype="2 Bytes" Bytesize="2" OffsetHex="00000004" Description="shaderIndex" DisplayMethod="hexadecimal"/>
         <Element Offset="6" Vartype="Byte" Bytesize="1" RLECount="2" OffsetHex="00000006" DisplayMethod="hexadecimal"/>
         <Element Offset="8" Vartype="Float" Bytesize="4" RLECount="4" OffsetHex="00000008" DisplayMethod="unsigned integer"/>
-        <Element Offset="24" Vartype="4 Bytes" Bytesize="4" OffsetHex="00000018" DisplayMethod="hexadecimal"/>
+        <Element Offset="24" Vartype="4 Bytes" Bytesize="4" RLECount="2" OffsetHex="00000018" DisplayMethod="hexadecimal"/>
         <Element Offset="28" Vartype="Float" Bytesize="4" OffsetHex="0000001C" DisplayMethod="unsigned integer"/>
-        <Element Offset="28" Vartype="4 Bytes" Bytesize="4" RLECount="2" OffsetHex="0000001C" DisplayMethod="hexadecimal"/>
-        <Element Offset="32" Vartype="4 Bytes" Bytesize="4" RLECount="11" OffsetHex="00000020" DisplayMethod="unsigned integer"/>
+        <Element Offset="32" Vartype="4 Bytes" Bytesize="4" OffsetHex="00000020" DisplayMethod="unsigned integer"/>
+        <Element Offset="32" Vartype="4 Bytes" Bytesize="4" OffsetHex="00000020" DisplayMethod="hexadecimal"/>
+        <Element Offset="36" Vartype="4 Bytes" Bytesize="4" RLECount="10" OffsetHex="00000024" DisplayMethod="unsigned integer"/>
         <Element Offset="76" Vartype="4 Bytes" Bytesize="4" RLECount="2" OffsetHex="0000004C" DisplayMethod="hexadecimal"/>
         <Element Offset="84" Vartype="4 Bytes" Bytesize="4" RLECount="2" OffsetHex="00000054" DisplayMethod="unsigned integer"/>
         <Element Offset="92" Vartype="4 Bytes" Bytesize="4" OffsetHex="0000005C" DisplayMethod="hexadecimal"/>
@@ -7750,11 +7873,6 @@ halo1.dll+B48CDA: 48 89 74 24 18        - mov [rsp+18],rsi
 </Comment>
     </DisassemblerComment>
     <DisassemblerComment>
-      <Address>"halo1.dll"+B04D5C</Address>
-      <Comment>no clear effect
-</Comment>
-    </DisassemblerComment>
-    <DisassemblerComment>
       <Address>"halo1.dll"+B04D97</Address>
       <Comment>nopping moves player under world
 </Comment>
@@ -7806,6 +7924,16 @@ halo1.dll+B48CDA: 48 89 74 24 18        - mov [rsp+18],rsi
 </Comment>
     </DisassemblerComment>
     <DisassemblerComment>
+      <Address>"halo1.dll"+B32101</Address>
+      <Comment>render scope mask
+</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B32106</Address>
+      <Comment>render ui
+</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
       <Address>"halo1.dll"+B35FD4</Address>
       <Header>spawn projectile function
 </Header>
@@ -7836,9 +7964,238 @@ halo1.dll+B48CDA: 48 89 74 24 18        - mov [rsp+18],rsi
 </Comment>
     </DisassemblerComment>
     <DisassemblerComment>
+      <Address>"halo1.dll"+B9F67B</Address>
+      <Comment>call damageEntity inner @ 7FF89813FBD0</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B9F680</Address>
+      <Comment>return site: xmm8 = out-param result from inner call [rbp-50]</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B9F68F</Address>
+      <Comment>jmp back to outer damage dispatch loop</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B9F694</Address>
+      <Comment>xmm1 = entity.health [rbx+0x9C] -- outer re-reads health for clamp</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B9F69C</Address>
+      <Comment>comiss xmm10, xmm1 -- compare min-health floor vs new health</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B9F6B0</Address>
+      <Comment>entity[rdi+0x4C] = clamped health -- write floor to secondary field</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B9F6D1</Address>
+      <Comment>call post-damage callback @ 7FF89813E7C8 -- death / kill-event dispatch</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B9FBD0</Address>
+      <Comment>damageEntity inner -- entry; rax=rsp for home-space spill</Comment>
+      <Header>void damageEntity(uint32_t entityHandle, ...)
+</Header>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B9FBD3</Address>
+      <Comment>spill r9 (5th param) into shadow space [rax+20]</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B9FBD7</Address>
+      <Comment>spill r8w (damage type flags) into [rax+18]</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B9FBDC</Address>
+      <Comment>spill dx (shooter entity category) into [rax+10]</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B9FBF1</Address>
+      <Comment>rbx = EntityRecordArray base (global @ 7FF89A33CDF8)</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B9FBFC</Address>
+      <Comment>rbp = 5th stack param -- victim entity ptr or damage_data struct</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B9FC04</Address>
+      <Comment>rbx += 0x34 -- advance into EntityRecordArray slot</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B9FC08</Address>
+      <Comment>save caller xmm6 (non-volatile) to local stack</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B9FC0C</Address>
+      <Comment>save caller xmm7 (non-volatile) to local stack</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B9FC10</Address>
+      <Comment>xmm7 = 0.0 -- zero float sentinel used throughout function</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B9FC1D</Address>
+      <Comment>xmm9 = raw incoming damage [rsp+0x118] -- 6th stack param from caller</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B9FC27</Address>
+      <Comment>r10d = victim handle low word (entity index into EntityArray)</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B9FC2B</Address>
+      <Comment>r14d = full victim handle (ecx preserved)</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B9FC2E</Address>
+      <Comment>rcx = EntityArray global (@ 7FF8991E2248)</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B9FC35</Address>
+      <Comment>rdx = index * 3 (EntityRecordArray stride step 1)</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B9FC39</Address>
+      <Comment>rdx &lt;&lt;= 2 =&gt; index * 12 (12 bytes per EntityRecord)</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B9FC3D</Address>
+      <Comment>rax = EntityArray.firstEntityOffset</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B9FC4B</Address>
+      <Comment>r12 = EntityRecord[index].entityArrayOffset</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
       <Address>"halo1.dll"+B9FC58</Address>
-      <Comment>rbx now points at damaged entity
-</Comment>
+      <Comment>rbx = EntityRecordArray + entityArrayOffset =&gt; victim entity ptr</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B9FC5B</Address>
+      <Comment>sanity: r12 vs -1 (invalid handle check)</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B9FC67</Address>
+      <Comment>test entity flags+0 bit 0x40 -- invincibility / no-damage flag</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B9FC6B</Address>
+      <Comment>xmm9 *= [rcx+0x3C] -- apply per-entity damage multiplier to raw damage</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B9FC76</Address>
+      <Comment>cmp shooter/victim team tags -- team-kill check</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B9FC85</Address>
+      <Comment>xmm9 = 0.0 -- SUPPRESSED: team-kill or self-damage, zero out damage</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B9FC89</Address>
+      <Comment>r15 = optional damage modifier object ptr (global @ 7FF89A43F820)</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B9FCB2</Address>
+      <Comment>call shield absorption calc -- xmm0 returns remaining health-damage after shields</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B9FCB7</Address>
+      <Comment>comiss xmm0, xmm7(0.0) -- any health damage remaining after shields?</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B9FCBA</Address>
+      <Comment>xmm8 = 1.0 constant (@ 7FF898DA0EF8) -- divisor guard</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B9FCC5</Address>
+      <Comment>xmm2 = 1.0 / xmm0 -- reciprocal for proportional area-damage scaling</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B9FCCF</Address>
+      <Comment>xmm2 = 0.0 -- no health damage path, skip proportional calc</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B9FCDA</Address>
+      <Comment>xmm6 = xmm9 -- FINAL DAMAGE VALUE committed to xmm6 for health write</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B9FCDE</Address>
+      <Comment>edi = damage_flags dword from [rsi] (flags struct)</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B9FCE0</Address>
+      <Comment>test dil bit 0x10 -- area-effect damage modifier?</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B9FCE6</Address>
+      <Comment>xmm6 = xmm8(1.0) -- area path: reset base to 1.0</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B9FCEA</Address>
+      <Comment>xmm6 -= [rbp+0x44] -- subtract victim shield fraction from area base</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B9FCEF</Address>
+      <Comment>xmm6 *= xmm9 -- scale by raw damage =&gt; area-scaled health damage in xmm6</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B9FCF4</Address>
+      <Comment>test dil bit 0x20 -- instant-kill / special damage modifier?</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B9FDC1</Address>
+      <Comment>test r15,r15 -- is damage modifier object present?</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B9FDC9</Address>
+      <Comment>xmm0 = xmm6 * 2 (addss xmm0,xmm6) -- double damage modifier path</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B9FDCD</Address>
+      <Comment>comiss xmm0, [rbx+0x9C] -- would doubled damage exceed current health?</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B9FDD9</Address>
+      <Comment>bts edi,7 -- set bit 7 in flags: mark entity as killed</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B9FDDD</Address>
+      <Comment>write back modified flags to [rsi] (damage_flags struct)</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B9FDED</Address>
+      <Comment>check [rsp+0x120] -- gate: only apply health damage if byte == 1</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B9FDF3</Address>
+      <Comment>xmm0 = entity.health [rbx+0x9C] -- load current health (rbx=victim entity ptr)</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B9FDFB</Address>
+      <Comment>xmm0 -= xmm6 -- subtract final damage from current health</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B9FDFF</Address>
+      <Comment>BREAKPOINT -- entity.health [rbx+0x9C] = xmm0 -- write new health</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B9FE07</Address>
+      <Comment>jmp -- entity survived; skip zero-health path</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B9FE1D</Address>
+      <Comment>r9d = [rsp+0xC8] word -- killer entity index for kill credit</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B9FE26</Address>
+      <Comment>edi = -1 -- sentinel: no specific killer team</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B9FE36</Address>
+      <Comment>eax = entity.teamFlags [rbx+0x130] -- victim team membership bitmask</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B9FE41</Address>
+      <Comment>bt eax, (r9b) -- is killer on same team as victim?</Comment>
     </DisassemblerComment>
     <DisassemblerComment>
       <Address>"halo1.dll"+BAFCE0</Address>

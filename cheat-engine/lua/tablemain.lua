@@ -8,6 +8,8 @@ dofile("lua/highlight_entity_memview.lua")
 dofile("lua/ipc.lua")
 dofile("lua/functions/plot.lua")
 dofile("lua/functions/halo1.lua")
+dofile("lua/functions/string_scan.lua")
+dofile("lua/register_address_symbol.lua")
 
 local forms = reloadPackage("lua/functions/forms")
 
