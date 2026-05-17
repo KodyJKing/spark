@@ -2,6 +2,7 @@
 <CheatTable CheatEngineTableVersion="45">
   <Forms>
     <UDF1 Class="TCEForm" Encoding="Ascii85">b(+R;!!Qtr$B*!$k_VIpibZL21w,Ilg-RH?4%84!#+U1,4d;uYEI9(6orkIldEpu9AAg[5-v}hL$}6:GrnK(zK3/m[TFF.W7,%}.[11WDMToF1]GIJ!4!$8?gz;ud%9[P7pK-0E?l!et^TPn8*z.BG(mk$T?vCFc+o*pb%1gSH:94YAwK9FRNh*4FN%zq_(x%!l**04oyV@)^5BDH;fkw#.@@+8+aHM#0oJLMPGj!rfaV,ZRdv{ly1Ed{Aq1DQJ;C)9jR6IeG07U[cBY//$BFtR:Bl-)xqQz^_ea{+itC?GyasB]</UDF1>
+    <UDF2 Class="TCEForm" Encoding="Ascii85">ZID4v!Y}xayKc{8[25a59CpwP0j^2*vT#[UaZ_j]t(GOflJYe8bu^rC]F)6RHbOK#@u4tG[5Xf8Mku_Hh9sr4Na=lrcpHtqm?UD+#?#vN/qF(^$4%A7^Xv{tFJR=/J7/#_[(cLYf;weMI-3/7MucV=.7WEY%qbO_NoXM[b;A;LR0+ZMFbq+IGN3]#6OxO=iUaG#G:5?wYjI;euxp3^6Lb0opk(Y#qbe:F+?wlKHY;iUqvE2Cba;#W+}@[Sm@QQjN37=@lZJRz5tBXf]7d#NAUX)HmDWZhrMCHrj(0(brss4ff_rtzOgz^NLDjB{DdIy$(Cc{RRlnayhrh6(Fp*r{0i)c[F[WbUh_W^CgE@OAt,rC9BFkTojuQ9}jC7aVsS/?z?e2</UDF2>
   </Forms>
   <CheatEntries>
     <CheatEntry>
@@ -1509,13 +1510,6 @@ halo1.dll+B48CDA: 48 89 74 24 18        - mov [rsp+18],rsi
           </CheatEntries>
         </CheatEntry>
       </CheatEntries>
-    </CheatEntry>
-    <CheatEntry>
-      <ID>199</ID>
-      <Description>"No description"</Description>
-      <ShowAsSigned>0</ShowAsSigned>
-      <VariableType>Float</VariableType>
-      <Address>22F513B8070+9C</Address>
     </CheatEntry>
   </CheatEntries>
   <CheatCodes>
@@ -4967,6 +4961,31 @@ halo1.dll+B48CDA: 48 89 74 24 18        - mov [rsp+18],rsi
         <Byte>15</Byte>
       </After>
     </CodeEntry>
+    <CodeEntry>
+      <Description>Call updateLookTarget</Description>
+      <AddressString>halo1.dll+AFFD64</AddressString>
+      <Before>
+        <Byte>24</Byte>
+        <Byte>50</Byte>
+        <Byte>49</Byte>
+        <Byte>8B</Byte>
+        <Byte>CF</Byte>
+      </Before>
+      <Actual>
+        <Byte>E8</Byte>
+        <Byte>9B</Byte>
+        <Byte>32</Byte>
+        <Byte>0A</Byte>
+        <Byte>00</Byte>
+      </Actual>
+      <After>
+        <Byte>48</Byte>
+        <Byte>8B</Byte>
+        <Byte>CB</Byte>
+        <Byte>E8</Byte>
+        <Byte>97</Byte>
+      </After>
+    </CodeEntry>
     <CodeEntry GroupHeader="1">
       <Description/>
     </CodeEntry>
@@ -5070,6 +5089,106 @@ halo1.dll+B48CDA: 48 89 74 24 18        - mov [rsp+18],rsi
         <Byte>45</Byte>
       </After>
     </CodeEntry>
+    <CodeEntry>
+      <Description>Change of call updateEntityLighting</Description>
+      <AddressString>halo1.dll+B493DE</AddressString>
+      <Before>
+        <Byte>D1</Byte>
+        <Byte>8B</Byte>
+        <Byte>D6</Byte>
+        <Byte>8B</Byte>
+        <Byte>CB</Byte>
+      </Before>
+      <Actual>
+        <Byte>E8</Byte>
+        <Byte>BD</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+      </Actual>
+      <After>
+        <Byte>E9</Byte>
+        <Byte>97</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of call updateEntityLighting</Description>
+      <AddressString>halo1.dll+B49477</AddressString>
+      <Before>
+        <Byte>D6</Byte>
+        <Byte>8B</Byte>
+        <Byte>D6</Byte>
+        <Byte>8B</Byte>
+        <Byte>CB</Byte>
+      </Before>
+      <Actual>
+        <Byte>E8</Byte>
+        <Byte>24</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+      </Actual>
+      <After>
+        <Byte>41</Byte>
+        <Byte>89</Byte>
+        <Byte>1E</Byte>
+        <Byte>48</Byte>
+        <Byte>8B</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of call updateEntityLighting_L3</Description>
+      <AddressString>halo1.dll+B48ECB</AddressString>
+      <Before>
+        <Byte>8B</Byte>
+        <Byte>0F</Byte>
+        <Byte>0F</Byte>
+        <Byte>28</Byte>
+        <Byte>C8</Byte>
+      </Before>
+      <Actual>
+        <Byte>E8</Byte>
+        <Byte>00</Byte>
+        <Byte>FC</Byte>
+        <Byte>FF</Byte>
+        <Byte>FF</Byte>
+      </Actual>
+      <After>
+        <Byte>EB</Byte>
+        <Byte>03</Byte>
+        <Byte>48</Byte>
+        <Byte>8B</Byte>
+        <Byte>C3</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of call updateEntityLighting_L4</Description>
+      <AddressString>halo1.dll+B48CB4</AddressString>
+      <Before>
+        <Byte>48</Byte>
+        <Byte>8B</Byte>
+        <Byte>CF</Byte>
+        <Byte>89</Byte>
+        <Byte>07</Byte>
+      </Before>
+      <Actual>
+        <Byte>E8</Byte>
+        <Byte>17</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+      </Actual>
+      <After>
+        <Byte>66</Byte>
+        <Byte>FF</Byte>
+        <Byte>C3</Byte>
+        <Byte>66</Byte>
+        <Byte>3B</Byte>
+      </After>
+    </CodeEntry>
   </CheatCodes>
   <UserdefinedSymbols>
     <SymbolEntry>
@@ -5093,16 +5212,36 @@ halo1.dll+B48CDA: 48 89 74 24 18        - mov [rsp+18],rsi
       <Address>halo1.dll+A9B648</Address>
     </SymbolEntry>
     <SymbolEntry>
-      <Name>__ENTITY_RECORDS_</Name>
-      <Address>halo1.dll+2D9CDF8</Address>
+      <Name>damageEntity</Name>
+      <Address>halo1.dll+B9FBD0</Address>
     </SymbolEntry>
     <SymbolEntry>
-      <Name>__ENTITIES__</Name>
+      <Name>__ENTITY_LIST__</Name>
       <Address>halo1.dll+1C42248</Address>
     </SymbolEntry>
     <SymbolEntry>
-      <Name>damageEntity</Name>
-      <Address>halo1.dll+B9FBD0</Address>
+      <Name>__ENTITY_ARRAY_</Name>
+      <Address>halo1.dll+2D9CDF8</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>updateEntityLighting</Name>
+      <Address>halo1.dll+B494A0</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>__ENTITY_LIGHTING_STRUCTURES__</Name>
+      <Address>halo1.dll+1C538E8</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>updateEntityLighting_L2</Name>
+      <Address>halo1.dll+B49358</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>updateEntityLighting_L3</Name>
+      <Address>halo1.dll+B48AD0</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>renderEntityModel</Name>
+      <Address>halo1.dll+B48CD0</Address>
     </SymbolEntry>
   </UserdefinedSymbols>
   <Structures StructVersion="2">
@@ -7959,6 +8098,11 @@ halo1.dll+B48CDA: 48 89 74 24 18        - mov [rsp+18],rsi
 </Header>
     </DisassemblerComment>
     <DisassemblerComment>
+      <Address>"halo1.dll"+B48CD0</Address>
+      <Header>void renderEntityModel(uint32_t entityHandle)
+</Header>
+    </DisassemblerComment>
+    <DisassemblerComment>
       <Address>"halo1.dll"+B89D2A</Address>
       <Comment>get particle tag data pointer
 </Comment>
@@ -8036,42 +8180,6 @@ halo1.dll+B48CDA: 48 89 74 24 18        - mov [rsp+18],rsi
     <DisassemblerComment>
       <Address>"halo1.dll"+B9FC1D</Address>
       <Comment>xmm9 = raw incoming damage [rsp+0x118] -- 6th stack param from caller</Comment>
-    </DisassemblerComment>
-    <DisassemblerComment>
-      <Address>"halo1.dll"+B9FC27</Address>
-      <Comment>r10d = victim handle low word (entity index into EntityArray)</Comment>
-    </DisassemblerComment>
-    <DisassemblerComment>
-      <Address>"halo1.dll"+B9FC2B</Address>
-      <Comment>r14d = full victim handle (ecx preserved)</Comment>
-    </DisassemblerComment>
-    <DisassemblerComment>
-      <Address>"halo1.dll"+B9FC2E</Address>
-      <Comment>rcx = EntityArray global (@ 7FF8991E2248)</Comment>
-    </DisassemblerComment>
-    <DisassemblerComment>
-      <Address>"halo1.dll"+B9FC35</Address>
-      <Comment>rdx = index * 3 (EntityRecordArray stride step 1)</Comment>
-    </DisassemblerComment>
-    <DisassemblerComment>
-      <Address>"halo1.dll"+B9FC39</Address>
-      <Comment>rdx &lt;&lt;= 2 =&gt; index * 12 (12 bytes per EntityRecord)</Comment>
-    </DisassemblerComment>
-    <DisassemblerComment>
-      <Address>"halo1.dll"+B9FC3D</Address>
-      <Comment>rax = EntityArray.firstEntityOffset</Comment>
-    </DisassemblerComment>
-    <DisassemblerComment>
-      <Address>"halo1.dll"+B9FC4B</Address>
-      <Comment>r12 = EntityRecord[index].entityArrayOffset</Comment>
-    </DisassemblerComment>
-    <DisassemblerComment>
-      <Address>"halo1.dll"+B9FC58</Address>
-      <Comment>rbx = EntityRecordArray + entityArrayOffset =&gt; victim entity ptr</Comment>
-    </DisassemblerComment>
-    <DisassemblerComment>
-      <Address>"halo1.dll"+B9FC5B</Address>
-      <Comment>sanity: r12 vs -1 (invalid handle check)</Comment>
     </DisassemblerComment>
     <DisassemblerComment>
       <Address>"halo1.dll"+B9FC67</Address>

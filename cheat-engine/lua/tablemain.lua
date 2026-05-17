@@ -10,6 +10,7 @@ dofile("lua/functions/plot.lua")
 dofile("lua/functions/halo1.lua")
 dofile("lua/functions/string_scan.lua")
 dofile("lua/register_address_symbol.lua")
+dofile("lua/bp_freeze.lua")
 
 local forms = reloadPackage("lua/functions/forms")
 
