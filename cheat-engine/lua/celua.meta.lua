@@ -77,6 +77,90 @@ R14 = 0
 R15 = 0
 
 -- ============================================================
+-- ENUM CONSTANTS
+-- The docs reference these by name but do not list integer values;
+-- declared as integer globals so the linter accepts them.
+-- ============================================================
+
+-- TAlign
+---@type integer alNone=0 alTop=1 alBottom=2 alLeft=3 alRight=4 alClient=5 alCustom=6
+alNone = 0
+---@type integer
+alTop = 1
+---@type integer
+alBottom = 2
+---@type integer
+alLeft = 3
+---@type integer
+alRight = 4
+---@type integer
+alClient = 5
+---@type integer
+alCustom = 6
+
+-- Breakpoint trigger types (debug_setBreakpoint trigger param)
+---@type integer
+bptExecute = 0
+---@type integer
+bptAccess = 1
+---@type integer
+bptWrite = 2
+
+-- debug_continueFromBreakpoint continueMethod values
+---@type integer
+co_run = 0
+---@type integer
+co_stepinto = 1
+---@type integer
+co_stepover = 2
+
+-- messageDialog type param
+---@type integer
+mtInformation = 0
+---@type integer
+mtWarning = 1
+---@type integer
+mtError = 2
+---@type integer
+mtConfirmation = 3
+
+-- messageDialog button params
+---@type integer
+mbOK = 0
+---@type integer
+mbYes = 1
+---@type integer
+mbNo = 2
+---@type integer
+mbCancel = 3
+---@type integer
+mbAbort = 4
+---@type integer
+mbRetry = 5
+---@type integer
+mbIgnore = 6
+---@type integer
+mbAll = 7
+---@type integer
+mbHelp = 8
+
+-- Scrollbar style (Memo/SynEdit Scrollbars property)
+---@type integer
+ssNone = 0
+---@type integer
+ssHorizontal = 1
+---@type integer
+ssVertical = 2
+---@type integer
+ssBoth = 3
+---@type integer
+ssAutoHorizontal = 4
+---@type integer
+ssAutoVertical = 5
+---@type integer
+ssAutoBoth = 6
+
+-- ============================================================
 -- VERSION / PLATFORM
 -- ============================================================
 
@@ -1711,7 +1795,7 @@ function debug_setBreakpointForThread(threadid, address, size, trigger, breakpoi
 
 ---@param address integer|string
 ---@param size integer?
----@param trigger string? bptExecute|bptAccess|bptWrite
+---@param trigger integer? bptExecute|bptAccess|bptWrite
 ---@param breakpointmethodOrCallback integer|function?
 ---@param functiontocall function?
 function debug_setBreakpoint(address, size, trigger, breakpointmethodOrCallback, functiontocall) end
@@ -1719,7 +1803,7 @@ function debug_setBreakpoint(address, size, trigger, breakpointmethodOrCallback,
 ---@param address integer|string
 function debug_removeBreakpoint(address) end
 
----@param continueMethod string co_run|co_stepinto|co_stepover
+---@param continueMethod integer co_run|co_stepinto|co_stepover
 function debug_continueFromBreakpoint(continueMethod) end
 
 ---@param xmmregnr integer 0-15 (0-7 on 32-bit)
@@ -1856,7 +1940,7 @@ function Component:getOwner() end
 ---@field Height integer
 ---@field ClientWidth integer
 ---@field ClientHeight integer
----@field Align string
+---@field Align integer alNone|alTop|alBottom|alLeft|alRight|alClient
 ---@field Enabled boolean
 ---@field Visible boolean
 ---@field Color integer
@@ -2035,6 +2119,8 @@ function Form:fixDPI() end
 function Form:centerScreen() end
 function Form:hide() end
 function Form:show() end
+--- PascalCase alias for show() — CE exposes both casings
+function Form:Show() end
 function Form:close() end
 function Form:bringToFront() end
 ---@return integer modalResult
@@ -2222,6 +2308,18 @@ function ImageList:getBitmap(index, bitmap, effect) end
 -- MenuItem / Menu
 -- ------------------------------------------------------------
 
+-- Menu Class: (Inheritance: Component->Object)
+-- properties
+--   Items : MenuItem - The base MenuItem class of this menu (readonly)
+-- methods
+--   getItems() : Returns the main MenuItem of this Menu
+
+---@class Menu: Component
+---@field Items MenuItem The base MenuItem class of this menu (readonly)
+local Menu = {}
+---@return MenuItem
+function Menu:getItems() end
+
 ---@class MenuItem: Component
 ---@field Caption string
 ---@field Shortcut string
@@ -2258,7 +2356,7 @@ function MenuItem:setOnClick(f) end
 function MenuItem:getOnClick() end
 function MenuItem:doClick() end
 
----@class MainMenu: Component
+---@class MainMenu: Menu
 local MainMenu = {}
 ---@param form Form
 ---@return MainMenu
@@ -2266,7 +2364,7 @@ function createMainMenu(form) end
 ---@return MenuItem
 function MainMenu:getItems() end
 
----@class PopupMenu: Component
+---@class PopupMenu: Menu
 local PopupMenu = {}
 ---@param owner any
 ---@return PopupMenu
@@ -3583,6 +3681,7 @@ local Hexadecimal = {}
 ---@class Memoryview: Form
 ---@field DisassemblerView Disassemblerview The disassembler pane of this memory view
 ---@field HexadecimalView Hexadecimal The hex pane of this memory view
+---@field memorypopup PopupMenu The popup/context menu of the memory view (undocumented)
 local Memoryview = {}
 
 --- Creates a new standalone memory view window.

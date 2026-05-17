@@ -1,5 +1,5 @@
 -- Break on write to a specific address and write the original value back after each write.
-function bp_freeze(address, size)
+local function bp_freeze(address, size)
     local originalValue = readBytes(address, size, true)
     debug_setBreakpoint(address, size, bptWrite, function()
         writeBytes(address, originalValue, true)
@@ -9,7 +9,7 @@ end
 
 -- Add noise to a specific address on each write. Useful for visually identifying the role of a dependent value in the game.
 -- Floating-point only.
-function bp_add_noise(address, noiseScale, relativeNoise)
+local function bp_add_noise(address, noiseScale, relativeNoise)
     if relativeNoise == nil then relativeNoise = false end
 
     debug_setBreakpoint(address, 4, bptWrite, function()
@@ -24,7 +24,7 @@ function bp_add_noise(address, noiseScale, relativeNoise)
     end)
 end
 
-function bp_slider(address)
+local function bp_slider(address)
     local value = readFloat(address)
     local min = -1
     local max = 1
@@ -48,7 +48,7 @@ function bp_slider(address)
     trackBar.Max = 10
     trackBar.Position = 0
 
-    function updateValue()
+    local function updateValue()
         value = min + trackBar.Position / trackBar.Max * (max - min)
     end
 
@@ -75,19 +75,19 @@ function bp_slider(address)
         debug_continueFromBreakpoint(co_run)
     end)
 
-    sliderForm.Show()
+    sliderForm:show()
     sliderForm.OnClose = function()
         debug_removeBreakpoint(address)
-        sliderForm.destroy()
+        sliderForm:destroy()
     end
 end
 
 -- UI Integration
 
 local sizes = {
-    dtByte = 1, 
-    dtByteDec = 1, 
-    dtWord = 2, 
+    dtByte = 1,
+    dtByteDec = 1,
+    dtWord = 2,
     dtWordDec = 2,
     dtDword = 4,
     dtDwordDec = 4,
@@ -188,7 +188,7 @@ if memoryForm then
                     return
                 end
 
-                bp_slider(address, min, max, step)
+                bp_slider(address)
             end
         end
     )
