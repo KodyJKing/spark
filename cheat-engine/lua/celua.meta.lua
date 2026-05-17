@@ -3591,3 +3591,946 @@ local Memoryview = {}
 ---@return Memoryview
 function createMemoryView() end
 
+-- ============================================================
+-- CollectionItem / Collection
+-- ============================================================
+
+---@class CollectionItem: Object
+---@field ID integer (readonly)
+---@field Index integer (readonly)
+local CollectionItem = {}
+
+---@class Collection: Object
+---@field Count integer
+local Collection = {}
+---@return integer
+function Collection:getCount() end
+---@param index integer
+---@return CollectionItem
+function Collection:getItem(index) end
+function Collection:clear() end
+---@param index integer
+function Collection:delete(index) end
+
+-- ============================================================
+-- ListColumn / ListColumns
+-- ============================================================
+
+---@class ListColumn: CollectionItem
+---@field AutoSize boolean
+---@field Caption string
+---@field MaxWidth integer
+---@field MinWidth integer
+---@field Width integer
+---@field Visible boolean
+local ListColumn = {}
+function ListColumn:getAutosize() end
+---@param v boolean
+function ListColumn:setAutosize(v) end
+function ListColumn:getCaption() end
+---@param caption string
+function ListColumn:setCaption(caption) end
+function ListColumn:getMaxWidth() end
+---@param width integer
+function ListColumn:setMaxWidth(width) end
+function ListColumn:getMinWidth() end
+---@param width integer
+function ListColumn:setMinWidth(width) end
+function ListColumn:getWidth() end
+---@param width integer
+function ListColumn:setWidth(width) end
+
+---@class ListColumns: Collection
+local ListColumns = {}
+--- Adds a new column and returns it
+---@return ListColumn
+function ListColumns:add() end
+---@param index integer
+---@return ListColumn
+function ListColumns:getColumn(index) end
+---@param index integer
+---@param col ListColumn
+function ListColumns:setColumn(index, col) end
+
+-- ============================================================
+-- HeaderSection / HeaderSections
+-- ============================================================
+
+---@class HeaderSection: CollectionItem
+---@field Alignment string taLeftJustify|taRightJustify|taCenter
+---@field ImageIndex integer
+---@field MaxWidth integer
+---@field MinWidth integer
+---@field Text string
+---@field Width integer
+---@field Visible boolean
+---@field OriginalIndex integer (readonly)
+local HeaderSection = {}
+
+---@class HeaderSections: Collection
+local HeaderSections = {}
+---@return HeaderSection
+function HeaderSections:add() end
+---@param index integer
+---@return HeaderSection
+function HeaderSections:insert(index) end
+---@param index integer
+function HeaderSections:delete(index) end
+
+-- ============================================================
+-- structure / StructureElement / StructureFrm / structColumn / structGroup
+-- ============================================================
+
+---@class StructureElement: Object
+---@field Owner structure (readonly)
+---@field Offset integer
+---@field Name string
+---@field Vartype integer See vtByte etc. constants
+---@field CustomType any CustomType object if vtCustom
+---@field CustomTypeName string
+---@field DisplayMethod string dtUnsignedInteger|dtSignedInteger|dtHexadecimal
+---@field ChildStruct structure?
+---@field ChildStructStart integer
+---@field Bytesize integer (readonly for basic types)
+---@field BackgroundColor integer
+local StructureElement = {}
+---@return structure
+function StructureElement:getOwnerStructure() end
+function StructureElement:getOffset() end
+---@param offset integer
+function StructureElement:setOffset(offset) end
+function StructureElement:getName() end
+---@param name string
+function StructureElement:setName(name) end
+function StructureElement:getVartype() end
+---@param vartype integer
+function StructureElement:setVartype(vartype) end
+---@param address integer
+---@return any
+function StructureElement:getValue(address) end
+---@param address integer
+---@param value any
+function StructureElement:setValue(address, value) end
+---@param baseaddress integer
+---@return any
+function StructureElement:getValueFromBase(baseaddress) end
+---@param baseaddress integer
+---@param value any
+function StructureElement:setValueFromBase(baseaddress, value) end
+function StructureElement:getChildStruct() end
+---@param s structure
+function StructureElement:setChildStruct(s) end
+function StructureElement:getChildStructStart() end
+---@param offset integer
+function StructureElement:setChildStructStart(offset) end
+function StructureElement:getBytesize() end
+---@param size integer
+function StructureElement:setBytesize(size) end
+
+---@class structure: Object
+---@field Name string
+---@field Size integer (readonly)
+---@field Count integer (readonly)
+local structure = {}
+function structure:getName() end
+---@param name string
+function structure:setName(name) end
+---@param index integer
+---@return StructureElement
+function structure:getElement(index) end
+---@param offset integer
+---@return StructureElement
+function structure:getElementByOffset(offset) end
+---@return StructureElement
+function structure:addElement() end
+---@param baseaddresstoguessfrom integer
+---@param offset integer
+---@param size integer
+function structure:autoGuess(baseaddresstoguessfrom, offset, size) end
+---@param address integer
+---@param changeName boolean?
+function structure:fillFromDotNetAddress(address, changeName) end
+function structure:beginUpdate() end
+function structure:endUpdate() end
+function structure:addToGlobalStructureList() end
+function structure:removeFromGlobalStructureList() end
+
+---@return integer
+function getStructureCount() end
+---@param index integer
+---@return structure
+function getStructure(index) end
+---@param name string
+---@return structure
+function createStructure(name) end
+---@param name string
+---@return structure?
+function createStructureFromName(name) end
+
+---@class structColumn
+---@field Address integer
+---@field AddressText string
+---@field Focused boolean
+local structColumn = {}
+function structColumn:focus() end
+
+---@class structGroup
+---@field name string
+---@field box GroupBox
+---@field columnCount integer
+local structGroup = {}
+---@return structColumn
+function structGroup:addColumns() end
+
+---@class StructureFrm: Form
+---@field MainStruct structure
+---@field ColumnCount integer
+---@field GroupCount integer
+local StructureFrm = {}
+---@param address integer
+---@param groupname string?
+---@param structurename string?
+---@return StructureFrm
+function createStructureForm(address, groupname, structurename) end
+---@return StructureFrm[]
+function enumStructureForms() end
+function StructureFrm:structChange() end
+---@return structColumn
+function StructureFrm:addColumn() end
+---@return structGroup
+function StructureFrm:addGroup() end
+---@param index integer
+---@return structColumn
+function StructureFrm:getColumn(index) end
+---@param index integer
+---@return structGroup
+function StructureFrm:getGroup(index) end
+---@return StructureElement?, {struct: structure, element: StructureElement}[]
+function StructureFrm:getSelectedStructElement() end
+
+-- ============================================================
+-- DBK (kernel driver) functions
+-- ============================================================
+
+---@return boolean loaded
+function dbk_initialize() end
+---@return boolean
+function dbk_initialized() end
+function dbk_useKernelmodeOpenProcess() end
+function dbk_useKernelmodeProcessMemoryAccess() end
+function dbk_useKernelmodeQueryMemoryRegions() end
+function dbk_usePhysicalMemoryAccess() end
+---@param state boolean
+function dbk_setSaferPhysicalMemoryScanning(state) end
+---@param address integer
+---@param size integer
+---@return integer[]
+function dbk_readPhysicalMemory(address, size) end
+---@param address integer
+---@param bytetable integer[]
+---@return boolean
+function dbk_writePhysicalMemory(address, bytetable) end
+---@param processid integer
+---@return integer eprocessAddress
+function dbk_getPEProcess(processid) end
+---@param threadid integer
+---@return integer ethreadAddress
+function dbk_getPEThread(threadid) end
+---@return integer cr0
+function dbk_getCR0() end
+---@return integer cr3
+function dbk_getCR3() end
+---@return integer cr4
+function dbk_getCR4() end
+---@param address integer
+---@return integer? physical nil if not mapped
+function dbk_getPhysicalAddress(address) end
+---@param state boolean
+function dbk_writesIgnoreWriteProtection(state) end
+---@param msr integer
+---@return integer
+function dbk_readMSR(msr) end
+---@param msr integer
+---@param value integer
+function dbk_writeMSR(msr, value) end
+---@param address integer
+---@param parameter integer?
+---@return integer
+function dbk_executeKernelMemory(address, parameter) end
+
+---@param size integer
+---@return integer address
+function allocateKernelMemory(size) end
+---@param address integer
+function freeKernelMemory(address) end
+
+---@param cr3 integer
+---@param address integer
+---@return integer? physical nil if not paged
+function getPhysicalAddressCR3(cr3, address) end
+---@param cr3 integer
+---@param address integer
+---@param size integer
+---@return integer[]? nil on failure
+function readProcessMemoryCR3(cr3, address, size) end
+---@param cr3 integer
+---@param address integer
+---@param bytetable integer[]
+function writeProcessMemoryCR3(cr3, address, bytetable) end
+
+---@param address integer
+---@param size integer
+---@param frompid integer?
+---@param topid integer?
+---@return integer address
+---@return integer mdl
+function mapMemory(address, size, frompid, topid) end
+---@param address integer
+---@param mdl integer
+function unmapMemory(address, mdl) end
+
+-- ============================================================
+-- DBVM (virtual machine) functions
+-- ============================================================
+
+---@param offloados boolean?
+---@param reason string?
+---@return boolean
+function dbvm_initialize(offloados, reason) end
+---@return boolean
+function dbvm_initialized() end
+---@param key1 integer
+---@param key2 integer
+---@param key3 integer
+---@return boolean
+function dbvm_setKeys(key1, key2, key3) end
+---@return integer freemem
+---@return integer fullpages
+function dbvm_getMemory() end
+---@param pagecount integer
+function dbvm_addMemory(pagecount) end
+---@param msr integer
+---@return integer
+function dbvm_readMSR(msr) end
+---@param msr integer
+---@param value integer
+function dbvm_writeMSR(msr, value) end
+---@return integer cr4
+function dbvm_getCR4() end
+---@param address integer
+---@param size integer
+---@return integer[]
+function dbvm_readPhysicalMemory(address, size) end
+---@param address integer
+---@param bytetable integer[]
+function dbvm_writePhysicalMemory(address, bytetable) end
+---@param physicalAddress integer
+---@param bytesize integer?
+---@param options any?
+---@param internalentrycount integer?
+---@param optional1 any?
+---@param optional2 any?
+---@return integer watchID
+function dbvm_watch_writes(physicalAddress, bytesize, options, internalentrycount, optional1, optional2) end
+---@param physicalAddress integer
+---@param bytesize integer?
+---@param options any?
+---@param internalentrycount integer?
+---@param optional1 any?
+---@param optional2 any?
+---@return integer watchID
+function dbvm_watch_reads(physicalAddress, bytesize, options, internalentrycount, optional1, optional2) end
+---@param physicalAddress integer
+---@param bytesize integer?
+---@param options any?
+---@param internalentrycount integer?
+---@param optional1 any?
+---@param optional2 any?
+---@return integer watchID
+function dbvm_watch_executes(physicalAddress, bytesize, options, internalentrycount, optional1, optional2) end
+---@param watchID integer
+---@return table[] entries
+function dbvm_watch_retrievelog(watchID) end
+---@param watchID integer
+function dbvm_watch_disable(watchID) end
+---@param physicalbase integer
+---@param virtualbase integer?
+function dbvm_cloak_activate(physicalbase, virtualbase) end
+---@param physicalbase integer
+function dbvm_cloak_deactivate(physicalbase) end
+---@param physicalbase integer
+---@return integer[]? 4096-byte table, nil on failure
+function dbvm_cloak_readOriginal(physicalbase) end
+---@param physicalbase integer
+---@param bytetable integer[] 4096 bytes
+function dbvm_cloak_writeOriginal(physicalbase, bytetable) end
+---@param physicaladdress integer
+---@param changereginfo any
+---@param virtualaddress integer?
+---@return boolean
+function dbvm_changeregonbp(physicaladdress, changereginfo, virtualaddress) end
+---@param physicaladdress integer
+function dbvm_removechangeregonbp(physicaladdress) end
+---@param physicalAddress integer
+---@param stepcount integer
+---@param virtualAddress integer
+---@param secondaryoptions table?
+function dbvm_traceonbp(physicalAddress, stepcount, virtualAddress, secondaryoptions) end
+---@return integer status 0=none 1=configured 2=started 3=done
+---@return integer count
+---@return integer maxcount
+function dbvm_traceonbp_getstatus() end
+function dbvm_traceonbp_stoptrace() end
+---@param pa integer
+---@param force boolean
+function dbvm_traceonbp_remove(pa, force) end
+---@return table[] traceentries
+function dbvm_traceonbp_retrievelog() end
+---@return integer count Available breakpoint slots
+function dbvm_bp_getBrokenThreadListSize() end
+---@param id integer
+---@return table
+function dbvm_bp_getBrokenThreadEventShort(id) end
+---@param id integer
+---@return table
+function dbvm_bp_getBrokenThreadEventFull(id) end
+---@param id integer
+---@param state any
+function dbvm_bp_setBrokenThreadEventFull(id, state) end
+---@param id integer
+---@param continueMethod integer 0=run 1=step into
+function dbvm_bp_resumeBrokenThread(id, continueMethod) end
+---@param threadEvent any
+---@return integer? processid nil on failure
+---@return integer|string threadid
+function dbvm_bp_getProcessAndThreadIDFromEvent(threadEvent) end
+function dbvm_log_cr3_start() end
+---@return integer[] cr3values
+function dbvm_log_cr3_stop() end
+---@param speed number
+function dbvm_speedhack_setSpeed(speed) end
+---@param enabled boolean
+---@param timeout integer?
+function dbvm_setTSCAdjust(enabled, timeout) end
+function dbvm_startcpuidlog() end
+function dbvm_stopcpuidlog() end
+---@return {cr3: integer, rip: integer}[]
+function dbvm_getcpuidlog() end
+---@param cs integer
+---@param ss integer
+---@param ds integer
+---@param es integer
+---@param fs integer
+---@param gs integer
+---@return integer
+function dbvm_changeselectors(cs, ss, ds, es, fs, gs) end
+
+-- ============================================================
+-- API pointer callbacks
+-- ============================================================
+
+---@param f fun(functionid: integer)
+function onAPIPointerChange(f) end
+
+---@param functionid integer
+---@param address integer
+function setAPIPointer(functionid, address) end
+
+-- ============================================================
+-- GDB interface
+-- ============================================================
+
+---@return boolean
+function gdb_connected() end
+---@return boolean
+function gdb_stopped() end
+---@return integer
+function gdb_getCurrentInstructionpointer() end
+---@param address integer
+function gdb_setCurrentInstructionpointer(address) end
+---@param command string
+---@return string result
+function gdb_command(command) end
+function gdb_break() end
+---@return string reason
+function gdb_getcurrentstopreason() end
+
+-- ============================================================
+-- CELUA (LuaClient.dll IPC stubs — called from target process)
+-- ============================================================
+
+---@param name string Pipe name used by openLuaServer()
+---@return boolean
+function CELUA_Initialize(name) end
+
+---@param luacode string Function body code
+---@param parameter integer
+---@return integer returnValue
+function CELUA_ExecuteFunction(luacode, parameter) end
+
+---@param luacode string Function body code
+---@param parameter integer
+---@return integer returnValue Async — runs in server thread
+function CELUA_ExecuteFunctionAsync(luacode, parameter) end
+
+---@param functionname string
+---@return integer refid
+function CELUA_GetFunctionReferenceFromName(functionname) end
+
+---@param refid integer
+---@param paramcount integer
+---@param parameters integer[] Pointer array (ptrs as integers)
+---@param async boolean
+---@return integer returnValue
+function CELUA_ExecuteFunctionByReference(refid, paramcount, parameters, async) end
+
+---@param name string Pipe name for the LuaClient.dll to connect to
+function openLuaServer(name) end
+
+-- ============================================================
+-- D3DHOOK
+-- ============================================================
+
+---@class D3DHook_Texture: Object
+---@field Height integer (readonly)
+---@field Width integer (readonly)
+local D3DHook_Texture = {}
+---@param picture any Picture or Bitmap
+function D3DHook_Texture:loadTextureByPicture(picture) end
+
+---@class D3DHook_FontMap: D3DHook_Texture
+local D3DHook_FontMap = {}
+---@param font Font
+function D3DHook_FontMap:changeFont(font) end
+---@param text string
+---@return integer pixels
+function D3DHook_FontMap:getTextWidth(text) end
+
+---@class D3DHook_RenderObject: Object
+---@field X number X position on screen
+---@field Y number Y position on screen
+---@field CenterX number Rotation center X inside object
+---@field CenterY number Rotation center Y inside object
+---@field Rotation number Degrees (0=360=no rotation)
+---@field Alphablend number 1.0=fully visible 0.0=invisible
+---@field Visible boolean
+---@field ZOrder integer Higher = in front
+local D3DHook_RenderObject = {}
+
+---@class D3DHook_Sprite: D3DHook_RenderObject
+---@field Width integer Pixel width (default = texture width)
+---@field Height integer Pixel height (default = texture height)
+---@field Texture D3DHook_Texture
+local D3DHook_Sprite = {}
+
+---@class D3Dhook_TextContainer: D3DHook_RenderObject
+---@field FontMap D3DHook_FontMap
+---@field Text string
+local D3Dhook_TextContainer = {}
+
+---@class D3DHOOK: Object
+---@field Width integer Screen width (readonly)
+---@field Height integer Screen height (readonly)
+---@field DisabledZBuffer boolean Disable depth testing
+---@field WireframeMode boolean Render as wireframe
+---@field MouseClip boolean Clip mouse to game window
+---@field OnClick fun(sprite: D3DHook_Sprite, x: integer, y: integer)? Called when a sprite is clicked
+---@field OnKeyDown fun(vkey: integer, char: string): boolean? Return false to suppress key event in game
+local D3DHOOK = {}
+
+---@param textureandcommandlistsize integer? Default 16MB
+---@param hookmessages boolean? Default true
+---@return D3DHOOK
+function createD3DHook(textureandcommandlistsize, hookmessages) end
+function D3DHOOK:beginUpdate() end
+function D3DHOOK:endUpdate() end
+---@param virtualkey integer e.g. 0xC0 for tilde
+function D3DHOOK:enableConsole(virtualkey) end
+---@param filename string
+---@return D3DHook_Texture
+function D3DHOOK:createTexture(filename) end
+---@param font Font
+---@return D3DHook_FontMap
+function D3DHOOK:createFontmap(font) end
+---@param texture D3DHook_Texture
+---@return D3DHook_Sprite
+function D3DHOOK:createSprite(texture) end
+---@param fontmap D3DHook_FontMap
+---@param x number
+---@param y number
+---@param text string
+---@return D3Dhook_TextContainer
+function D3DHOOK:createTextContainer(fontmap, x, y, text) end
+
+-- ============================================================
+-- Disassembler (standalone object)
+-- ============================================================
+
+---@class DisassemblerData
+---@field address integer
+---@field opcode string
+---@field parameters string
+---@field description string
+---@field commentsoverride string?
+---@field bytes integer[]
+---@field modrmValueType integer dvtNone=0 dvtAddress=1 dvtValue=2
+---@field modrmValue integer
+---@field parameterValueType integer
+---@field parameterValue integer
+---@field isJump boolean
+---@field isCall boolean
+---@field isRet boolean
+---@field isRep boolean
+---@field isConditionalJump boolean
+
+---@class Disassembler: Object
+---@field LastDisassembleData DisassemblerData
+---@field syntaxhighlighting boolean
+---@field OnDisassembleOverride fun(sender: Disassembler, address: integer, data: DisassemblerData): string?, string?
+---@field OnPostDisassemble fun(sender: Disassembler, address: integer, data: DisassemblerData, result: string, description: string): string, string
+local Disassembler = {}
+
+---@return Disassembler
+function createDisassembler() end
+---@return Disassembler
+function getDefaultDisassembler() end
+---@return Disassembler
+function getVisibleDisassembler() end
+
+---@param f fun(sender: Disassembler, address: integer, data: DisassemblerData): string?, string?
+---@return integer id
+function registerGlobalDisassembleOverride(f) end
+---@param id integer
+function unregisterGlobalDisassembleOverride(id) end
+
+---@param address integer
+---@return string opcode
+function Disassembler:disassemble(address) end
+---@return string
+function Disassembler:decodeLastParametersToString() end
+---@return DisassemblerData
+function Disassembler:getLastDisassembleData() end
+
+-- ============================================================
+-- DissectCode
+-- ============================================================
+
+---@class DissectCode: Object
+local DissectCode = {}
+
+---@return DissectCode
+function getDissectCode() end
+function DissectCode:clear() end
+---@param modulenameOrBase string|integer Module name or base address
+---@param size integer? Required when passing base address
+function DissectCode:dissect(modulenameOrBase, size) end
+---@param fromAddress integer
+---@param toAddress integer
+---@param reftype string jtCall|jtUnconditional|jtConditional|jtMemory
+---@param isstring boolean?
+function DissectCode:addReference(fromAddress, toAddress, reftype, isstring) end
+---@param fromAddress integer
+---@param toAddress integer
+function DissectCode:deleteReference(fromAddress, toAddress) end
+---@param address integer
+---@return {address: integer, reftype: string}[]
+function DissectCode:getReferences(address) end
+---@return {address: integer, text: string}[]
+function DissectCode:getReferencedStrings() end
+---@return integer[]
+function DissectCode:getReferencedFunctions() end
+---@param filename string
+function DissectCode:saveToFile(filename) end
+---@param filename string
+function DissectCode:loadFromFile(filename) end
+
+-- ============================================================
+-- RIPRelativeScanner
+-- ============================================================
+
+---@class RIPRelativeScanner: Object
+---@field Count integer Number of matching instructions found
+local RIPRelativeScanner = {}
+
+---@param startOrModule integer|string Start address or module name
+---@param stopOrInclude integer|boolean Stop address, or includejumpsandcalls when module name given
+---@param includejumpsandcalls boolean?
+---@return RIPRelativeScanner
+function createRipRelativeScanner(startOrModule, stopOrInclude, includejumpsandcalls) end
+---@param index integer 1-based
+---@return integer address Address of the RIP-relative offset field
+function RIPRelativeScanner:getAddress(index) end
+
+-- ============================================================
+-- LuaPipe / LuaPipeClient / LuaPipeServer
+-- ============================================================
+
+---@class LuaPipe: Object
+---@field Connected boolean
+---@field Timeout integer Seconds; 0=never
+---@field OnTimeout fun(sender: LuaPipe)?
+---@field OnError fun(sender: LuaPipe)?
+---@field OnAboutToTimeout fun(sender: LuaPipe): boolean?
+local LuaPipe = {}
+function LuaPipe:lock() end
+function LuaPipe:unlock() end
+---@param stream Stream
+---@param size integer
+function LuaPipe:readIntoStream(stream, size) end
+---@param stream Stream
+---@param size integer?
+function LuaPipe:writeFromStream(stream, size) end
+---@param bytetable integer[]
+---@param size integer?
+---@return integer? bytessent
+function LuaPipe:writeBytes(bytetable, size) end
+---@param size integer
+---@return integer[]? nil on failure
+function LuaPipe:readBytes(size) end
+---@return number?
+function LuaPipe:readDouble() end
+---@return number?
+function LuaPipe:readFloat() end
+---@return integer?
+function LuaPipe:readQword() end
+---@param count integer
+---@return integer[]?
+function LuaPipe:readQwords(count) end
+---@return integer?
+function LuaPipe:readDword() end
+---@param count integer
+---@return integer[]?
+function LuaPipe:readDwords(count) end
+---@return integer?
+function LuaPipe:readWord() end
+---@param count integer
+---@return integer[]?
+function LuaPipe:readWords(count) end
+---@return integer?
+function LuaPipe:readByte() end
+---@param size integer
+---@return string?
+function LuaPipe:readString(size) end
+---@param size integer
+---@return string?
+function LuaPipe:readWideString(size) end
+---@param v number
+---@return integer? bytessent
+function LuaPipe:writeDouble(v) end
+---@param v number
+---@return integer? bytessent
+function LuaPipe:writeFloat(v) end
+---@param v integer
+---@return integer? bytessent
+function LuaPipe:writeQword(v) end
+---@param v integer
+---@return integer? bytessent
+function LuaPipe:writeDword(v) end
+---@param v integer
+---@return integer? bytessent
+function LuaPipe:writeWord(v) end
+---@param v integer
+---@return integer? bytessent
+function LuaPipe:writeByte(v) end
+---@param str string
+---@param include0terminator boolean?
+---@return integer? bytessent
+function LuaPipe:writeString(str, include0terminator) end
+---@param str string
+---@param include0terminator boolean?
+---@return integer? bytessent
+function LuaPipe:writeWideString(str, include0terminator) end
+
+---@class LuaPipeClient: LuaPipe
+local LuaPipeClient = {}
+
+---@param pipename string
+---@param timeout integer? Milliseconds
+---@return LuaPipeClient?
+function connectToPipe(pipename, timeout) end
+
+---@class LuaPipeServer: LuaPipe
+---@field valid boolean True if pipe was created successfully
+---@field handle integer Handle of the server-side pipe
+local LuaPipeServer = {}
+--- Blocks until a client connects
+function LuaPipeServer:acceptConnection() end
+
+---@param pipename string
+---@param inputsize integer?
+---@param outputsize integer?
+---@param maxInstanceCount integer?
+---@return LuaPipeServer
+function createPipe(pipename, inputsize, outputsize, maxInstanceCount) end
+
+-- ============================================================
+-- SymbolList
+-- ============================================================
+
+---@class SymbolList: Object
+---@field PID integer
+---@field Name string
+local SymbolList = {}
+---@return SymbolList
+function createSymbolList() end
+---@return SymbolList
+function getMainSymbolList() end
+---@return SymbolList[]
+function enumRegisteredSymbolLists() end
+function SymbolList:clear() end
+---@param address integer
+---@return {modulename: string, searchkey: string, address: integer, symbolsize: integer}?
+function SymbolList:getSymbolFromAddress(address) end
+---@param searchkey string
+---@return {modulename: string, searchkey: string, address: integer, symbolsize: integer}?
+function SymbolList:getSymbolFromString(searchkey) end
+---@param modulename string
+---@param modulepath string
+---@param address integer
+---@param size integer
+---@param is64bit boolean
+function SymbolList:addModule(modulename, modulepath, address, size, is64bit) end
+---@param modulenameOrAddress string|integer
+function SymbolList:deleteModule(modulenameOrAddress) end
+---@param modulename string
+---@param searchkey string
+---@param address integer
+---@param symbolsize integer
+---@param skipAddressToSymbolLookup boolean?
+---@param extradata {returntype: string, parameters: string}?
+function SymbolList:addSymbol(modulename, searchkey, address, symbolsize, skipAddressToSymbolLookup, extradata) end
+---@param searchkeyOrAddress string|integer
+function SymbolList:deleteSymbol(searchkeyOrAddress) end
+function SymbolList:register() end
+function SymbolList:unregister() end
+---@return table[]
+function SymbolList:getModuleList() end
+---@return table
+function SymbolList:getSymbolList() end
+
+-- ============================================================
+-- PageControl / TabSheet
+-- ============================================================
+
+---@class TabSheet: WinControl
+---@field TabIndex integer Index in the owning page control
+local TabSheet = {}
+
+---@class PageControl: WinControl
+---@field ShowTabs boolean
+---@field TabIndex integer
+---@field ActivePage TabSheet
+---@field PageCount integer
+local PageControl = {}
+---@param owner WinControl
+---@return PageControl
+function createPageControl(owner) end
+---@return TabSheet
+function PageControl:addTab() end
+---@param index integer
+---@return {Left: integer, Top: integer, Right: integer, Bottom: integer}
+function PageControl:tabRect(index) end
+---@param index integer
+---@return TabSheet
+function PageControl:getPage(index) end
+
+-- ============================================================
+-- Internet
+-- ============================================================
+
+---@class Internet: Object
+---@field Header string Additional header for next getURL request
+local Internet = {}
+---@param clientname string
+---@return Internet
+function getInternet(clientname) end
+---@param path string
+---@return string? nil on failure
+function Internet:getURL(path) end
+---@param path string
+---@param urlencodeddata string
+---@return string? result
+function Internet:postURL(path, urlencodeddata) end
+
+-- ============================================================
+-- CustomType
+-- ============================================================
+
+---@class CustomType: Object
+---@field name string
+---@field functiontypename string
+---@field CustomTypeType integer
+---@field script string
+---@field scriptUsesFloat boolean
+local CustomType = {}
+---@param typename string
+---@param bytecount integer
+---@param bytestovaluefunction fun(...): integer
+---@param valuetobytesfunction fun(value: integer): ...
+---@param isFloat boolean?
+---@param isString boolean?
+---@return CustomType
+function registerCustomTypeLua(typename, bytecount, bytestovaluefunction, valuetobytesfunction, isFloat, isString) end
+---@param script string
+---@return CustomType
+function registerCustomTypeAutoAssembler(script) end
+---@param typename string
+---@return CustomType?
+function getCustomType(typename) end
+---@param bytetable integer[]
+---@param address integer?
+---@return any
+function CustomType:byteTableToValue(bytetable, address) end
+---@param value any
+---@param address integer?
+---@return integer[]
+function CustomType:valueToByteTable(value, address) end
+
+-- ============================================================
+-- Settings
+-- ============================================================
+
+---@class Settings: Object
+---@field Path string? Current subkey (nil=CE main settings)
+local Settings = {}
+function reloadSettingsFromRegistry() end
+---@param path string?
+---@param nilResults boolean?
+---@return Settings
+function getSettings(path, nilResults) end
+---@param name string
+---@param stream Stream
+function Settings:getBinaryValue(name, stream) end
+---@param name string
+---@param stream Stream
+---@param size integer?
+function Settings:setBinaryValue(name, stream, size) end
+
+-- ============================================================
+-- TFrmTracer
+-- ============================================================
+
+---@class TFrmTracer: Form
+---@field Count integer Number of trace entries
+---@field SelectionCount integer Number of selected entries
+local TFrmTracer = {}
+---@param index integer 0-based
+---@return {address: integer, instruction: string, instructionSize: integer, referencedAddress: integer, referencedData: integer[], context: table}
+function TFrmTracer:getEntry(index) end
+
+-- ============================================================
+-- Misc remaining global functions
+-- ============================================================
+
+---@param attachwindow Form
+---@param hasclosebutton boolean
+---@param width integer
+---@param height integer
+---@param position integer 0=Top 1=Right 2=Bottom 3=Left
+---@param yoururl string?
+---@param extraparameters string?
+---@param percentageshown number?
+function supportCheatEngine(attachwindow, hasclosebutton, width, height, position, yoururl, extraparameters, percentageshown) end
+
+function fuckCheatEngine() end
+
