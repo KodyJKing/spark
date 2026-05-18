@@ -1109,7 +1109,8 @@ function onPointerMapGenerationFinish() end
 
 --- Called when a breaking breakpoint hits; EAX/RBX/... globals are populated
 ---@return integer? 0=update UI, anything else=skip UI update
-function debugger_onBreakpoint() end
+---@type (fun():integer?)|nil
+debugger_onBreakpoint = nil
 
 --- Called when a module is loaded (Windows debugger only)
 ---@param modulename string

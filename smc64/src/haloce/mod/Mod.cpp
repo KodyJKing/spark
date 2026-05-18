@@ -14,6 +14,7 @@
 #include "DllMain.hpp"
 #include "modules/mario/Mario.hpp"
 #include "modules/freecam.hpp"
+#include "overlay/VectorProfiler.hpp"
 
 namespace HaloCE::Mod {
 
@@ -65,6 +66,8 @@ namespace HaloCE::Mod {
     //
     void hkUpdateAllEntities() {
         UnloadLock lock; // No unloading while we're still executing hook code.
+
+        Overlay::ESP::VectorProfiler::start(GetCurrentThreadId());
 
         Freecam::update();
         Mario::update();
@@ -355,6 +358,8 @@ namespace HaloCE::Mod {
 
         Mario::free();
         Freecam::free();
+
+        Overlay::ESP::VectorProfiler::stop();
 
         #ifdef PATCH_TAGS
         unpatchTags();

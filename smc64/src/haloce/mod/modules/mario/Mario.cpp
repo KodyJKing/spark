@@ -27,7 +27,7 @@
 #include "ThirdPersonFix.hpp"
 #include "MarioSkeleton.hpp"
 
-#define ENABLE_MARIO 1
+// #define ENABLE_MARIO 1
 
 namespace HaloCE::Mod::Mario {
 

@@ -6,27 +6,6 @@
   </Forms>
   <CheatEntries>
     <CheatEntry>
-      <ID>198</ID>
-      <Description>"Symbol Script"</Description>
-      <VariableType>Auto Assembler Script</VariableType>
-      <AssemblerScript>[ENABLE]
-define(__ENTITY_ARRAY__,halo1.dll+2D9CDF8)
-registerSymbol(__ENTITY_ARRAY__)
-
-define(__ENTITY_LIST__,halo1.dll+1C42248)
-registerSymbol(__ENTITY_LIST__)
-
-define(getTagDataPointer,halo1.dll+A9B648)
-registerSymbol(getTagDataPointer)
-
-[DISABLE]
-unregisterSymbol(__ENTITY_ARRAY__)
-unregisterSymbol(__ENTITY_LIST__)
-unregisterSymbol(getTagDataPointer)
-
-</AssemblerScript>
-    </CheatEntry>
-    <CheatEntry>
       <ID>36</ID>
       <Description>"MCC"</Description>
       <Options moAlwaysHideChildren="1" moManualExpandCollapse="1"/>
@@ -5187,6 +5166,138 @@ halo1.dll+B48CDA: 48 89 74 24 18        - mov [rsp+18],rsi
         <Byte>C3</Byte>
         <Byte>66</Byte>
         <Byte>3B</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of call updateEntityLighting_L3</Description>
+      <AddressString>halo1.dll+B48D75</AddressString>
+      <Before>
+        <Byte>8B</Byte>
+        <Byte>0F</Byte>
+        <Byte>0F</Byte>
+        <Byte>28</Byte>
+        <Byte>C8</Byte>
+      </Before>
+      <Actual>
+        <Byte>E8</Byte>
+        <Byte>56</Byte>
+        <Byte>FD</Byte>
+        <Byte>FF</Byte>
+        <Byte>FF</Byte>
+      </Actual>
+      <After>
+        <Byte>8B</Byte>
+        <Byte>0F</Byte>
+        <Byte>4C</Byte>
+        <Byte>8B</Byte>
+        <Byte>D8</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry GroupHeader="1">
+      <Description/>
+    </CodeEntry>
+    <CodeEntry GroupHeader="1">
+      <Description>Particles</Description>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Update Particle Position :movsd [r13+00],xmm0</Description>
+      <AddressString>halo1.dll+B10069</AddressString>
+      <Before>
+        <Byte>45</Byte>
+        <Byte>88</Byte>
+        <Byte>8B</Byte>
+        <Byte>4D</Byte>
+        <Byte>90</Byte>
+      </Before>
+      <Actual>
+        <Byte>F2</Byte>
+        <Byte>41</Byte>
+        <Byte>0F</Byte>
+        <Byte>11</Byte>
+        <Byte>45</Byte>
+        <Byte>00</Byte>
+      </Actual>
+      <After>
+        <Byte>41</Byte>
+        <Byte>89</Byte>
+        <Byte>4D</Byte>
+        <Byte>08</Byte>
+        <Byte>8B</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of call halo1.dll+B0FC04</Description>
+      <AddressString>halo1.dll+B8AA54</AddressString>
+      <Before>
+        <Byte>4C</Byte>
+        <Byte>89</Byte>
+        <Byte>6C</Byte>
+        <Byte>24</Byte>
+        <Byte>20</Byte>
+      </Before>
+      <Actual>
+        <Byte>E8</Byte>
+        <Byte>AB</Byte>
+        <Byte>51</Byte>
+        <Byte>F8</Byte>
+        <Byte>FF</Byte>
+      </Actual>
+      <After>
+        <Byte>44</Byte>
+        <Byte>8B</Byte>
+        <Byte>F8</Byte>
+        <Byte>A8</Byte>
+        <Byte>04</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Call Update Particles</Description>
+      <AddressString>halo1.dll+AAF512</AddressString>
+      <Before>
+        <Byte>5D</Byte>
+        <Byte>FF</Byte>
+        <Byte>0F</Byte>
+        <Byte>28</Byte>
+        <Byte>C7</Byte>
+      </Before>
+      <Actual>
+        <Byte>E8</Byte>
+        <Byte>69</Byte>
+        <Byte>AD</Byte>
+        <Byte>0D</Byte>
+        <Byte>00</Byte>
+      </Actual>
+      <After>
+        <Byte>B9</Byte>
+        <Byte>03</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of call halo1.dll+B8A8CC</Description>
+      <AddressString>halo1.dll+B8A32C</AddressString>
+      <Before>
+        <Byte>0F</Byte>
+        <Byte>28</Byte>
+        <Byte>CE</Byte>
+        <Byte>8B</Byte>
+        <Byte>CB</Byte>
+      </Before>
+      <Actual>
+        <Byte>E8</Byte>
+        <Byte>9B</Byte>
+        <Byte>05</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+      </Actual>
+      <After>
+        <Byte>48</Byte>
+        <Byte>8B</Byte>
+        <Byte>3D</Byte>
+        <Byte>58</Byte>
+        <Byte>BC</Byte>
       </After>
     </CodeEntry>
   </CheatCodes>

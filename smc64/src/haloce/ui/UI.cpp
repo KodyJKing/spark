@@ -1,6 +1,7 @@
 #include "imgui.h"
 #include "haloce/mod/Mod.hpp"
 #include "overlay/ESP.hpp"
+#include "overlay/VectorProfiler.hpp"
 #include "UI.hpp"
 #include "haloce/halo1/halo1.hpp"
 #include "haloce/mod/modules/mario/Mario.hpp"
@@ -214,7 +215,7 @@ namespace HaloCE::Mod::UI {
         float maxBSPVertexDistance = 10.0f;
         struct Filter
         {
-            bool biped = true;
+            bool biped = false;
             bool vehicle = false;
             bool weapon = false;
             bool projectile = false;
@@ -783,6 +784,8 @@ namespace HaloCE::Mod::UI {
 
         // Mario debugRender
         HaloCE::Mod::Mario::debugRender();
+
+        Overlay::ESP::VectorProfiler::render();
     }
 
 }
