@@ -10,6 +10,8 @@
 #include <unordered_set>
 #include <Windows.h>
 
+// #define ENABLE_VECTOR_PROFILER 1
+
 struct Entry {
     Vec3 vector;
     uintptr_t pointer;
@@ -237,14 +239,20 @@ VectorProfiler profiler;
 
 namespace Overlay::ESP::VectorProfiler {
     void start(DWORD threadId) {
+        #ifdef ENABLE_VECTOR_PROFILER
         profiler.startThread(threadId);
+        #endif
     }
 
     void stop() {
+        #ifdef ENABLE_VECTOR_PROFILER
         profiler.stopThread();
+        #endif
     }
 
     void render() {
+        #ifdef ENABLE_VECTOR_PROFILER
         profiler.render();
+        #endif
     }
 }

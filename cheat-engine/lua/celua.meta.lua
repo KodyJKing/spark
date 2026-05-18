@@ -1795,11 +1795,11 @@ function debug_removeThreadFromNoBreakList(threadid) end
 function debug_setBreakpointForThread(threadid, address, size, trigger, breakpointmethod, functiontocall) end
 
 ---@param address integer|string
----@param size integer?
+---@param sizeOrFunctionToCall integer|function?
 ---@param trigger integer? bptExecute|bptAccess|bptWrite
 ---@param breakpointmethodOrCallback integer|function?
 ---@param functiontocall function?
-function debug_setBreakpoint(address, size, trigger, breakpointmethodOrCallback, functiontocall) end
+function debug_setBreakpoint(address, sizeOrFunctionToCall, trigger, breakpointmethodOrCallback, functiontocall) end
 
 ---@param address integer|string
 function debug_removeBreakpoint(address) end

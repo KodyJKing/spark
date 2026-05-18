@@ -5300,6 +5300,81 @@ halo1.dll+B48CDA: 48 89 74 24 18        - mov [rsp+18],rsi
         <Byte>BC</Byte>
       </After>
     </CodeEntry>
+    <CodeEntry>
+      <Description>Change of call halo1.dll+BCAE20</Description>
+      <AddressString>halo1.dll+BCA0FE</AddressString>
+      <Before>
+        <Byte>D8</Byte>
+        <Byte>00</Byte>
+        <Byte>41</Byte>
+        <Byte>8B</Byte>
+        <Byte>D6</Byte>
+      </Before>
+      <Actual>
+        <Byte>E8</Byte>
+        <Byte>1D</Byte>
+        <Byte>0D</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+      </Actual>
+      <After>
+        <Byte>48</Byte>
+        <Byte>8B</Byte>
+        <Byte>6C</Byte>
+        <Byte>24</Byte>
+        <Byte>48</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of call halo1.dll+BCA990</Description>
+      <AddressString>halo1.dll+AAF536</AddressString>
+      <Before>
+        <Byte>5D</Byte>
+        <Byte>FF</Byte>
+        <Byte>0F</Byte>
+        <Byte>28</Byte>
+        <Byte>C6</Byte>
+      </Before>
+      <Actual>
+        <Byte>E8</Byte>
+        <Byte>55</Byte>
+        <Byte>B4</Byte>
+        <Byte>11</Byte>
+        <Byte>00</Byte>
+      </Actual>
+      <After>
+        <Byte>B9</Byte>
+        <Byte>04</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Call Update Particles (top?)</Description>
+      <AddressString>halo1.dll+AB0F5C</AddressString>
+      <Before>
+        <Byte>00</Byte>
+        <Byte>F3</Byte>
+        <Byte>0F</Byte>
+        <Byte>59</Byte>
+        <Byte>C7</Byte>
+      </Before>
+      <Actual>
+        <Byte>E8</Byte>
+        <Byte>3F</Byte>
+        <Byte>E5</Byte>
+        <Byte>FF</Byte>
+        <Byte>FF</Byte>
+      </Actual>
+      <After>
+        <Byte>41</Byte>
+        <Byte>8B</Byte>
+        <Byte>CE</Byte>
+        <Byte>E8</Byte>
+        <Byte>07</Byte>
+      </After>
+    </CodeEntry>
   </CheatCodes>
   <UserdefinedSymbols>
     <SymbolEntry>
@@ -5353,6 +5428,10 @@ halo1.dll+B48CDA: 48 89 74 24 18        - mov [rsp+18],rsi
     <SymbolEntry>
       <Name>renderEntityModel</Name>
       <Address>halo1.dll+B48CD0</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>updateParticles</Name>
+      <Address>halo1.dll+AAF4A0</Address>
     </SymbolEntry>
   </UserdefinedSymbols>
   <Structures StructVersion="2">
@@ -8212,6 +8291,11 @@ halo1.dll+B48CDA: 48 89 74 24 18        - mov [rsp+18],rsi
       <Address>"halo1.dll"+B48CD0</Address>
       <Header>void renderEntityModel(uint32_t entityHandle)
 </Header>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B49602</Address>
+      <Comment>This is the failing test for Mario's lighting.
+</Comment>
     </DisassemblerComment>
     <DisassemblerComment>
       <Address>"halo1.dll"+B89D2A</Address>

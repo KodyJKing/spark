@@ -26,8 +26,10 @@
 #include "../FreeCam.hpp"
 #include "ThirdPersonFix.hpp"
 #include "MarioSkeleton.hpp"
+#include "MarioModel.hpp"
+#include "MarioLightingFix.hpp"
 
-// #define ENABLE_MARIO 1
+#define ENABLE_MARIO 1
 
 namespace HaloCE::Mod::Mario {
 
@@ -154,12 +156,14 @@ namespace HaloCE::Mod::Mario {
         initMario();
 
         ThirdPersonFix::init(Halo1::dllBase());
+        MarioModel::LightingFix::init(Halo1::dllBase());
         #endif
     }
 
     void free() {
         #ifdef ENABLE_MARIO
         ThirdPersonFix::free();
+        MarioModel::LightingFix::free();
 
         sm64_global_terminate();
 
@@ -326,13 +330,21 @@ namespace HaloCE::Mod::Mario {
     void marioDebugWindow(SM64WallCollisionData& wallData) {
         ImGui::Begin("Mario Debug Info", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
         
-        // ImGui::Text("Mario ID: %d", marioId);
-        // ImGui::Text("Position: (%.2f, %.2f, %.2f)", marioState.position[0], marioState.position[1], marioState.position[2]);
-        // ImGui::Text("Velocity: (%.2f, %.2f, %.2f)", marioState.velocity[0], marioState.velocity[1], marioState.velocity[2]);
-        // ImGui::Text("Health: %d", marioState.health);
-        // ImGui::Text("Action: 0x%X", marioState.action);
-        // ImGui::Text("Flags: 0x%X", marioState.flags);
-        // ImGui::Text("Num walls: %d", wallData.numWalls);
+        ImGui::Text("Mario Model Handle: %X", MarioModel::marioHandle);
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Right click to copy");
+        if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
+            char buffer[32];
+            snprintf(buffer, sizeof(buffer), "%X", MarioModel::marioHandle);
+            ImGui::SetClipboardText(buffer);
+        }
+
+        ImGui::Text("Mario ID: %d", marioId);
+        ImGui::Text("Position: (%.2f, %.2f, %.2f)", marioState.position[0], marioState.position[1], marioState.position[2]);
+        ImGui::Text("Velocity: (%.2f, %.2f, %.2f)", marioState.velocity[0], marioState.velocity[1], marioState.velocity[2]);
+        ImGui::Text("Health: %d", marioState.health);
+        ImGui::Text("Action: 0x%X", marioState.action);
+        ImGui::Text("Flags: 0x%X", marioState.flags);
+        ImGui::Text("Num walls: %d", wallData.numWalls);
 
         // Slider for highlightTriangleIndex
         ImGui::SliderInt("##Highlight Triangle Index", &highlightTriangleIndex, -1, marioGeometry.numTrianglesUsed - 1);
@@ -426,7 +438,7 @@ namespace HaloCE::Mod::Mario {
 
         drawMarioBones(marioGeometry);
 
-        // marioDebugWindow(wallData);
+        marioDebugWindow(wallData);
 
         #endif // ENABLE_MARIO
     }
