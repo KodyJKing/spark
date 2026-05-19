@@ -27,7 +27,6 @@
 #include "ThirdPersonFix.hpp"
 #include "MarioSkeleton.hpp"
 #include "MarioModel.hpp"
-#include "MarioLightingFix.hpp"
 
 #define ENABLE_MARIO 1
 
@@ -156,14 +155,12 @@ namespace HaloCE::Mod::Mario {
         initMario();
 
         ThirdPersonFix::init(Halo1::dllBase());
-        MarioModel::LightingFix::init(Halo1::dllBase());
         #endif
     }
 
     void free() {
         #ifdef ENABLE_MARIO
         ThirdPersonFix::free();
-        MarioModel::LightingFix::free();
 
         sm64_global_terminate();
 
@@ -214,9 +211,23 @@ namespace HaloCE::Mod::Mario {
         return result;
     }
 
+    bool shouldAlignToLook() {
+        // Only align to look direction when Mario is idle, to avoid interfering with other actions.
+        return marioState.action == ACT_IDLE || marioState.action == ACT_RIDING_SHELL_GROUND;
+    }
+
+    bool shouldWalkOnAlign() {
+        // Only walk in the look direction when Mario is idle, to avoid interfering with other actions.
+        return marioState.action == ACT_IDLE;
+    }
+
+    bool shouldAlignGradual() {
+        // Only gradually align to look direction when Mario is idle, to avoid interfering with other actions.
+        return marioState.action != ACT_IDLE;
+    }
+
     void faceLookDirection(Vec3 lookDirection) {
-        // Skip if Mario is not IDLE to avoid interfering with other actions.
-        if (marioState.action != ACT_IDLE) return;
+        if (!shouldAlignToLook()) return;
 
         float desiredYaw = atan2f(lookDirection.x, lookDirection.y);
 
@@ -228,9 +239,18 @@ namespace HaloCE::Mod::Mario {
         const float PI = 3.14159265f;
         if (diff < PI / 3.0) return; // Already facing the right direction
 
+        if (shouldAlignGradual()) {
+            float cross = cosf(yaw) * sinf(desiredYaw) - sinf(yaw) * cosf(desiredYaw);
+            float sign = (cross > 0) ? 1.0f : -1.0f;
+            float turnSpeed = 0.1f; // Adjust this for faster/slower turning
+            desiredYaw = yaw + sign * turnSpeed * diff;
+        }
+
         sm64_set_mario_faceangle(marioId, desiredYaw);
-        sm64_set_mario_action(marioId, ACT_WALKING);
-        sm64_set_mario_forward_velocity(marioId, 10.0f);
+        if (shouldWalkOnAlign()) {
+            sm64_set_mario_action(marioId, ACT_WALKING);
+            sm64_set_mario_forward_velocity(marioId, 10.0f);
+        }
     }
 
     void update() {
@@ -252,6 +272,10 @@ namespace HaloCE::Mod::Mario {
         if (GetAsyncKeyState(VK_F4) & 1) {
             possessMario = !possessMario;
             if (possessMario) marioToCheif();
+        }
+
+        if (GetAsyncKeyState(VK_NUMPAD1) & 1) {
+            sm64_set_mario_action_arg(marioId, ACT_RIDING_SHELL_GROUND, 0);
         }
 
         if (marioId < 0 || !enableMario) {

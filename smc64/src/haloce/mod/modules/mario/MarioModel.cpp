@@ -4,6 +4,7 @@
 #include "MarioInverseKinematics.hpp"
 #include <string>
 #include "decomp/sm64.h"
+#include "Coordinates.hpp"
 
 namespace {
     void updateEntityRegion(uint32_t entityHandle, void* unknown) {
@@ -36,8 +37,15 @@ namespace HaloCE::Mod::Mario::MarioModel {
         return playerEntity->childHandle;
     }
 
+    bool marioRightArmBusy() {
+        if (marioState.action == ACT_IDLE) return false;
+        return true;
+    }
+
     bool marioArmsBusy() {
-        return marioState.action != ACT_IDLE;
+        if (marioState.action == ACT_IDLE) return false;
+        if (marioState.action == ACT_RIDING_SHELL_GROUND) return false;
+        return true;
     }
 
     void IKToWeapon() {
@@ -70,6 +78,8 @@ namespace HaloCE::Mod::Mario::MarioModel {
         ikRequest.targetPosition = target;
         InverseKinematics::applyMarioIK(ikRequest);
 
+        if (marioRightArmBusy()) return;
+
         ikRequest.limb = InverseKinematics::MarioIKRequest::Limb::RightArm;
         ikRequest.targetPosition = target + right * 0.05f;
         InverseKinematics::applyMarioIK(ikRequest);
@@ -83,6 +93,8 @@ namespace HaloCE::Mod::Mario::MarioModel {
         if (!worldBones) return;
 
         marioEntity->pos = marioPose[0].pos;
+        Vec3 marioVelocity = *(Vec3*)&marioState.velocity[0];
+        marioEntity->vel = Coordinates::marioToHalo(marioVelocity);
         updateEntityRegion(entityHandle, nullptr);
 
         IKToWeapon();
@@ -118,7 +130,7 @@ namespace HaloCE::Mod::Mario::MarioModel {
             rootBone->z = leftHandBone.z;
             rootBone->pos = leftHandBone.pos;
         }
-        rootBone->pos = leftHandBone.pos + leftHandBone.x * 0.05f + rootBone->z * 0.025f;
+        rootBone->pos = leftHandBone.pos + leftHandBone.x * 0.05f + rootBone->z * 0.0125f;
 
         auto initialInverse = Halo1::inverseWorldTransform(rootBoneInitial);
         auto relativeTransform = Halo1::multiplyWorldTransforms(
