@@ -212,6 +212,9 @@ namespace HaloCE::Mod::Mario {
     }
 
     bool shouldAlignToLook() {
+        // If stick input is non-zero, don't align to look direction.
+        if (marioInputs.stickX != 0 || marioInputs.stickY != 0) return false;
+
         // Only align to look direction when Mario is idle, to avoid interfering with other actions.
         return marioState.action == ACT_IDLE || marioState.action == ACT_RIDING_SHELL_GROUND;
     }

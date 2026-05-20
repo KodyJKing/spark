@@ -16,3 +16,5 @@ vendor/*/obj/
 scripts/user
 paired_sensors.txt
 cheat-engine/data
+
+binary-ninja/halo1.dll.bndb

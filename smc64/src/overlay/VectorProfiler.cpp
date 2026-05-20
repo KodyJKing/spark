@@ -30,9 +30,9 @@ struct Entry {
 
 struct VectorProfiler {
     size_t writeHead = 0;
-    std::array<Entry, 100000> vectors;
+    std::array<Entry, 10000> vectors;
     
-    float maxDistanceSq = 20.0f * 20.0f;
+    float maxDistance = 2.0f;
     float blockSize = 0x1000;
 
     bool running = false;
@@ -62,7 +62,7 @@ struct VectorProfiler {
         auto value = maybeValue.value();
 
         auto diff = value - Overlay::ESP::camera.pos;
-        if (diff.lengthSquared() > maxDistanceSq) return;
+        if (diff.lengthSquared() > maxDistance * maxDistance) return;
         auto diffNormalized = diff.normalize();
         auto maxDot = cosf(Overlay::ESP::camera.fov / 2.0f);
         if (diffNormalized.dot(Overlay::ESP::camera.fwd) < maxDot) return;
