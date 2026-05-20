@@ -60,6 +60,14 @@ namespace HaloCE::Mod::BSPConversion {
                 auto p1 = &bspVertices[edge->endVertex];
                 auto p2 = firstVertex;
 
+                // Todo: Implement chunking to limit the max coordinate needed to be loaded into Mario's engine.
+                if (!Coordinates::isHaloVectorSafe(p0->pos) ||
+                    !Coordinates::isHaloVectorSafe(p1->pos) ||
+                    !Coordinates::isHaloVectorSafe(p2->pos)) {
+                    // Skip triangles with unsafe coordinates to avoid Mario getting launched into space.
+                    continue;
+                }
+
                 auto v01 = p1->pos - p0->pos;
                 auto v02 = p2->pos - p0->pos;
                 auto cross = v01.cross(v02);

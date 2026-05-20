@@ -1,13 +1,21 @@
-- Disable fall death timer when Mario is in control.
+- Fall damage:
+    - Disable fall death timer for Cheif,
+    - Disable fall damage for Cheif.
+    - Apply Mario's fall damage to Cheif.
 
-- Fix spurious collisions with large distant triangles.
-    - Create better tooling to investigate these triangles. Determine if they are actual collidable geometry in game.
-    - Experiment with dynamic collision mesh gen for static level geometry.
+- Disable or move 1rst person weapon flares and muzzle flashes.
 
-- Fix Mario's shadow clipping.
-    -Try updating his tag's bounds.
+- Implement collision with vehicles, bipeds and other moving objects.
 
-- Render a false projectile exiting the player's barel.
+- Implement melee and shell damage interactions.
+
+- Implement damage knockback on Mario.
+
+- Shrink Chief to Mario's size so AI targetting looks correct.
+
+- Implement level geometry chunking. Keep Mario's coordinates near the origin to avoid overflow.
+
+- Render a false projectile exiting the player's barrel.
     - False projectile should converge with the actual projectile over distance.
     
 - Fix wall kicks for near-vertical walls.
@@ -15,6 +23,10 @@
 
 - Blend Mario's animation with Chief's.
 
+- Implement slow motion.
+
 Done:
 
 x Keep mario model's lighting up to date.
+x Fix Mario's shadow clipping.
+x Fix spurious collisions with large distant triangles.
