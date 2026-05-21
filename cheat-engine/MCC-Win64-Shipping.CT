@@ -732,148 +732,6 @@ halo1.dll+B48CDA: 48 89 74 24 18        - mov [rsp+18],rsi
       <Options moAlwaysHideChildren="1" moManualExpandCollapse="1"/>
       <GroupHeader>1</GroupHeader>
     </CheatEntry>
-    <CheatEntry>
-      <ID>99</ID>
-      <Description>"Auto Assemble script"</Description>
-      <VariableType>Auto Assembler Script</VariableType>
-      <AssemblerScript>{ Game   : Halo: The Master Chief Collection  
-  Version: 
-  Date   : 2026-05-20
-  Author : Kody
-
-  This script does blah blah blah
-}
-
-define(address,"halo1.dll"+B280C7)
-define(bytes,8B 88 68 04 00 00)
-
-[ENABLE]
-
-assert(address,bytes)
-alloc(newmem,$1000,"halo1.dll"+B280C7)
-
-label(code)
-label(return)
-
-newmem:
-
-code:
-  mov ecx,FFFFFFFF
-  jmp return
-
-address:
-  jmp newmem
-  nop
-return:
-
-[DISABLE]
-
-address:
-  db bytes
-  // mov ecx,[rax+00000468]
-
-dealloc(newmem)
-
-{
-// ORIGINAL CODE - INJECTION POINT: halo1.dll+B280C7
-
-halo1.dll+B2809E: E8 01 CE FE FF        - call halo1.dll+B14EA4
-halo1.dll+B280A3: 66 85 C0              - test ax,ax
-halo1.dll+B280A6: 75 62                 - jne halo1.dll+B2810A
-halo1.dll+B280A8: 8B 0E                 - mov ecx,[rsi]
-halo1.dll+B280AA: 49 0F BF C1           - movsx rax,r9w
-halo1.dll+B280AE: 4C 69 C8 94 1E 00 00  - imul r9,rax,00001E94
-halo1.dll+B280B5: 4C 03 0D D4 4C 27 02  - add r9,[halo1.dll+2D9CD90]
-halo1.dll+B280BC: E8 87 35 F7 FF        - call getTagDataPointer
-halo1.dll+B280C1: 41 F6 01 04           - test byte ptr [r9],04
-halo1.dll+B280C5: 74 43                 - je halo1.dll+B2810A
-// ---------- INJECTING HERE ----------
-halo1.dll+B280C7: 8B 88 68 04 00 00     - mov ecx,[rax+00000468]
-// ---------- DONE INJECTING  ----------
-halo1.dll+B280CD: 41 3B CA              - cmp ecx,r10d
-halo1.dll+B280D0: 74 38                 - je halo1.dll+B2810A
-halo1.dll+B280D2: 44 39 90 78 04 00 00  - cmp [rax+00000478],r10d
-halo1.dll+B280D9: 74 2F                 - je halo1.dll+B2810A
-halo1.dll+B280DB: 66 89 6C 24 40        - mov [rsp+40],bp
-halo1.dll+B280E0: 49 8D 81 88 10 00 00  - lea rax,[r9+00001088]
-halo1.dll+B280E7: 4C 89 74 24 38        - mov [rsp+38],r14
-halo1.dll+B280EC: 49 81 C1 88 1D 00 00  - add r9,00001D88
-halo1.dll+B280F3: 88 5C 24 30           - mov [rsp+30],bl
-halo1.dll+B280F7: 45 33 C0              - xor r8d,r8d
-}
-</AssemblerScript>
-    </CheatEntry>
-    <CheatEntry>
-      <ID>100</ID>
-      <Description>"Auto Assemble script"</Description>
-      <VariableType>Auto Assembler Script</VariableType>
-      <AssemblerScript>{ Game   : Halo: The Master Chief Collection  
-  Version: 
-  Date   : 2026-05-20
-  Author : Kody
-
-  This script does blah blah blah
-}
-
-define(address,"halo1.dll"+AB3201)
-define(bytes,8B 8D 68 04 00 00)
-
-[ENABLE]
-
-assert(address,bytes)
-alloc(newmem,$1000,"halo1.dll"+AB3201)
-
-label(code)
-label(return)
-
-newmem:
-
-code:
-  mov ecx,FFFFFFFF
-  jmp return
-
-address:
-  jmp newmem
-  nop
-return:
-
-[DISABLE]
-
-address:
-  db bytes
-  // mov ecx,[rbp+00000468]
-
-dealloc(newmem)
-
-{
-// ORIGINAL CODE - INJECTION POINT: halo1.dll+AB3201
-
-halo1.dll+AB31C8: 48 0F BF FE                 - movsx rdi,si
-halo1.dll+AB31CC: 48 8D 1D 2D CE 54 FF        - lea rbx,[halo1.dll]
-halo1.dll+AB31D3: F3 0F 10 84 BB 88 FD E9 02  - movss xmm0,[rbx+rdi*4+02E9FD88]
-halo1.dll+AB31DC: F3 41 0F 5C 06              - subss xmm0,[r14]
-halo1.dll+AB31E1: 0F 5A C8                    - cvtps2pd xmm1,xmm0
-halo1.dll+AB31E4: 0F 54 0D 25 E7 E9 00        - andps xmm1,[halo1.dll+1951910]
-halo1.dll+AB31EB: 66 0F 2F 0D 25 C3 E9 00     - comisd xmm1,[halo1.dll+194F518]
-halo1.dll+AB31F3: 0F 86 90 00 00 00           - jbe halo1.dll+AB3289
-halo1.dll+AB31F9: F3 41 0F 10 16              - movss xmm2,[r14]
-halo1.dll+AB31FE: 0F B7 D6                    - movzx edx,si
-// ---------- INJECTING HERE ----------
-halo1.dll+AB3201: 8B 8D 68 04 00 00           - mov ecx,[rbp+00000468]
-// ---------- DONE INJECTING  ----------
-halo1.dll+AB3207: E8 04 E8 5D FF              - call halo1.dll+91A10
-halo1.dll+AB320C: F3 0F 11 84 BB 88 FD E9 02  - movss [rbx+rdi*4+02E9FD88],xmm0
-halo1.dll+AB3215: EB 72                       - jmp halo1.dll+AB3289
-halo1.dll+AB3217: 83 FB FF                    - cmp ebx,-01
-halo1.dll+AB321A: 74 0A                       - je halo1.dll+AB3226
-halo1.dll+AB321C: 8B CB                       - mov ecx,ebx
-halo1.dll+AB321E: E8 39 80 FE FF              - call halo1.dll+A9B25C
-halo1.dll+AB3223: 48 8B F8                    - mov rdi,rax
-halo1.dll+AB3226: 48 8D 15 8B 18 DD 00        - lea rdx,[halo1.dll+1884AB8]
-halo1.dll+AB322D: 48 8B CF                    - mov rcx,rdi
-}
-</AssemblerScript>
-    </CheatEntry>
   </CheatEntries>
   <CheatCodes>
     <CodeEntry>
@@ -7553,10 +7411,11 @@ halo1.dll+AB322D: 48 8B CF                    - mov rcx,rdi
         <Element Offset="4" Vartype="2 Bytes" Bytesize="2" OffsetHex="00000004" Description="shaderIndex" DisplayMethod="hexadecimal"/>
         <Element Offset="6" Vartype="Byte" Bytesize="1" RLECount="2" OffsetHex="00000006" DisplayMethod="hexadecimal"/>
         <Element Offset="8" Vartype="Float" Bytesize="4" RLECount="4" OffsetHex="00000008" DisplayMethod="unsigned integer"/>
-        <Element Offset="24" Vartype="4 Bytes" Bytesize="4" OffsetHex="00000018" DisplayMethod="hexadecimal"/>
+        <Element Offset="24" Vartype="4 Bytes" Bytesize="4" RLECount="2" OffsetHex="00000018" DisplayMethod="hexadecimal"/>
         <Element Offset="28" Vartype="Float" Bytesize="4" OffsetHex="0000001C" DisplayMethod="unsigned integer"/>
-        <Element Offset="28" Vartype="4 Bytes" Bytesize="4" RLECount="2" OffsetHex="0000001C" DisplayMethod="hexadecimal"/>
-        <Element Offset="32" Vartype="4 Bytes" Bytesize="4" RLECount="11" OffsetHex="00000020" DisplayMethod="unsigned integer"/>
+        <Element Offset="32" Vartype="4 Bytes" Bytesize="4" OffsetHex="00000020" DisplayMethod="unsigned integer"/>
+        <Element Offset="32" Vartype="4 Bytes" Bytesize="4" OffsetHex="00000020" DisplayMethod="hexadecimal"/>
+        <Element Offset="36" Vartype="4 Bytes" Bytesize="4" RLECount="10" OffsetHex="00000024" DisplayMethod="unsigned integer"/>
         <Element Offset="76" Vartype="4 Bytes" Bytesize="4" RLECount="2" OffsetHex="0000004C" DisplayMethod="hexadecimal"/>
         <Element Offset="84" Vartype="4 Bytes" Bytesize="4" RLECount="2" OffsetHex="00000054" DisplayMethod="unsigned integer"/>
         <Element Offset="92" Vartype="4 Bytes" Bytesize="4" OffsetHex="0000005C" DisplayMethod="hexadecimal"/>
