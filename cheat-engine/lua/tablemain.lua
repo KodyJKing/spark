@@ -16,6 +16,7 @@ dofile("lua/bp_freeze.lua")
 local forms         = reloadPackage("lua/functions/forms")
 local tagBrowser    = reloadPackage("lua/halo/ui/tag_browser")
 local entityBrowser = reloadPackage("lua/halo/ui/entity_browser")
+reloadPackage("lua/halo/ui/memory_view_extensions")
 
 forms.addMenuItem(
     getMainForm().Menu.Items,

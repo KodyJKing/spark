@@ -8,9 +8,10 @@
         - Move all hooking into the Halo1 namespace. Engine knowledge should not live in mod directories.
         - All mod logic in hooks should be implemented as middleware.
 
-- Stability:
+- Bugs and Stability:
     - Implement level geometry chunking. Keep Mario's coordinates near the origin to avoid overflow.
     - Audit all raw memory accesses. Replace with safe wrappers in non-performance critical code.
+    - Find out why updateAllEntities is not running in the underground section of Attack on the Control Room.
 
 - Gameplay:
     - Movement:

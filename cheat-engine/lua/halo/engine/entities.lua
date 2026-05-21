@@ -190,4 +190,33 @@ function module.enumerateEntities(filterFn)
     return results
 end
 
+-- -------------------------------------------------------------------------
+-- Look up a single live entity by its 32-bit handle.
+-- handle layout: upper 16 bits = record id (generation), lower 16 bits = slot index.
+-- Returns the entity table on success, nil if the slot is empty or the id
+-- does not match (i.e. the handle is stale or invalid).
+-- -------------------------------------------------------------------------
+function module.getEntityByHandle(handle)
+    if not handle or handle == 0 or handle == 0xFFFFFFFF then return nil end
+
+    local slotIndex = handle & 0xFFFF
+    local slotId    = (handle >> 16) & 0xFFFF
+
+    local pList  = entityListPtr()
+    local pArray = entityArrayBase()
+    if not pList or pList == 0 or not pArray or pArray == 0 then return nil end
+
+    local okOff, listOffset = pcall(readInteger, pList + ENTITYLIST_OFF_ENTITYLIST_OFF)
+    if not okOff or not listOffset then return nil end
+
+    local rec = readRecord(pList, listOffset, slotIndex)
+    if not rec then return nil end
+    if rec.arrayOffset == -1 or rec.arrayOffset == 0xFFFFFFFF then return nil end
+    -- Validate generation id so stale handles are rejected.
+    if rec.id ~= slotId then return nil end
+
+    local entityAddr = pArray + ENTITY_ARRAY_ELEM_OFFSET + rec.arrayOffset
+    return readEntityFields(entityAddr, rec, slotIndex, {})
+end
+
 return module

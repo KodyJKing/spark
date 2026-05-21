@@ -13,6 +13,9 @@ function module.createHexView(address)
         mv.destroy()
         return originalOnClose(sender)
     end
+    -- Attach Halo interpretation panel. Done after OnClose is set so that
+    -- module.attach can chain it correctly when wrapping for cleanup.
+    require("lua/halo/ui/memory_view_extensions").attach(mv)
     return mv
 end
 
