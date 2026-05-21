@@ -25,6 +25,7 @@
 
 #include "../FreeCam.hpp"
 #include "ThirdPersonFix.hpp"
+#include "MarioPickingFix.hpp"
 #include "MarioSkeleton.hpp"
 #include "MarioModel.hpp"
 
@@ -155,12 +156,14 @@ namespace HaloCE::Mod::Mario {
         initMario();
 
         ThirdPersonFix::init(Halo1::dllBase());
+        MarioPickingFix::init(Halo1::dllBase());
         #endif
     }
 
     void free() {
         #ifdef ENABLE_MARIO
         ThirdPersonFix::free();
+        MarioPickingFix::free();
 
         sm64_global_terminate();
 

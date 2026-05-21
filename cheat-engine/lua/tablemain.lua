@@ -58,3 +58,18 @@ forms.addMenuItem(
         end
     end
 )
+
+forms.addMenuItem(
+    getMainForm().Menu.Items,
+    {"Halo CE", "Copy Halo Base Address"},
+    function(item)
+        item.OnClick = function(sender)
+            local haloBase = getAddress("halo1.dll")
+            if haloBase then
+                writeToClipboard(string.format("0x%X", haloBase))
+            else
+                showMessage("Failed to find Halo base address.")
+            end
+        end
+    end
+)

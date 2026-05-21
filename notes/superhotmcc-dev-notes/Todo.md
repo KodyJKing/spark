@@ -12,13 +12,14 @@
     - Implement level geometry chunking. Keep Mario's coordinates near the origin to avoid overflow.
     - Audit all raw memory accesses. Replace with safe wrappers in non-performance critical code.
     - Find out why updateAllEntities is not running in the underground section of Attack on the Control Room.
+    x Fix Mario(.weapon) being available for pickup.
 
 - Gameplay:
     - Movement:
         - Implement collision with vehicles, bipeds and other moving objects.
         - Fix wall kicks for near-vertical walls.
             - Place a vertical wall between Mario and a wall when he is airborne and close.
-        - Implement ridable jackal sheild. (rideable as koopa shell)
+        - Implement ridable jackal shield. (rideable as koopa shell)
         
     - Combat:
         - Implement melee and shell damage interactions.
@@ -49,7 +50,7 @@
         - Look into disabling Halo engine's model interpolation (for non-tick frames).
     
     - Third person camera:
-        -> Disable or move 1rst person weapon flares and muzzle flashes.
+        - > Disable or move 1rst person weapon flares and muzzle flashes.
         - Render a false projectile exiting the player's barrel.
             - False projectile should converge with the actual projectile over distance.
             
