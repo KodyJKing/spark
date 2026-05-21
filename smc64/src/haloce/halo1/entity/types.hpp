@@ -86,6 +86,7 @@ namespace Halo1 {
     };
     static_assert( offsetof(Entity, pad_01B0) == 0x1B0 );
     static_assert( offsetof(Entity, pad_02FE) == 0x2FE );
+    static_assert( offsetof(Entity, entityCategory) == 0x70 );
 
     class EntityRecord {
         public:
@@ -106,6 +107,7 @@ namespace Halo1 {
         uint16_t count; 
         int32_t entityListOffset; 
     };
+    static_assert( offsetof(EntityList, entityListOffset) == 0x34 );
 
     enum EntityCategory {
         EntityCategory_Biped,

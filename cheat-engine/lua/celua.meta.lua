@@ -1950,6 +1950,8 @@ function Component:getOwner() end
 ---@field PopupMenu PopupMenu?
 ---@field Font Font
 ---@field OnClick fun(sender: any)?
+---@field OnDblClick fun(sender: any)?
+---@field OnMouseDown fun(sender: any, button: integer, x: integer, y: integer)?
 ---@field OnChangeBounds fun(sender: any)?
 local Control = {}
 function Control:getLeft() end
@@ -2803,6 +2805,8 @@ function ListView:getItemAt(x, y) end
 function ListView:getCanvas() end
 function ListView:beginUpdate() end
 function ListView:endUpdate() end
+---@return ListColumns
+function ListView:getColumns() end
 
 -- ------------------------------------------------------------
 -- TreeView

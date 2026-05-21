@@ -5,7 +5,6 @@ local module = {}
 
 local tags       = reloadPackage("lua/halo/engine/tags")
 local memoryView = reloadPackage("lua/functions/memory_view")
-local forms      = reloadPackage("lua/functions/forms")
 
 local PAGE_SIZE = 100
 
@@ -221,6 +220,26 @@ function module.open()
         mv:show()
     end
 
+    -- Context menu
+    local popup = createPopupMenu(lv)
+
+    local bpReadItem = createMenuItem(popup)
+    bpReadItem.Caption = "Set read breakpoint on PDataAddress"
+    bpReadItem.OnClick = function(sender)
+        local item = lv.Selected
+        if not item then return end
+        local addr = tonumber(item.SubItems[2], 16)  -- SubItems[2] = PDataAddress
+        if not addr or addr == 0 then
+            print("Tag Browser: selected tag has no valid PDataAddress")
+            return
+        end
+        debug_setBreakpoint(addr, 4, bptAccess)
+        print(string.format("Tag Browser: read breakpoint set at %X (PDataAddress)", addr))
+    end
+    popup.Items.Add(bpReadItem)
+
+    lv.PopupMenu = popup
+
     -- Copy cell on right-click
     lv.OnMouseDown = function(sender, button, x, y)
         if button == 2 then return end
@@ -228,7 +247,7 @@ function module.open()
         local columnIndex = 0
         local xLeft = x
         while xLeft > 0 and columnIndex < #module.COLUMNS do
-            local col = lv.getColumns()[columnIndex]
+            local col = lv:getColumns()[columnIndex]
             local colWidth = col.Width
             if xLeft <= colWidth then break end
             xLeft = xLeft - colWidth
@@ -240,9 +259,10 @@ function module.open()
         writeToClipboard(lv.Selected.SubItems[columnIndex - 1])
     end
 
-    form.OnResize = function(sender)
-        layoutBottom()
-    end
+    -- -- Does this actually exist in CE lua's API?
+    -- form.OnResize = function(sender)
+    --     layoutBottom()
+    -- end
 
     form:show()
 end

@@ -13,8 +13,9 @@ dofile("lua/register_address_symbol.lua")
 dofile("lua/bp_freeze.lua")
 -- dofile("lua/float_fuzz.lua")
 
-local forms      = reloadPackage("lua/functions/forms")
-local tagBrowser = reloadPackage("lua/halo/ui/tag_browser")
+local forms         = reloadPackage("lua/functions/forms")
+local tagBrowser    = reloadPackage("lua/halo/ui/tag_browser")
+local entityBrowser = reloadPackage("lua/halo/ui/entity_browser")
 
 forms.addMenuItem(
     getMainForm().Menu.Items,
@@ -22,6 +23,16 @@ forms.addMenuItem(
     function(item)
         item.OnClick = function(sender)
             tagBrowser.open()
+        end
+    end
+)
+
+forms.addMenuItem(
+    getMainForm().Menu.Items,
+    {"Halo CE", "Entity Browser", "Open"},
+    function(item)
+        item.OnClick = function(sender)
+            entityBrowser.open()
         end
     end
 )
