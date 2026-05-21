@@ -174,10 +174,16 @@ function module.open()
             -- Path substring filter
             if searchText ~= "" then
                 local path = (tag.path or ""):lower()
-                if not path:find(searchText, 1, true) then
+                local tagID = string.format("%X", tag.tagID or 0):lower()
+                if not path:find(searchText, 1, true)
+                and not tagID:find(searchText, 1, true)
+                then
                     return false
                 end
             end
+
+            
+
             return true
         end
 
@@ -211,8 +217,8 @@ function module.open()
     lv.OnDblClick = function(sender)
         local item = lv.Selected
         if not item then return end
-        -- SubItems[2] = DataAddress column (0-based SubItems index)
-        local addrStr = item.SubItems[2]
+        -- SubItems[3] = DataAddress column (0-based SubItems index)
+        local addrStr = item.SubItems[3]
         local addr = tonumber(addrStr, 16)
         if not addr or addr == 0 then return end
         local mv = memoryView.createHexView(addr)

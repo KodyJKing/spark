@@ -19,7 +19,7 @@ local entityBrowser = reloadPackage("lua/halo/ui/entity_browser")
 
 forms.addMenuItem(
     getMainForm().Menu.Items,
-    {"Halo CE", "Tag Browser", "Open"},
+    {"Halo CE", "Tag Browser"},
     function(item)
         item.OnClick = function(sender)
             tagBrowser.open()
@@ -29,7 +29,7 @@ forms.addMenuItem(
 
 forms.addMenuItem(
     getMainForm().Menu.Items,
-    {"Halo CE", "Entity Browser", "Open"},
+    {"Halo CE", "Entity Browser"},
     function(item)
         item.OnClick = function(sender)
             entityBrowser.open()

@@ -722,6 +722,85 @@ halo1.dll+B48CDA: 48 89 74 24 18        - mov [rsp+18],rsi
       </CheatEntries>
     </CheatEntry>
     <CheatEntry>
+      <ID>100</ID>
+      <Description>"POC Scripts"</Description>
+      <Options moAlwaysHideChildren="1" moManualExpandCollapse="1"/>
+      <GroupHeader>1</GroupHeader>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>99</ID>
+          <Description>"No Lense Flare"</Description>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{ Game   : MCC-Win64-Shipping.exe
+  Version: 
+  Date   : 2026-05-20
+  Author : Kody
+
+  This script does blah blah blah
+}
+
+define(address,"halo1.dll"+BE6125)
+define(bytes,8B 8E B8 00 00 00)
+
+[ENABLE]
+
+assert(address,bytes)
+alloc(newmem,$1000,"halo1.dll"+BE6125)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov ecx,FFFFFFFF
+  jmp return
+
+address:
+  jmp newmem
+  nop
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+  // mov ecx,[rsi+000000B8]
+
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: halo1.dll+BE6125
+
+halo1.dll+BE6101: 7D 0C                    - jnl halo1.dll+BE610F
+halo1.dll+BE6103: 48 8D 4C 24 50           - lea rcx,[rsp+50]
+halo1.dll+BE6108: E8 2F BD 02 00           - call halo1.dll+C11E3C
+halo1.dll+BE610D: EB 03                    - jmp halo1.dll+BE6112
+halo1.dll+BE610F: 41 8B C2                 - mov eax,r10d
+halo1.dll+BE6112: 89 44 3B 08              - mov [rbx+rdi+08],eax
+halo1.dll+BE6116: 41 B9 01 00 00 00        - mov r9d,00000001
+halo1.dll+BE611C: EB 07                    - jmp halo1.dll+BE6125
+halo1.dll+BE611E: 8B 46 04                 - mov eax,[rsi+04]
+halo1.dll+BE6121: 89 44 3B 54              - mov [rbx+rdi+54],eax
+// ---------- INJECTING HERE ----------
+halo1.dll+BE6125: 8B 8E B8 00 00 00        - mov ecx,[rsi+000000B8]
+// ---------- DONE INJECTING  ----------
+halo1.dll+BE612B: 41 3B CA                 - cmp ecx,r10d
+halo1.dll+BE612E: 0F 84 BE 01 00 00        - je halo1.dll+BE62F2
+halo1.dll+BE6134: E8 0F 55 EB FF           - call halo1.dll+A9B648
+halo1.dll+BE6139: F3 41 0F 10 07           - movss xmm0,[r15]
+halo1.dll+BE613E: F3 41 0F 10 4F 04        - movss xmm1,[r15+04]
+halo1.dll+BE6144: F3 0F 59 0D 84 99 D6 00  - mulss xmm1,[halo1.dll+194FAD0]
+halo1.dll+BE614C: 48 89 45 98              - mov [rbp-68],rax
+halo1.dll+BE6150: F3 0F 59 05 78 99 D6 00  - mulss xmm0,[halo1.dll+194FAD0]
+halo1.dll+BE6158: 48 89 44 24 50           - mov [rsp+50],rax
+halo1.dll+BE615D: F3 0F 59 3D 6B 99 D6 00  - mulss xmm7,[halo1.dll+194FAD0]
+}
+</AssemblerScript>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
       <ID>30</ID>
       <Description>"=== Temporary =========================================="</Description>
       <GroupHeader>1</GroupHeader>
@@ -731,6 +810,14 @@ halo1.dll+B48CDA: 48 89 74 24 18        - mov [rsp+18],rsi
       <Description>"Scans"</Description>
       <Options moAlwaysHideChildren="1" moManualExpandCollapse="1"/>
       <GroupHeader>1</GroupHeader>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>98</ID>
+      <Description>"No description"</Description>
+      <ShowAsHex>1</ShowAsHex>
+      <ShowAsSigned>0</ShowAsSigned>
+      <VariableType>4 Bytes</VariableType>
+      <Address>1BE4FC26220</Address>
     </CheatEntry>
   </CheatEntries>
   <CheatCodes>
@@ -4233,6 +4320,32 @@ halo1.dll+B48CDA: 48 89 74 24 18        - mov [rsp+18],rsi
         <Byte>38</Byte>
       </After>
     </CodeEntry>
+    <CodeEntry>
+      <Description>Read lens flare tag handle :mov ecx,[rsi+000000B8]</Description>
+      <AddressString>halo1.dll+BE6125</AddressString>
+      <Before>
+        <Byte>04</Byte>
+        <Byte>89</Byte>
+        <Byte>44</Byte>
+        <Byte>3B</Byte>
+        <Byte>54</Byte>
+      </Before>
+      <Actual>
+        <Byte>8B</Byte>
+        <Byte>8E</Byte>
+        <Byte>B8</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+      </Actual>
+      <After>
+        <Byte>41</Byte>
+        <Byte>3B</Byte>
+        <Byte>CA</Byte>
+        <Byte>0F</Byte>
+        <Byte>84</Byte>
+      </After>
+    </CodeEntry>
     <CodeEntry GroupHeader="1">
       <Description/>
     </CodeEntry>
@@ -4716,64 +4829,7 @@ halo1.dll+B48CDA: 48 89 74 24 18        - mov [rsp+18],rsi
       </After>
     </CodeEntry>
   </CheatCodes>
-  <UserdefinedSymbols>
-    <SymbolEntry>
-      <Name>__BSP_POINTER_POINTER__</Name>
-      <Address>halo1.dll+1C55C68</Address>
-    </SymbolEntry>
-    <SymbolEntry>
-      <Name>__TAG_ARRAY__</Name>
-      <Address>halo1.dll+1C34FB0</Address>
-    </SymbolEntry>
-    <SymbolEntry>
-      <Name>__MAP_BASE__</Name>
-      <Address>halo1.dll+2EA3410</Address>
-    </SymbolEntry>
-    <SymbolEntry>
-      <Name>__MAP_BASE_RELOCATED__</Name>
-      <Address>halo1.dll+2D9CE10</Address>
-    </SymbolEntry>
-    <SymbolEntry>
-      <Name>getTagDataPointer</Name>
-      <Address>halo1.dll+A9B648</Address>
-    </SymbolEntry>
-    <SymbolEntry>
-      <Name>damageEntity</Name>
-      <Address>halo1.dll+B9FBD0</Address>
-    </SymbolEntry>
-    <SymbolEntry>
-      <Name>__ENTITY_LIST__</Name>
-      <Address>halo1.dll+1C42248</Address>
-    </SymbolEntry>
-    <SymbolEntry>
-      <Name>__ENTITY_ARRAY_</Name>
-      <Address>halo1.dll+2D9CDF8</Address>
-    </SymbolEntry>
-    <SymbolEntry>
-      <Name>updateEntityLighting</Name>
-      <Address>halo1.dll+B494A0</Address>
-    </SymbolEntry>
-    <SymbolEntry>
-      <Name>__ENTITY_LIGHTING_STRUCTURES__</Name>
-      <Address>halo1.dll+1C538E8</Address>
-    </SymbolEntry>
-    <SymbolEntry>
-      <Name>updateEntityLighting_L2</Name>
-      <Address>halo1.dll+B49358</Address>
-    </SymbolEntry>
-    <SymbolEntry>
-      <Name>updateEntityLighting_L3</Name>
-      <Address>halo1.dll+B48AD0</Address>
-    </SymbolEntry>
-    <SymbolEntry>
-      <Name>renderEntityModel</Name>
-      <Address>halo1.dll+B48CD0</Address>
-    </SymbolEntry>
-    <SymbolEntry>
-      <Name>updateParticles</Name>
-      <Address>halo1.dll+AAF4A0</Address>
-    </SymbolEntry>
-  </UserdefinedSymbols>
+  <UserdefinedSymbols/>
   <Structures StructVersion="2">
     <Structure Name="Entity" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" RLECompression="1" AutoCreateStructsize="4096">
       <Elements>
@@ -7411,11 +7467,10 @@ halo1.dll+B48CDA: 48 89 74 24 18        - mov [rsp+18],rsi
         <Element Offset="4" Vartype="2 Bytes" Bytesize="2" OffsetHex="00000004" Description="shaderIndex" DisplayMethod="hexadecimal"/>
         <Element Offset="6" Vartype="Byte" Bytesize="1" RLECount="2" OffsetHex="00000006" DisplayMethod="hexadecimal"/>
         <Element Offset="8" Vartype="Float" Bytesize="4" RLECount="4" OffsetHex="00000008" DisplayMethod="unsigned integer"/>
-        <Element Offset="24" Vartype="4 Bytes" Bytesize="4" RLECount="2" OffsetHex="00000018" DisplayMethod="hexadecimal"/>
+        <Element Offset="24" Vartype="4 Bytes" Bytesize="4" OffsetHex="00000018" DisplayMethod="hexadecimal"/>
         <Element Offset="28" Vartype="Float" Bytesize="4" OffsetHex="0000001C" DisplayMethod="unsigned integer"/>
-        <Element Offset="32" Vartype="4 Bytes" Bytesize="4" OffsetHex="00000020" DisplayMethod="unsigned integer"/>
-        <Element Offset="32" Vartype="4 Bytes" Bytesize="4" OffsetHex="00000020" DisplayMethod="hexadecimal"/>
-        <Element Offset="36" Vartype="4 Bytes" Bytesize="4" RLECount="10" OffsetHex="00000024" DisplayMethod="unsigned integer"/>
+        <Element Offset="28" Vartype="4 Bytes" Bytesize="4" RLECount="2" OffsetHex="0000001C" DisplayMethod="hexadecimal"/>
+        <Element Offset="32" Vartype="4 Bytes" Bytesize="4" RLECount="11" OffsetHex="00000020" DisplayMethod="unsigned integer"/>
         <Element Offset="76" Vartype="4 Bytes" Bytesize="4" RLECount="2" OffsetHex="0000004C" DisplayMethod="hexadecimal"/>
         <Element Offset="84" Vartype="4 Bytes" Bytesize="4" RLECount="2" OffsetHex="00000054" DisplayMethod="unsigned integer"/>
         <Element Offset="92" Vartype="4 Bytes" Bytesize="4" OffsetHex="0000005C" DisplayMethod="hexadecimal"/>
