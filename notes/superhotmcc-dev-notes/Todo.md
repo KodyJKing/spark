@@ -33,6 +33,8 @@
         - Apply Mario's fall damage to Cheif.
 
 - Presentation:
+    - Play sounds from LibSM64.
+
     - Animation:
         - Inverse kinematics:
             - Arm IK:
@@ -50,11 +52,12 @@
         - Look into disabling Halo engine's model interpolation (for non-tick frames).
     
     - Third person camera:
-        - > Disable or move 1rst person weapon flares and muzzle flashes.
+        x Disable or move 1rst person weapon flares and muzzle flashes.
         - Render a false projectile exiting the player's barrel.
             - False projectile should converge with the actual projectile over distance.
             
     - Address Mario jitter during pause.
+        - Disable non-tick frame interpolation system.
 
 - Tooling
     - Cheat Engine:
