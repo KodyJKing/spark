@@ -55,9 +55,6 @@ namespace HaloCE::Mod {
         });
 
         RenderEntity::addHandler(0, [](RenderEntity::Next next, Engine::RenderEntityRequest* request) {
-            if (GetAsyncKeyState(VK_F10)) {
-                return next(request);
-            }
             next(request);
             Mario::MarioModel::renderEntity(request, RenderEntity::original);
         });

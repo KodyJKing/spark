@@ -65,16 +65,17 @@ void FreecamMod::init() {
         Engine::PlayerController pc = *playerController;
         playerController->walkX = 0.0f;
         playerController->walkY = 0.0f;
+        playerController->gunTrigger = 0.0f;
+        playerController->actions = 0;
         next(param_1, param_2);
         *playerController = pc;
     });
 
     UpdateCamera::addHandler(modId_, [this](UpdateCamera::Next next, float unknown) {
-        if (GetAsyncKeyState(VK_F10)) return next(unknown);
         if (!enabled_)               return next(unknown);
-        auto camera      = Engine::getPlayerCameraPointer();
+        auto camera       = Engine::getPlayerCameraPointer();
         bool camAllocated = camera && Memory::isAllocated(camera);
-        Vec3 camPos      = {0, 0, 0};
+        Vec3 camPos       = {0, 0, 0};
         if (camAllocated) camPos = camera->pos;
         next(unknown);
         if (camAllocated) camera->pos = camPos;
@@ -87,10 +88,7 @@ void FreecamMod::init() {
 }
 
 void FreecamMod::update() {
-    if (GetAsyncKeyState(VK_HOME) & 1) {
-        enabled_ = !enabled_;
-        std::cout << "Freecam " << (enabled_ ? "enabled." : "disabled.") << std::endl;
-    }
+    if (GetAsyncKeyState(VK_HOME) & 1) enabled_ = !enabled_;
     if (!enabled_) return;
 
     auto camera = Engine::getPlayerCameraPointer();
