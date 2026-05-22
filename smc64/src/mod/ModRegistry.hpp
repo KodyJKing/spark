@@ -13,13 +13,13 @@ public:
     // Two-phase startup: registerHandlers() all → installAllHooks(base) → init() all.
     void initAll(uintptr_t base);
 
-    // Teardown: free() all (reverse order) → unregisterAllHooksForMod per mod → uninstallAllHooks().
+    // Teardown: free() all (reverse order) → unregisterHandlers per mod → uninstallAllHooks().
     void freeAll();
 
     // Hot-load after initAll(): assign id, registerHandlers(), init().
     void load(std::unique_ptr<IMod> mod);
 
-    // Hot-unload: free(), unregisterAllHooksForMod(id), destroy.
+    // Hot-unload: free(), unregisterHandlers(id), destroy.
     void unload(IMod* mod);
 
 private:

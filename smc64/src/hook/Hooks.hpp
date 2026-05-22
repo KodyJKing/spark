@@ -22,8 +22,8 @@ namespace Spark {
         #undef HOOK
     }
 
-    inline void unregisterAllHooksForMod(ModId owner) {
-        #define HOOK(Name, ...) Name::unregisterAllHooksForMod(owner);
+    inline void unregisterHandlers(ModId owner) {
+        #define HOOK(Name, ...) Name::unregisterHandlers(owner);
         #include "hooks.def"
         #undef HOOK
     }
