@@ -1,7 +1,7 @@
 #include "MarioMod.hpp"
 #include "hook/Hooks.hpp"
 #include "spark/RenderBuses.hpp"
-#include "haloce/mod/modules/mario/Mario.hpp"
+#include "Mario.hpp"
 #include "engine/halo1.hpp"
 
 void MarioMod::init() {
