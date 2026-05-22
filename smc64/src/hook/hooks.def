@@ -4,13 +4,13 @@
 // This file is included multiple times with different HOOK macro definitions.
 // All types referenced here must be declared before the including header.
 
-HOOK( UpdateCamera,          void,     0xB14380U, float                                            )
-HOOK( UpdatePlayerControls,  void,     0xA9A8A4U, float*, float*                                  )
-HOOK( RenderFPVModel,        void,     0xB275B8U                                                  )
-HOOK( UpdateAllEntities,    void,     0xB35654U                                                    )
-HOOK( UpdateEntity,         uint64_t, 0xB3A06CU, uint32_t                                         )
-HOOK( UpdateWorldBones,     void,     0xB3A614U, uint32_t                                         )
-HOOK( RenderEntity,         void,     0xB48CD0U, Halo1::RenderEntityRequest*                      )
-HOOK( TryPickInteractable,  void,     0xAD559CU, uint16_t, int16_t, uint32_t, int16_t            )
-HOOK( UpdateFlareTransform, void,     0xBE7D70U, uint32_t                                         )
-HOOK( SpawnProjectile,      uint32_t, 0xB35FD4U, Halo1::ProjectileSpawnArgs*, uint32_t           )
+HOOK( UpdateCamera,         void,     0xB14380U, float                                 )
+HOOK( UpdatePlayerControls, void,     0xA9A8A4U, float*, float*                        )
+HOOK( RenderFPVModel,       void,     0xB275B8U                                        )
+HOOK( UpdateAllEntities,    void,     0xB35654U                                        )
+HOOK( UpdateEntity,         uint64_t, 0xB3A06CU, uint32_t                              )
+HOOK( UpdateWorldBones,     void,     0xB3A614U, uint32_t                              )
+HOOK( RenderEntity,         void,     0xB48CD0U, Halo1::RenderEntityRequest*           )
+HOOK( TryPickInteractable,  void,     0xAD559CU, uint16_t, int16_t, uint32_t, int16_t  )
+HOOK( UpdateFlareTransform, void,     0xBE7D70U, uint32_t                              )
+HOOK( SpawnProjectile,      uint32_t, 0xB35FD4U, Halo1::ProjectileSpawnArgs*, uint32_t )
