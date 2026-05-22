@@ -8,18 +8,8 @@ namespace HaloCE::Freecam {
 
     bool isFreecamEnabled = false;
 
-    Override cameraOverride = {};
-
     bool isEnabled() {
-        return isFreecamEnabled || cameraOverride.enableLook || cameraOverride.enablePosition;
-    }
-
-    Vec3 getCameraPosition(Halo1::Camera* camera) {
-        if (!cameraOverride.enablePosition)
-            return camera->pos;
-        if (cameraOverride.getPosition)
-            return cameraOverride.getPosition();
-        return cameraOverride.position;
+        return isFreecamEnabled;
     }
 
     void registerHandlers() {
@@ -66,8 +56,6 @@ namespace HaloCE::Freecam {
             next(unknown);
             if (saveCamPos) {
                 camera->pos = camPos;
-            } else {
-                camera->pos = getCameraPosition(camera);
             }
         });
     }

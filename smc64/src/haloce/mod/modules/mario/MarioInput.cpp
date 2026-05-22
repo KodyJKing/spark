@@ -3,7 +3,6 @@
 #pragma comment( lib, "Xinput.lib" )
 
 #include "haloce/halo1/halo1.hpp"
-#include "../FreeCam.hpp"
 #include "Coordinates.hpp"
 
 namespace HaloCE::Mod::Mario {

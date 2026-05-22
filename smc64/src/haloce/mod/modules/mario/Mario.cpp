@@ -23,7 +23,7 @@
 #include "Coordinates.hpp"
 #include "DynamicGeometry.hpp"
 
-#include "../FreeCam.hpp"
+#include "MarioCamera.hpp"
 #include "ThirdPersonFix.hpp"
 #include "MarioPickingFix.hpp"
 #include "MarioSkeleton.hpp"
@@ -157,6 +157,7 @@ namespace HaloCE::Mod::Mario {
 
         ThirdPersonFix::registerHandlers();
         MarioPickingFix::registerHandlers();
+        MarioCamera::registerHandlers();
         #endif
     }
 
@@ -197,19 +198,6 @@ namespace HaloCE::Mod::Mario {
         });
     }
 
-
-    Vec3 cameraPosition = {0, 0, 0};
-    Vec3 cameraVelocity = {0, 0, 0};
-    uint32_t framesSinceLastUpdate = 0;
-    Vec3 getCameraPosition() {
-        // Extrapolate camera on non-update frames. Without this, the camera jitters terribly.
-        float dt = (framesSinceLastUpdate % 2) * 0.5f;
-        auto camera = Halo1::getPlayerCameraPointer();
-        if (!camera) return Vec3{0,0,0};
-        Vec3 result = cameraPosition + cameraVelocity * dt + camera->fwd * -1.0f + camera->fwd.cross(camera->up) * 0.25f + Vec3{0, 0, 0.5f};
-        framesSinceLastUpdate++;
-        return result;
-    }
 
     bool shouldAlignToLook() {
         // If stick input is non-zero, don't align to look direction.
@@ -259,12 +247,7 @@ namespace HaloCE::Mod::Mario {
     void update() {
         #ifdef ENABLE_MARIO
 
-        Vec3 oldCameraPosition = cameraPosition;
-        cameraPosition = marioWorldPosition();
-        cameraVelocity = cameraPosition - oldCameraPosition;
-        framesSinceLastUpdate = 0;
-        Freecam::cameraOverride.getPosition = getCameraPosition;
-        Freecam::cameraOverride.enablePosition = true;
+        MarioCamera::onUpdate(marioWorldPosition());
 
         // F6 to dump Mario geometry buffers
         if (GetAsyncKeyState(VK_F6) & 1) {
@@ -282,7 +265,7 @@ namespace HaloCE::Mod::Mario {
         }
 
         if (marioId < 0 || !enableMario) {
-            Freecam::cameraOverride.enablePosition = false;
+            MarioCamera::onDisable();
             return;
         }
 
@@ -314,7 +297,7 @@ namespace HaloCE::Mod::Mario {
             }
             Mario::updateInput(marioInputs, marioState, Halo1::getPlayerCameraPointer());
         } else {
-            Freecam::cameraOverride.enablePosition = false;
+            MarioCamera::onDisable();
         }
         
         faceLookDirection(Halo1::getPlayerCameraPointer()->fwd);
