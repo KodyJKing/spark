@@ -8,8 +8,7 @@
 #include <shared_mutex>
 #include "MinHook.h"
 #include "utils/UnloadLock.hpp"
-
-using ModId = uint32_t;
+#include "hook/ModId.hpp"
 
 template<uintptr_t Offset, typename Ret, typename... Args>
 struct Hook {

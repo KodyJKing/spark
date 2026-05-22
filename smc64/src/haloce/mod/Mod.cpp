@@ -16,10 +16,12 @@
 #include "modules/freecam.hpp"
 #include "overlay/VectorProfiler.hpp"
 #include "hook/Hooks.hpp"
+#include "mod/ModRegistry.hpp"
 
 namespace HaloCE::Mod {
 
     uintptr_t halo1 = 0;
+    ModRegistry registry;
 
     //////////////////////////////////////////////////////////////////
     // Hook handlers
@@ -76,9 +78,8 @@ namespace HaloCE::Mod {
         std::cout << moduleName << ": " << (void*) halo1 << std::endl;
 
         registerHandlers();
-        SparkLoader::installAllHooks(halo1);
-
         Freecam::registerHandlers();
+        registry.initAll(halo1);
         Mario::init();
 
         std::cout << "Mod installed." << std::endl;
@@ -93,7 +94,7 @@ namespace HaloCE::Mod {
 
         Overlay::ESP::VectorProfiler::stop();
 
-        SparkLoader::uninstallAllHooks();
+        registry.freeAll();
 
         std::cout << "Mod uninstalled." << std::endl;
     }
