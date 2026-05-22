@@ -78,7 +78,7 @@ namespace HaloCE::Mod {
         registerHandlers();
         SparkLoader::installAllHooks(halo1);
 
-        Freecam::init( halo1 );
+        Freecam::registerHandlers();
         Mario::init();
 
         std::cout << "Mod installed." << std::endl;
@@ -90,7 +90,6 @@ namespace HaloCE::Mod {
         isInstalled = false;
 
         Mario::free();
-        Freecam::free();
 
         Overlay::ESP::VectorProfiler::stop();
 

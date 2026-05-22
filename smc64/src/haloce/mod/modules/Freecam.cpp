@@ -1,14 +1,8 @@
 #include "freecam.hpp"
 #include "common.hpp"
+#include "hook/Hooks.hpp"
 #include <Xinput.h>
 #pragma comment( lib, "Xinput.lib" )
-
-#define HOOK_FUNC( func, offset) \
-    void* p##func = (void*) (halo1 + offset); \
-    std::cout << #func << ": " << std::endl; \
-    std::cout << AsmHelper::disassemble( (uint8_t*) p##func, 0x100 ) << std::endl; \
-    MH_CreateHook( p##func, hk##func, (void**) &original##func ); \
-    MH_EnableHook( p##func );
 
 namespace HaloCE::Freecam {
 
@@ -28,97 +22,54 @@ namespace HaloCE::Freecam {
         return cameraOverride.position;
     }
 
-    // void renderFPVModel(void)
-    typedef void (*renderFPVModel)();
-    renderFPVModel originalRenderFPVModel = nullptr;
-    void hkRenderFPVModel() {
-        UnloadLock lock; // No unloading while we're still executing hook code.
-        if (isEnabled()) {
-            return;
-        }
-        originalRenderFPVModel();
-    }
+    void registerHandlers() {
+        RenderFPVModel::addHandler([](RenderFPVModel::Next next) {
+            if (isEnabled()) return;
+            next();
+        });
 
-    // void updatePlayerControls(undefined4 *param_1,undefined4 *param_2)
-    typedef void (*updatePlayerControls)(float* param_1, float* param_2);
-    updatePlayerControls originalUpdatePlayerControls = nullptr;
-    void hkUpdatePlayerControls(float* param_1, float* param_2) {
-        UnloadLock lock; // No unloading while we're still executing hook code.
-        if (!isEnabled()) {
-            originalUpdatePlayerControls(param_1, param_2);
-            return;
-        }
+        // void updatePlayerControls(undefined4 *param_1, undefined4 *param_2)
+        UpdatePlayerControls::addHandler([](UpdatePlayerControls::Next next, float* param_1, float* param_2) {
+            if (!isEnabled()) {
+                next(param_1, param_2);
+                return;
+            }
+            auto playerController = Halo1::getPlayerControllerPointer();
+            if (!playerController || !Memory::isAllocated(playerController)) return;
 
-        auto playerController = Halo1::getPlayerControllerPointer();
-        if (!playerController || !Memory::isAllocated(playerController)) {
-            return;
-        }
+            // Backup player controller state
+            Halo1::PlayerController pc = *playerController;
+            // playerController->actions = 0;
+            playerController->walkX = 0.0f;
+            playerController->walkY = 0.0f;
+            // playerController->gunTrigger = 0.0f;
+            next(param_1, param_2);
+            // Restore player controller state
+            *playerController = pc;
+        });
 
-        // Backup player controller state
-        Halo1::PlayerController pc = *playerController;
+        // Slight misnomer: This function updates *all* cameras, not a single camera.
+        UpdateCamera::addHandler([](UpdateCamera::Next next, float unknown) {
+            if (GetAsyncKeyState(VK_F10)) {
+                return next(unknown);
+            }
+            if (!isEnabled()) {
+                return next(unknown);
+            }
 
-        // playerController->actions = 0;
-        playerController->walkX = 0.0f;
-        playerController->walkY = 0.0f;
-        // playerController->gunTrigger = 0.0f;
+            auto camera = Halo1::getPlayerCameraPointer();
+            bool camAllocated = camera && Memory::isAllocated(camera);
+            Vec3 camPos = {0, 0, 0};
+            bool saveCamPos = camAllocated && isFreecamEnabled;
 
-        originalUpdatePlayerControls(param_1, param_2);
-
-        // Restore player controller state
-        *playerController = pc;
-
-        return;
-    }
-
-    // Slight misnomer: This function updates *all* cameras, not a single camera.
-    typedef void (*updateCamera)(float unknown);
-    updateCamera originalUpdateCamera = nullptr;
-    void hkUpdateCamera(float unknown) {
-        UnloadLock lock; // No unloading while we're still executing hook code.
-
-        if (GetAsyncKeyState(VK_F10)) {
-            originalUpdateCamera(unknown);
-            return;
-        }
-
-        if (!isEnabled()) {
-            originalUpdateCamera(unknown);
-            return;
-        }
-        
-        auto camera = Halo1::getPlayerCameraPointer();
-        bool camAllocated = camera && Memory::isAllocated(camera);
-        Vec3 camPos = {0,0,0};
-        bool saveCamPos = camAllocated && isFreecamEnabled;
-
-        // Halo1::enterThirdPerson();
-
-        if (saveCamPos) {
-            camPos = camera->pos;
-        }
-        originalUpdateCamera(unknown);
-        if (saveCamPos) {
-            camera->pos = camPos;
-        } else {
-            camera->pos = getCameraPosition(camera);
-        }
-
-        // Halo1::enterThirdPerson();
-    }
-
-    void init(uintptr_t halo1) {
-        std::cout << "\nHooking Freecam functions:\n" << std::endl;
-
-        HOOK_FUNC( UpdateCamera, 0xB14380U );
-        HOOK_FUNC( UpdatePlayerControls, 0xA9A8A4U );
-        HOOK_FUNC( RenderFPVModel, 0xB275B8U );
-    }
-    
-    void free() {
-        std::cout << "\nUnhooking Freecam functions." << std::endl;
-        MH_RemoveHook( (void*) originalUpdateCamera );
-        MH_RemoveHook( (void*) originalUpdatePlayerControls );
-        MH_RemoveHook( (void*) originalRenderFPVModel );
+            if (saveCamPos) camPos = camera->pos;
+            next(unknown);
+            if (saveCamPos) {
+                camera->pos = camPos;
+            } else {
+                camera->pos = getCameraPosition(camera);
+            }
+        });
     }
 
     void updateXboxControls(Halo1::Camera* camera) {

@@ -3,8 +3,7 @@
 #include "math/Vectors.hpp"
 
 namespace HaloCE::Freecam {
-    void init(uintptr_t halo1);
-    void free();
+    void registerHandlers();
     void update();
 
     struct Override {

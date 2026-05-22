@@ -3,6 +3,7 @@
     - Move all global state into a struct for cleaner reinitilization on halo1.dll reload.
     - Fix file naming inconsistencies (mostly casing).
     - Break up Entity type by type. Eg: Vehicle, Biped, Weapon, etc.
+    - Create a fork of LibSM64 that exposes bone transforms.
 
     - Engine/mod seperation:
         - Move all hooking into the Halo1 namespace. Engine knowledge should not live in mod directories.
