@@ -155,16 +155,13 @@ namespace HaloCE::Mod::Mario {
         initTestLevel();
         initMario();
 
-        ThirdPersonFix::init(Halo1::dllBase());
-        MarioPickingFix::init(Halo1::dllBase());
+        ThirdPersonFix::registerHandlers();
+        MarioPickingFix::registerHandlers();
         #endif
     }
 
     void free() {
         #ifdef ENABLE_MARIO
-        ThirdPersonFix::free();
-        MarioPickingFix::free();
-
         sm64_global_terminate();
 
         if (texture) {

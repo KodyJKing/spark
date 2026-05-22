@@ -15,112 +15,51 @@
 #include "modules/mario/Mario.hpp"
 #include "modules/freecam.hpp"
 #include "overlay/VectorProfiler.hpp"
+#include "hook/Hooks.hpp"
 
 namespace HaloCE::Mod {
 
     uintptr_t halo1 = 0;
 
     //////////////////////////////////////////////////////////////////
-    // Hooks
-    
-    typedef void (*updateAllEntities_t)( void );
-    updateAllEntities_t originalUpdateAllEntities = nullptr;
-    //
-    void hkUpdateAllEntities() {
-        UnloadLock lock; // No unloading while we're still executing hook code.
+    // Hook handlers
 
-        Overlay::ESP::VectorProfiler::start(GetCurrentThreadId());
+    void registerHandlers() {
+        UpdateAllEntities::addHandler([](UpdateAllEntities::Next next) {
+            Overlay::ESP::VectorProfiler::start(GetCurrentThreadId());
+            Freecam::update();
+            Mario::update();
+            next();
+        });
 
-        Freecam::update();
-        Mario::update();
-
-        originalUpdateAllEntities();
-    }
-    
-    typedef uint64_t (*updateEntity_t)( uint32_t entityHandle );
-    updateEntity_t originalUpdateEntity = nullptr;
-    //
-    uint64_t hkUpdateEntity( uint32_t entityHandle ) {
-        UnloadLock lock; // No unloading while we're still executing hook code.
-
-        auto rec = Halo1::getEntityRecord( entityHandle );
-        if (!rec)  return originalUpdateEntity( entityHandle);
-            
-        auto entity = rec->entity();
-        if (!entity) return originalUpdateEntity( entityHandle );
-
-        if (settings.freezeTime) {
-            auto playerRec = Halo1::getPlayerRecord();
-            if (playerRec && rec->id != playerRec->id) {
-                return 0;
+        UpdateEntity::addHandler([](UpdateEntity::Next next, uint32_t entityHandle) -> uint64_t {
+            auto rec = Halo1::getEntityRecord(entityHandle);
+            if (!rec) return next(entityHandle);
+            auto entity = rec->entity();
+            if (!entity) return next(entityHandle);
+            if (settings.freezeTime) {
+                auto playerRec = Halo1::getPlayerRecord();
+                if (playerRec && rec->id != playerRec->id) return 0;
             }
-        }
+            return next(entityHandle);
+        });
 
-        // Do update
-        uint64_t result = originalUpdateEntity( entityHandle );
+        UpdateWorldBones::addHandler([](UpdateWorldBones::Next next, uint32_t entityHandle) {
+            auto rec = Halo1::getEntityRecord(entityHandle);
+            if (!rec) return next(entityHandle);
+            auto entity = rec->entity();
+            if (!entity) return next(entityHandle);
+            next(entityHandle);
+            Mario::MarioModel::processEntity(entityHandle, entity);
+        });
 
-        // Mario::MarioModel::processEntity( entity );
-
-        return result;
-    }
-
-    typedef void (*updateWorldBones_t)(uint32_t entityHandle);
-    updateWorldBones_t originalUpdateWorldBones = nullptr;
-    //
-    void hkUpdateWorldBones(uint32_t entityHandle) {
-        UnloadLock lock; // No unloading while we're still executing hook code.
-
-        auto rec = Halo1::getEntityRecord( entityHandle );
-        if (!rec)  return originalUpdateWorldBones( entityHandle);
-            
-        auto entity = rec->entity();
-        if (!entity) return originalUpdateWorldBones( entityHandle );
-
-        originalUpdateWorldBones( entityHandle );
-
-        Mario::MarioModel::processEntity( entityHandle, entity );
-    }
-
-    // renderEntity
-    Halo1::renderEntity_t originalRenderEntity = nullptr;
-    void hkRenderEntity(Halo1::RenderEntityRequest* request) {
-        UnloadLock lock; // No unloading while we're still executing hook code.
-
-        if (GetAsyncKeyState(VK_F10)) {
-            return originalRenderEntity(request);
-        }
-
-         auto rec = Halo1::getEntityRecord( request->entityHandle );
-
-        originalRenderEntity(request);
-
-        Mario::MarioModel::renderEntity(request, originalRenderEntity);
-    }
-
-    void hookFunctions() {
-        std::cout << "\nHooking functions:\n" << std::endl;
-
-        #define HOOK_FUNC( func, offset) \
-            void* p##func = (void*) (halo1 + offset); \
-            std::cout << #func << ": " << std::endl; \
-            std::cout << AsmHelper::disassemble( (uint8_t*) p##func, 0x100 ) << std::endl; \
-            MH_CreateHook( p##func, hk##func, (void**) &original##func ); \
-            MH_EnableHook( p##func );
-
-        HOOK_FUNC( UpdateEntity, 0xB3A06CU );
-        HOOK_FUNC( UpdateAllEntities, 0xB35654U );
-        HOOK_FUNC( UpdateWorldBones, 0xB3A614U );
-        HOOK_FUNC( RenderEntity, RENDER_ENTITY_FUNC_OFFSET );
-
-        #undef HOOK_FUNC
-    }
-
-    void unhookFunctions() {
-        std::cout << "\nUnhooking functions." << std::endl;
-        MH_RemoveHook( (void*) originalUpdateEntity );
-        MH_RemoveHook( (void*) originalUpdateAllEntities );
-        MH_RemoveHook( (void*) originalUpdateWorldBones );
-        MH_RemoveHook( (void*) originalRenderEntity );
+        RenderEntity::addHandler([](RenderEntity::Next next, Halo1::RenderEntityRequest* request) {
+            if (GetAsyncKeyState(VK_F10)) {
+                return next(request);
+            }
+            next(request);
+            Mario::MarioModel::renderEntity(request, RenderEntity::original);
+        });
     }
 
     //////////////////////////////////////////////////////////////////
@@ -136,7 +75,8 @@ namespace HaloCE::Mod {
         halo1 = (uintptr_t) Utils::waitForModule(moduleName);
         std::cout << moduleName << ": " << (void*) halo1 << std::endl;
 
-        hookFunctions();
+        registerHandlers();
+        SparkLoader::installAllHooks(halo1);
 
         Freecam::init( halo1 );
         Mario::init();
@@ -154,7 +94,7 @@ namespace HaloCE::Mod {
 
         Overlay::ESP::VectorProfiler::stop();
 
-        unhookFunctions();
+        SparkLoader::uninstallAllHooks();
 
         std::cout << "Mod uninstalled." << std::endl;
     }
