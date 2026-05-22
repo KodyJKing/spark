@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <functional>
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include "MinHook.h"
@@ -13,11 +14,21 @@ struct Hook {
     using Next    = std::function<Ret(Args...)>;
     using Handler = std::function<Ret(Next, Args...)>;
 
-    inline static Fn       original = nullptr;
-    inline static uintptr_t base    = 0;
-    inline static std::vector<Handler> handlers;
+    struct Entry {
+        int     priority;
+        Handler handler;
+    };
 
-    static void addHandler(Handler h) { handlers.push_back(std::move(h)); }
+    inline static Fn                 original = nullptr;
+    inline static uintptr_t          base     = 0;
+    inline static std::vector<Entry> handlers;
+
+    // Lower priority value runs first (outermost in the chain).
+    static void addHandler(Handler h, int priority = 0) {
+        auto it = std::lower_bound(handlers.begin(), handlers.end(), priority,
+            [](const Entry& e, int p) { return e.priority < p; });
+        handlers.insert(it, { priority, std::move(h) });
+    }
 
     static void install(uintptr_t dllBase) {
         base = dllBase;
@@ -44,6 +55,6 @@ private:
         if (index >= handlers.size())
             return original(args...);
         Next next = [index](Args... a) { return dispatch(index + 1, a...); };
-        return handlers[index](next, args...);
+        return handlers[index].handler(next, args...);
     }
 };
