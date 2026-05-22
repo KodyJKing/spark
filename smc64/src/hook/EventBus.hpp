@@ -60,8 +60,9 @@ struct EventBus {
         handlers.clear();
     }
 
-    // Dispatch through the handler chain; `termFn(termCtx, args...)` is called when exhausted.
     Ret dispatch(TerminalFn termFn, void* termCtx, Args... args) {
+        // Todo: Think through lock's implications for hooked recursive functions.
+        // If a unique_lock is sandwiched between two shared locks in the same thread, what happens?
         std::shared_lock slock(handlersMutex);
         Cursor cursor { &EventBus::doAdvance, this, 0, termFn, termCtx };
         return doAdvance(cursor, args...);
