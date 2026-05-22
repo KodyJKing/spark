@@ -17,6 +17,7 @@
 #include "overlay/VectorProfiler.hpp"
 #include "hook/Hooks.hpp"
 #include "mod/ModRegistry.hpp"
+#include "haloce/ui/UI.hpp"
 
 namespace HaloCE::Mod {
 
@@ -74,6 +75,7 @@ namespace HaloCE::Mod {
         std::cout << moduleName << ": " << (void*) halo1 << std::endl;
 
         registerHandlers();
+        HaloCE::Mod::UI::registerHandlers();
         registry.add(std::make_unique<FreecamMod>());
         registry.initAll(halo1);
         Mario::init();

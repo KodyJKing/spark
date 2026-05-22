@@ -11,8 +11,7 @@
 #include "math/Math.hpp"
 #include "version.h"
 
-// Todo: Remove reference to game specific code.
-#include "haloce/ui/UI.hpp"
+#include "spark/RenderBuses.hpp"
 #include "engine/halo1.hpp"
 #include "DllMain.hpp"
 
@@ -67,7 +66,7 @@ namespace Overlay {
                 credits();
                 ImGui::EndTabItem();
             }
-            HaloCE::Mod::UI::mainWindowTabs();
+            Spark::onRenderPauseMenuTabs.dispatch(Spark::noopTerminal, nullptr);
             ImGui::EndTabBar();
         }        
 
@@ -123,11 +122,26 @@ namespace Overlay {
         ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();
 
-        // Todo: Replace with modInstance.isGameLoaded() to make this game agnostic.
         if (!Engine::isGameLoaded())
             loadedIndicatorWindow();
 
-        HaloCE::Mod::UI::topLevelRender();
+        // Sync ESP camera to the player camera, then fire the world-space debug render bus.
+        // Spark owns this sync; handlers must not touch Overlay::ESP::camera setup.
+        if (Engine::isGameLoaded()) {
+            const float fovScale = 0.627f; // Magic number to convert Halo's vertical FOV to the horizontal FOV used by our projection math.
+            auto haloCam = Engine::getPlayerCameraPointer();
+            auto& cam = Overlay::ESP::camera;
+            cam.pos = haloCam->pos;
+            cam.fwd = haloCam->fwd;
+            cam.up  = haloCam->up;
+            cam.fov = haloCam->fov * fovScale;
+            cam.verticalFov = true;
+            Overlay::ESP::beginESPWindow("__ESP");
+            Spark::onRenderDebugWorld.dispatch(Spark::noopTerminal, nullptr);
+            Overlay::ESP::endESPWindow();
+        }
+
+        Spark::onRenderDebugUI.dispatch(Spark::noopTerminal, nullptr);
 
         if ( paused )
             mainModWindow();

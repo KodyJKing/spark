@@ -23,12 +23,14 @@
 #include "DrawEntity.hpp"
 #include "DrawBones.hpp"
 #include "DrawEntityCollision.hpp"
+#include "spark/RenderBuses.hpp"
 
 #include <Windows.h>
 
 namespace HaloCE::Mod::UI {
 
     void renderESP();
+    void renderESP_world();
     void checkHotKeys();
     void settingsTab();
     void devTab();
@@ -44,11 +46,7 @@ namespace HaloCE::Mod::UI {
         checkHotKeys();
 
         if (showEsp)
-        {
-            Overlay::ESP::beginESPWindow("__ESP");
             renderESP();
-            Overlay::ESP::endESPWindow();
-        }
     }
 
     void checkHotKeys()
@@ -760,16 +758,9 @@ namespace HaloCE::Mod::UI {
             return;
 
         espWindow();
+    }
 
-        // Setup ESP camera to match player camera.
-        Camera &camera = Overlay::ESP::camera;
-        auto haloCam = Engine::getPlayerCameraPointer();
-        camera.pos = haloCam->pos;
-        camera.fwd = haloCam->fwd;
-        camera.up = haloCam->up;
-        camera.fov = haloCam->fov * espSettings.fovScale;
-        camera.verticalFov = true;
-
+    void renderESP_world() {
         renderESP_entities();
 
         if (ImGui::IsKeyPressed(ImGuiKey_F5, false)) view.worldBones = !view.worldBones;
@@ -786,6 +777,25 @@ namespace HaloCE::Mod::UI {
         HaloCE::Mod::Mario::debugRender();
 
         Overlay::ESP::VectorProfiler::render();
+    }
+
+    void registerHandlers() {
+        using Bus = EventBus<void>;
+
+        Spark::onRenderDebugUI.addHandler(0, +[](void*, Bus::Cursor next) {
+            topLevelRender();
+            next();
+        }, nullptr);
+
+        Spark::onRenderPauseMenuTabs.addHandler(0, +[](void*, Bus::Cursor next) {
+            mainWindowTabs();
+            next();
+        }, nullptr);
+
+        Spark::onRenderDebugWorld.addHandler(0, +[](void*, Bus::Cursor next) {
+            if (showEsp) renderESP_world();
+            next();
+        }, nullptr);
     }
 
 }

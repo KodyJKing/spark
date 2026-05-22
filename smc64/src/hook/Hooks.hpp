@@ -2,6 +2,7 @@
 
 #include "Hook.hpp"
 #include "engine/halo1.hpp"
+#include "spark/RenderBuses.hpp"
 
 // Generate a named type alias for each hook.
 #define HOOK(Name, Ret, Offset, ...) using Name = Hook<Offset, Ret, __VA_ARGS__>;
@@ -22,7 +23,7 @@ namespace Spark {
         #undef HOOK
     }
 
-    inline void unregisterHandlers(ModId owner) {
+    inline void unregisterHookHandlers(ModId owner) {
         #define HOOK(Name, ...) Name::unregisterHandlers(owner);
         #include "hooks.def"
         #undef HOOK

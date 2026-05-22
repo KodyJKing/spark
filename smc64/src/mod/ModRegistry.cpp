@@ -24,7 +24,7 @@ void ModRegistry::freeAll() {
     for (int i = (int)mods_.size() - 1; i >= 0; --i)
         mods_[i]->free();
     for (auto& mod : mods_)
-        Spark::unregisterHandlers(mod->modId_);
+        Spark::unregisterHookHandlers(mod->modId_);
     Spark::uninstallAllHooks();
     mods_.clear();
     initialized_ = false;
@@ -41,6 +41,12 @@ void ModRegistry::unload(IMod* target) {
         [target](const std::unique_ptr<IMod>& m) { return m.get() == target; });
     if (it == mods_.end()) return;
     (*it)->free();
-    Spark::unregisterHandlers((*it)->modId_);
+    Spark::unregisterHookHandlers((*it)->modId_);
+
+    // Unregister render phase handlers
+    Spark::onRenderDebugUI.unregisterHandlers((*it)->modId_);
+    Spark::onRenderDebugWorld.unregisterHandlers((*it)->modId_);
+    Spark::onRenderPauseMenuTabs.unregisterHandlers((*it)->modId_);
+
     mods_.erase(it);
 }
