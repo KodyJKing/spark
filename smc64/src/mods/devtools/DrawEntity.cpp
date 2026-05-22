@@ -1,9 +1,9 @@
-#include "haloce/ui/DrawEntity.hpp"
+#include "mods/devtools/DrawEntity.hpp"
 
 #include "DrawBones.hpp"
 #include "DrawEntityCollision.hpp"
 
-namespace HaloCE::Mod::UI  {
+namespace Mod::DevTools {
     void drawEntity(Engine::Entity* entity) {
         // Draw bones
         drawBones(entity);

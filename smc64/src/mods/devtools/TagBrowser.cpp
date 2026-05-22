@@ -10,7 +10,7 @@
 #include "memory/Memory.hpp"
 #include "cheatengine/Messages.hpp"
 
-namespace HaloCE::Mod::UI {
+namespace Mod::DevTools {
 
     struct GroupID {
         const char* name;

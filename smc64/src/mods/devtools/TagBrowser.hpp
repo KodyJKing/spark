@@ -1,4 +1,4 @@
-namespace HaloCE::Mod::UI {
+namespace Mod::DevTools {
     extern bool showTagBrowser;
     void tagBrowser();
 }

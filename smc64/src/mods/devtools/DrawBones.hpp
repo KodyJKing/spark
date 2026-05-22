@@ -2,6 +2,6 @@
 
 #include "engine/halo1.hpp"
 
-namespace HaloCE::Mod::UI  {
+namespace Mod::DevTools {
     void drawBones(Engine::Entity* entity);
 }

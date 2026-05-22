@@ -1,7 +1,7 @@
-#include "haloce/ui/DrawBones.hpp"
+#include "mods/devtools/DrawBones.hpp"
 #include "overlay/ESP.hpp"
 
-namespace HaloCE::Mod::UI  {
+namespace Mod::DevTools {
     void drawBones(Engine::Entity* entity) {
         namespace ESP = Overlay::ESP;
         Camera &camera = ESP::camera;

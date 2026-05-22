@@ -3,8 +3,8 @@
 #include "engine/halo1.hpp"
 #include "memory/Memory.hpp"
 #include "utils/Strings.hpp"
-#include "haloce/utils/Interpret.hpp"
-namespace HaloCE::Mod::UI {
+#include "mods/devtools/Interpret.hpp"
+namespace Mod::DevTools {
     void interpretations(uint32_t value) {
         auto result = Engine::interpretU32(value);
         if (result.mapPointer && Memory::isAllocated((uintptr_t)result.mapPointer))
