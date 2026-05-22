@@ -38,7 +38,6 @@ namespace Mod::DevTools {
         bool renderBsp   = false;
     };
 
-    inline bool showEsp = false;
     inline Engine::Entity* highlightEntity = nullptr;
     inline ESPSettings espSettings = {};
     inline View view = {};

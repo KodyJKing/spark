@@ -34,18 +34,6 @@ namespace HaloCE::Mod {
             next();
         }, nullptr);
 
-        UpdateEntity::addHandler(0, +[](void* /*ctx*/, UpdateEntity::Cursor next, uint32_t entityHandle) -> uint64_t {
-            auto rec = Engine::getEntityRecord(entityHandle);
-            if (!rec) return next(entityHandle);
-            auto entity = rec->entity();
-            if (!entity) return next(entityHandle);
-            if (settings.freezeTime) {
-                auto playerRec = Engine::getPlayerRecord();
-                if (playerRec && rec->id != playerRec->id) return 0;
-            }
-            return next(entityHandle);
-        }, nullptr);
-
         UpdateWorldBones::addHandler(0, +[](void* /*ctx*/, UpdateWorldBones::Cursor next, uint32_t entityHandle) {
             auto rec = Engine::getEntityRecord(entityHandle);
             if (!rec) return next(entityHandle);

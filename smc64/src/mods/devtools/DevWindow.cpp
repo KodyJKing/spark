@@ -6,13 +6,12 @@
 #include "mods/devtools/Interpretations.hpp"
 #include "mods/devtools/TagBrowser.hpp"
 #include "utils/Strings.hpp"
+#include "spark/Spark.hpp"
 #include <string>
 
 namespace Mod::DevTools {
 
     void checkHotKeys() {
-        if (ImGui::IsKeyPressed(ImGuiKey_F1, false))
-            showEsp = !showEsp;
         if (ImGui::IsKeyPressed(ImGuiKey_F2, false))
             HaloCE::Mod::settings.freezeTime = !HaloCE::Mod::settings.freezeTime;
     }
@@ -98,7 +97,7 @@ namespace Mod::DevTools {
             if (showTagBrowser)
                 tagBrowser();
 
-            ImGui::Checkbox("ESP", &showEsp);
+            ImGui::Checkbox("ESP", &Spark::showDebugOverlay);
             if (ImGui::IsItemHovered())
                 ImGui::SetTooltip("Toggle ESP (F1)");
         }
