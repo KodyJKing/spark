@@ -2,12 +2,12 @@
 #include "overlay/ESP.hpp"
 
 namespace HaloCE::Mod::UI  {
-    void drawBones(Halo1::Entity* entity) {
+    void drawBones(Engine::Entity* entity) {
         namespace ESP = Overlay::ESP;
         Camera &camera = ESP::camera;
 
         auto boneCount = entity->worldBones.count();
-        Halo1::WorldTransform* worldBones = entity->worldBones.get( entity, 0 );
+        Engine::WorldTransform* worldBones = entity->worldBones.get( entity, 0 );
 
         for ( uint16_t i = 0; i < boneCount; i++ ) {
             auto& bone = worldBones[i];

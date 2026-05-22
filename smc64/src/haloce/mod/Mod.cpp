@@ -10,7 +10,7 @@
 #include "math/Math.hpp"
 #include "asm/AsmHelper.hpp"
 #include "memory/Memory.hpp"
-#include "../halo1/halo1.hpp"
+#include "engine/halo1.hpp"
 #include "DllMain.hpp"
 #include "modules/mario/Mario.hpp"
 #include "modules/freecam.hpp"
@@ -35,19 +35,19 @@ namespace HaloCE::Mod {
         });
 
         UpdateEntity::addHandler(0, [](UpdateEntity::Next next, uint32_t entityHandle) -> uint64_t {
-            auto rec = Halo1::getEntityRecord(entityHandle);
+            auto rec = Engine::getEntityRecord(entityHandle);
             if (!rec) return next(entityHandle);
             auto entity = rec->entity();
             if (!entity) return next(entityHandle);
             if (settings.freezeTime) {
-                auto playerRec = Halo1::getPlayerRecord();
+                auto playerRec = Engine::getPlayerRecord();
                 if (playerRec && rec->id != playerRec->id) return 0;
             }
             return next(entityHandle);
         });
 
         UpdateWorldBones::addHandler(0, [](UpdateWorldBones::Next next, uint32_t entityHandle) {
-            auto rec = Halo1::getEntityRecord(entityHandle);
+            auto rec = Engine::getEntityRecord(entityHandle);
             if (!rec) return next(entityHandle);
             auto entity = rec->entity();
             if (!entity) return next(entityHandle);
@@ -55,7 +55,7 @@ namespace HaloCE::Mod {
             Mario::MarioModel::processEntity(entityHandle, entity);
         });
 
-        RenderEntity::addHandler(0, [](RenderEntity::Next next, Halo1::RenderEntityRequest* request) {
+        RenderEntity::addHandler(0, [](RenderEntity::Next next, Engine::RenderEntityRequest* request) {
             if (GetAsyncKeyState(VK_F10)) {
                 return next(request);
             }
@@ -101,7 +101,7 @@ namespace HaloCE::Mod {
 
     // Called by mod dll's thread regularly.
     void modThreadUpdate() {
-        if (Halo1::isGameLoaded()) {
+        if (Engine::isGameLoaded()) {
             init();
         } else if (isInstalled) {
             ModHost::reinitialize();

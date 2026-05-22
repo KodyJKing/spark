@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Hook.hpp"
-#include "haloce/halo1/halo1.hpp"
+#include "engine/halo1.hpp"
 
 // Generate a named type alias for each hook.
 #define HOOK(Name, Ret, Offset, ...) using Name = Hook<Offset, Ret, __VA_ARGS__>;

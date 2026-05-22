@@ -2,7 +2,7 @@
 #include <Xinput.h>
 #pragma comment( lib, "Xinput.lib" )
 
-#include "haloce/halo1/halo1.hpp"
+#include "engine/halo1.hpp"
 #include "Coordinates.hpp"
 
 namespace HaloCE::Mod::Mario {
@@ -67,7 +67,7 @@ namespace HaloCE::Mod::Mario {
 
     }
 
-    void updateInput(SM64MarioInputs& inputs, SM64MarioState& marioState, Halo1::Camera* camera) {
+    void updateInput(SM64MarioInputs& inputs, SM64MarioState& marioState, Engine::Camera* camera) {
         inputs = {};
         updateXboxControls(inputs);
         updateKeyboardControls(inputs);
@@ -76,9 +76,9 @@ namespace HaloCE::Mod::Mario {
             inputs.camLookZ = -camera->fwd.y;
         }
 
-        auto playerController = Halo1::getPlayerControllerPointer();
+        auto playerController = Engine::getPlayerControllerPointer();
         if (playerController) {
-            bool cheifMelee = (playerController->actions & Halo1::PlayerActionFlags::melee) != 0;
+            bool cheifMelee = (playerController->actions & Engine::PlayerActionFlags::melee) != 0;
             if (cheifMelee) inputs.buttonB = 1;
         }
     }

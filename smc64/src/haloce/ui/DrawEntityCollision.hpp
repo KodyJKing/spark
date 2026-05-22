@@ -1,7 +1,7 @@
 #pragma once
 
-#include "haloce/halo1/halo1.hpp"
+#include "engine/halo1.hpp"
 
 namespace HaloCE::Mod::UI  {
-    void drawEntityCollision(Halo1::Entity* entity);
+    void drawEntityCollision(Engine::Entity* entity);
 }

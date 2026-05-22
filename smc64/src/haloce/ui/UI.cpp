@@ -3,7 +3,7 @@
 #include "overlay/ESP.hpp"
 #include "overlay/VectorProfiler.hpp"
 #include "UI.hpp"
-#include "haloce/halo1/halo1.hpp"
+#include "engine/halo1.hpp"
 #include "haloce/mod/modules/mario/Mario.hpp"
 #include "halomcc/HaloMCC.hpp"
 #include "utils/ImGuiUtils.hpp"
@@ -37,7 +37,7 @@ namespace HaloCE::Mod::UI {
 
     bool showEsp = false;
 
-    extern "C" __declspec(dllexport) Halo1::Entity *highlightEntity = nullptr;
+    extern "C" __declspec(dllexport) Engine::Entity *highlightEntity = nullptr;
 
     void topLevelRender()
     {
@@ -131,8 +131,8 @@ namespace HaloCE::Mod::UI {
 
             static char address[255] = {0};
             static char address2[255] = {0};
-            renderAddressInput("From Map Relative Address", address, 255, "%p", Halo1::translateMapAddress);
-            renderAddressInput("To Map Relative Address", address2, 255, "%X", Halo1::translateToMapAddress);
+            renderAddressInput("From Map Relative Address", address, 255, "%p", Engine::translateMapAddress);
+            renderAddressInput("To Map Relative Address", address2, 255, "%X", Engine::translateToMapAddress);
 
             ImGui::EndChild();
 
@@ -168,7 +168,7 @@ namespace HaloCE::Mod::UI {
             {
                 pointerValue = 0;
             }
-            Halo1::Entity *entity = (Halo1::Entity *)pointerValue;
+            Engine::Entity *entity = (Engine::Entity *)pointerValue;
             if (entity && Memory::isAllocated((uintptr_t)entity))
             {
                 ImGui::Text("Interpreting object fields %p", (void *)entity);
@@ -225,20 +225,20 @@ namespace HaloCE::Mod::UI {
         } filter = {};
     } espSettings = {};
 
-    bool shouldDisplay(Halo1::Entity *entity)
+    bool shouldDisplay(Engine::Entity *entity)
     {
-        auto c = (Halo1::EntityCategory)entity->entityCategory;
-        if (c == Halo1::EntityCategory_Biped)
+        auto c = (Engine::EntityCategory)entity->entityCategory;
+        if (c == Engine::EntityCategory_Biped)
             return espSettings.filter.biped;
-        if (c == Halo1::EntityCategory_Vehicle)
+        if (c == Engine::EntityCategory_Vehicle)
             return espSettings.filter.vehicle;
-        if (c == Halo1::EntityCategory_Weapon)
+        if (c == Engine::EntityCategory_Weapon)
             return espSettings.filter.weapon;
-        if (c == Halo1::EntityCategory_Projectile)
+        if (c == Engine::EntityCategory_Projectile)
             return espSettings.filter.projectile;
-        if (c == Halo1::EntityCategory_Scenery)
+        if (c == Engine::EntityCategory_Scenery)
             return espSettings.filter.scenery;
-        if (c == Halo1::EntityCategory_Equipment)
+        if (c == Engine::EntityCategory_Equipment)
             return espSettings.filter.equipment;
         return espSettings.filter.other;
     }
@@ -254,7 +254,7 @@ namespace HaloCE::Mod::UI {
         ImGui::Checkbox("Other", &espSettings.filter.other);
     }
 
-    // Halo1::Entity* highlightEntity = nullptr;
+    // Engine::Entity* highlightEntity = nullptr;
 
     struct View {
         // Entities Tab
@@ -280,7 +280,7 @@ namespace HaloCE::Mod::UI {
 
     void highlightedEntityDetails()
     {
-        Halo1::Entity *entity = highlightEntity;
+        Engine::Entity *entity = highlightEntity;
 
         if (entity == nullptr || !Memory::isAllocated((uintptr_t)entity))
             return;
@@ -481,7 +481,7 @@ namespace HaloCE::Mod::UI {
 #ifdef PLAYER_CONTROLLER_TAB
             if (ImGui::BeginTabItem("PlayerController"))
             {
-                auto playerController = Halo1::getPlayerControllerPointer();
+                auto playerController = Engine::getPlayerControllerPointer();
                 ImGui::Text("%p", playerController);
 
                 uint32_t actions = playerController->actions;
@@ -496,7 +496,7 @@ namespace HaloCE::Mod::UI {
 
                 ImVec4 green = ImVec4(0.0f, 1.0f, 0.0f, 1.0f);
                 ImVec4 white = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
-#define SHOW_ACTION_1(name) ImGui::TextColored((actions & Halo1::PlayerActionFlags::name) ? green : white, #name);
+#define SHOW_ACTION_1(name) ImGui::TextColored((actions & Engine::PlayerActionFlags::name) ? green : white, #name);
 #define SHOW_ACTION_2(name) \
     ImGui::SameLine();      \
     SHOW_ACTION_1(name);
@@ -526,25 +526,25 @@ namespace HaloCE::Mod::UI {
                 // Render BSP toggle
                 ImGui::Checkbox("Render BSP", &view.renderBsp);
 
-                uintptr_t bspPointer = Halo1::getBSPPointer();
+                uintptr_t bspPointer = Engine::getBSPPointer();
                 char bspPointerStr[255] = {0};
                 snprintf(bspPointerStr, 255, "%p", (void *)bspPointer);
                 ImGuiUtils::renderCopyableText("BSP Pointer", bspPointerStr);
 
-                uint32_t bspVertexCount = Halo1::getBSPVertexCount();
+                uint32_t bspVertexCount = Engine::getBSPVertexCount();
                 ImGui::Text("BSP Vertices: %d", bspVertexCount);
 
-                Halo1::BSPVertex *bspVertices = Halo1::getBSPVertexArray();
+                Engine::BSPVertex *bspVertices = Engine::getBSPVertexArray();
                 char bspVerticesStr[255] = {0};
                 snprintf(bspVerticesStr, 255, "%p", bspVertices);
                 ImGuiUtils::renderCopyableText("BSP Vertex Array", bspVerticesStr);
 
                 // Edge count
-                uint32_t bspEdgeCount = Halo1::getBSPEdgeCount();
+                uint32_t bspEdgeCount = Engine::getBSPEdgeCount();
                 ImGui::Text("BSP Edges: %d", bspEdgeCount);
 
                 // Edge array
-                Halo1::BSPEdge *bspEdges = Halo1::getBSPEdgeArray();
+                Engine::BSPEdge *bspEdges = Engine::getBSPEdgeArray();
                 char bspEdgesStr[255] = {0};
                 snprintf(bspEdgesStr, 255, "%p", bspEdges);
                 ImGuiUtils::renderCopyableText("BSP Edge Array", bspEdgesStr);
@@ -559,11 +559,11 @@ namespace HaloCE::Mod::UI {
         ImGui::End();
     }
 
-    Vec3 displayPos(Halo1::Entity *entity)
+    Vec3 displayPos(Engine::Entity *entity)
     {
         return entity->rootBonePos;
         // if (
-        //     // entity->entityCategory == Halo1::EntityCategory_Scenery ||
+        //     // entity->entityCategory == Engine::EntityCategory_Scenery ||
         //     entity->parentHandle != NULL_HANDLE
         // )
         //     return entity->rootBonePos;
@@ -575,8 +575,8 @@ namespace HaloCE::Mod::UI {
         namespace ESP = Overlay::ESP;
         Camera &camera = ESP::camera;
 
-        std::vector<Halo1::Entity *> entitiesToDraw;
-        Halo1::foreachEntityRecord([&](Halo1::EntityRecord *rec)
+        std::vector<Engine::Entity *> entitiesToDraw;
+        Engine::foreachEntityRecord([&](Engine::EntityRecord *rec)
                                    {
             auto entity = rec->entity();
             if (shouldDisplay( entity )) {
@@ -610,7 +610,7 @@ namespace HaloCE::Mod::UI {
 
         bool gamePaused = HaloMCC::isPauseMenuOpen();
         byte alpha = gamePaused ? 0x40 : 0xFF;
-        for (Halo1::Entity *entity : entitiesToDraw)
+        for (Engine::Entity *entity : entitiesToDraw)
         {
             auto color = IM_COL32(255, 255, 255, alpha);
             float radius = 0.1f;
@@ -660,18 +660,18 @@ namespace HaloCE::Mod::UI {
         namespace ESP = Overlay::ESP;
         Camera &camera = ESP::camera;
 
-        uint32_t bspVertexCount = Halo1::getBSPVertexCount();
-        Halo1::BSPVertex *bspVertices = Halo1::getBSPVertexArray();
+        uint32_t bspVertexCount = Engine::getBSPVertexCount();
+        Engine::BSPVertex *bspVertices = Engine::getBSPVertexArray();
         if (bspVertices == nullptr || bspVertexCount == 0)
             return;
 
-        uint32_t bspEdgeCount = Halo1::getBSPEdgeCount();
-        Halo1::BSPEdge *bspEdges = Halo1::getBSPEdgeArray();
+        uint32_t bspEdgeCount = Engine::getBSPEdgeCount();
+        Engine::BSPEdge *bspEdges = Engine::getBSPEdgeArray();
         if (bspEdges == nullptr || bspEdgeCount == 0)
             return;
 
-        uint32_t bspSurfaceCount = Halo1::getBSPSurfaceCount();
-        Halo1::BSPSurface *bspSurfaces = Halo1::getBSPSurfaceArray();
+        uint32_t bspSurfaceCount = Engine::getBSPSurfaceCount();
+        Engine::BSPSurface *bspSurfaces = Engine::getBSPSurfaceArray();
         if (bspSurfaces == nullptr || bspSurfaceCount == 0)
             return;
 
@@ -756,14 +756,14 @@ namespace HaloCE::Mod::UI {
     }
 
     void renderESP() {
-        if (!Halo1::isGameLoaded())
+        if (!Engine::isGameLoaded())
             return;
 
         espWindow();
 
         // Setup ESP camera to match player camera.
         Camera &camera = Overlay::ESP::camera;
-        auto haloCam = Halo1::getPlayerCameraPointer();
+        auto haloCam = Engine::getPlayerCameraPointer();
         camera.pos = haloCam->pos;
         camera.fwd = haloCam->fwd;
         camera.up = haloCam->up;

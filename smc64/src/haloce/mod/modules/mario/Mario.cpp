@@ -15,7 +15,7 @@
 #include <Windows.h>
 
 #include <filesystem>
-#include "../../../halo1/Halo1.hpp"
+#include "engine/halo1.hpp"
 #include "Mario.hpp"
 #include "MarioInput.hpp"
 #include "BSPConversion.hpp"
@@ -77,7 +77,7 @@ namespace HaloCE::Mod::Mario {
         // Create a Mario instance at the origin.
         if (marioId < 0) {
             auto id = sm64_mario_create(99999.0f, 99999.0f, 99999.0f);
-            auto playerPos = Halo1::getPlayerPosition();
+            auto playerPos = Engine::getPlayerPosition();
             if (playerPos.has_value()) {
                 auto pos = playerPos.value();
                 // Convert Halo CE coordinates to Super Mario 64 coordinates
@@ -178,7 +178,7 @@ namespace HaloCE::Mod::Mario {
     }
 
     void marioToCheif() {
-        auto playerPos = Halo1::getPlayerPosition();
+        auto playerPos = Engine::getPlayerPosition();
         if (playerPos.has_value()) {
             auto pos = playerPos.value();
             // Convert Halo CE coordinates to Super Mario 64 coordinates
@@ -272,7 +272,7 @@ namespace HaloCE::Mod::Mario {
         DynamicGeometry::update(marioState);
 
         if (possessMario) {
-            auto playerRec = Halo1::getPlayerRecord();
+            auto playerRec = Engine::getPlayerRecord();
             if (playerRec) {
                 auto player = playerRec->entity();
                 if (player) {
@@ -295,12 +295,12 @@ namespace HaloCE::Mod::Mario {
                     }
                 }
             }
-            Mario::updateInput(marioInputs, marioState, Halo1::getPlayerCameraPointer());
+            Mario::updateInput(marioInputs, marioState, Engine::getPlayerCameraPointer());
         } else {
             MarioCamera::onDisable();
         }
         
-        faceLookDirection(Halo1::getPlayerCameraPointer()->fwd);
+        faceLookDirection(Engine::getPlayerCameraPointer()->fwd);
 
         sm64_mario_tick(marioId, &marioInputs, &marioState, &marioGeometry);
         sm64_set_mario_water_level(marioId, -999999.99f);

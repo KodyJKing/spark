@@ -24,11 +24,11 @@ namespace HaloCE::Freecam {
                 next(param_1, param_2);
                 return;
             }
-            auto playerController = Halo1::getPlayerControllerPointer();
+            auto playerController = Engine::getPlayerControllerPointer();
             if (!playerController || !Memory::isAllocated(playerController)) return;
 
             // Backup player controller state
-            Halo1::PlayerController pc = *playerController;
+            Engine::PlayerController pc = *playerController;
             // playerController->actions = 0;
             playerController->walkX = 0.0f;
             playerController->walkY = 0.0f;
@@ -47,7 +47,7 @@ namespace HaloCE::Freecam {
                 return next(unknown);
             }
 
-            auto camera = Halo1::getPlayerCameraPointer();
+            auto camera = Engine::getPlayerCameraPointer();
             bool camAllocated = camera && Memory::isAllocated(camera);
             Vec3 camPos = {0, 0, 0};
             bool saveCamPos = camAllocated && isFreecamEnabled;
@@ -60,7 +60,7 @@ namespace HaloCE::Freecam {
         });
     }
 
-    void updateXboxControls(Halo1::Camera* camera) {
+    void updateXboxControls(Engine::Camera* camera) {
         XINPUT_STATE state;
         ZeroMemory(&state, sizeof(XINPUT_STATE));
         XInputGetState(0, &state);
@@ -88,7 +88,7 @@ namespace HaloCE::Freecam {
         camera->pos += moveDelta;
     }
 
-    void updateKeyboardControls(Halo1::Camera* camera) {
+    void updateKeyboardControls(Engine::Camera* camera) {
 
         float speed = 0.2f;
         if (GetAsyncKeyState(VK_MENU) & 0x8000)
@@ -124,7 +124,7 @@ namespace HaloCE::Freecam {
         }
         if (!isEnabled()) return;
 
-        auto camera = Halo1::getPlayerCameraPointer();
+        auto camera = Engine::getPlayerCameraPointer();
         if (!camera || !Memory::isAllocated(camera)) return;
 
         if (isFreecamEnabled) {

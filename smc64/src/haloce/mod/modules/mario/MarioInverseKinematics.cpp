@@ -102,7 +102,7 @@ namespace HaloCE::Mod::Mario::InverseKinematics {
 
         IKRequest ikRequest;
         for (int i = 0; i < (int)boneNames.size(); i++) {
-            Halo1::WorldTransform initialTransform = getMarioBoneByName(boneNames[i]);
+            Engine::WorldTransform initialTransform = getMarioBoneByName(boneNames[i]);
             float length = i == 2 ? 0.05f : -1.0f;
             Vec3 pivotOffset = pivotOffsets[i];
             ikRequest.bones.push_back({ initialTransform, length, pivotOffset });
@@ -115,7 +115,7 @@ namespace HaloCE::Mod::Mario::InverseKinematics {
         for (size_t i = 0; i < ikRequest.bones.size(); i++) {
             const auto& ikBone = ikRequest.bones[i];
             const char* boneName = boneNames[i];
-            Halo1::WorldTransform* marioBone = getMarioBonePointerByName(boneName);
+            Engine::WorldTransform* marioBone = getMarioBonePointerByName(boneName);
             if (marioBone) {
                 *marioBone = ikBone.currentTransform;
             }

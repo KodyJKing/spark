@@ -1,7 +1,7 @@
 #pragma once
-#include "haloce/halo1/halo1.hpp"
+#include "engine/halo1.hpp"
 
-namespace Halo1 {
+namespace Engine {
     struct Interpretations {
         Tag* tag = nullptr;
         Entity* entity = nullptr;

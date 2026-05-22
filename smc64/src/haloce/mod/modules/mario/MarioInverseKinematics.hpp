@@ -3,14 +3,14 @@
 #include <vector>
 #include <string>
 #include "MarioSkeleton.hpp"
-#include "haloce/halo1/halo1.hpp"
+#include "engine/halo1.hpp"
 
 namespace HaloCE::Mod::Mario::InverseKinematics {
     struct IKBone {
-        Halo1::WorldTransform initialTransform;
+        Engine::WorldTransform initialTransform;
         float length = -1.0f;
         Vec3 pivotOffset = Vec3{ 0.0f, 0.0f, 0.0f };
-        Halo1::WorldTransform currentTransform;
+        Engine::WorldTransform currentTransform;
     };
 
     struct IKRequest {

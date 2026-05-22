@@ -1,32 +1,32 @@
 #include "libsm64.h"
 #include "decomp/surface_terrains.h"
-#include "haloce/halo1/halo1.hpp"
+#include "engine/halo1.hpp"
 #include "Coordinates.hpp"
 
 #include <vector>
 
 namespace HaloCE::Mod::BSPConversion {
 
-    std::vector<SM64Surface> convertBSP(Halo1::CollisionBSP* bsp, uint16_t defaultSurfaceType) {
+    std::vector<SM64Surface> convertBSP(Engine::CollisionBSP* bsp, uint16_t defaultSurfaceType) {
         std::vector<SM64Surface> result;
 
         uint32_t bspVertexCount = bsp->vertices.count;
-        Halo1::BSPVertex* bspVertices = bsp->vertices.get<Halo1::BSPVertex>(0);
+        Engine::BSPVertex* bspVertices = bsp->vertices.get<Engine::BSPVertex>(0);
         if (bspVertices == nullptr || bspVertexCount == 0)
             return result;
 
         uint32_t bspEdgeCount = bsp->edges.count;
-        Halo1::BSPEdge* bspEdges = bsp->edges.get<Halo1::BSPEdge>(0);
+        Engine::BSPEdge* bspEdges = bsp->edges.get<Engine::BSPEdge>(0);
         if (bspEdges == nullptr || bspEdgeCount == 0)
             return result;
 
         uint32_t bspSurfaceCount = bsp->surfaces.count;
-        Halo1::BSPSurface* bspSurfaces = bsp->surfaces.get<Halo1::BSPSurface>(0);
+        Engine::BSPSurface* bspSurfaces = bsp->surfaces.get<Engine::BSPSurface>(0);
         if (bspSurfaces == nullptr || bspSurfaceCount == 0)
             return result;
 
         uint32_t planeCount = bsp->planes.count;
-        Halo1::BSPPlane* planes = bsp->planes.get<Halo1::BSPPlane>(0);
+        Engine::BSPPlane* planes = bsp->planes.get<Engine::BSPPlane>(0);
         if (planes == nullptr || planeCount == 0)
             return result;
 
@@ -88,8 +88,8 @@ namespace HaloCE::Mod::BSPConversion {
                     continue;
                 }
 
-                Halo1::BSPPlane* plane = &planes[surface->planeIndex];
-                Halo1::BSPVertex* p[3] = { p0, p2, p1 };
+                Engine::BSPPlane* plane = &planes[surface->planeIndex];
+                Engine::BSPVertex* p[3] = { p0, p2, p1 };
                 if (cross.dot(plane->normal) < 0) {
                     std::swap(p[1], p[2]);
                 }
@@ -110,7 +110,7 @@ namespace HaloCE::Mod::BSPConversion {
 
     // Convert Halo CE static geometry to Super Mario 64 format
     std::vector<SM64Surface> haloGeometryToMario() {
-        auto bsp = (Halo1::CollisionBSP*) Halo1::getBSPPointer();
+        auto bsp = (Engine::CollisionBSP*) Engine::getBSPPointer();
         if (bsp == nullptr) return std::vector<SM64Surface>{};
         return convertBSP(bsp, SURFACE_WALL_MISC);
     }

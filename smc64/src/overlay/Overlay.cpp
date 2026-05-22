@@ -13,7 +13,7 @@
 
 // Todo: Remove reference to game specific code.
 #include "haloce/ui/UI.hpp"
-#include "haloce/halo1/halo1.hpp"
+#include "engine/halo1.hpp"
 #include "DllMain.hpp"
 
 
@@ -124,7 +124,7 @@ namespace Overlay {
         ImGui::NewFrame();
 
         // Todo: Replace with modInstance.isGameLoaded() to make this game agnostic.
-        if (!Halo1::isGameLoaded())
+        if (!Engine::isGameLoaded())
             loadedIndicatorWindow();
 
         HaloCE::Mod::UI::topLevelRender();

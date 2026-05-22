@@ -1,8 +1,8 @@
 #include "haloce/utils/Interpret.hpp"
-#include "haloce/halo1/halo1.hpp"
+#include "engine/halo1.hpp"
 #include "memory/Memory.hpp"
 
-namespace Halo1 {
+namespace Engine {
     Interpretations interpretU32( uint32_t value ) {
         Interpretations result;
 

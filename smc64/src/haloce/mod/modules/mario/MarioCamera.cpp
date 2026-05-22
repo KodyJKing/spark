@@ -12,7 +12,7 @@ namespace HaloCE::Mod::Mario::MarioCamera {
     static Vec3 getCameraPosition() {
         // Extrapolate camera on non-update frames. Without this, the camera jitters terribly.
         float dt = (framesSinceLastUpdate % 2) * 0.5f;
-        auto camera = Halo1::getPlayerCameraPointer();
+        auto camera = Engine::getPlayerCameraPointer();
         if (!camera) return Vec3{0, 0, 0};
         Vec3 result = cameraPosition
             + cameraVelocity * dt
@@ -46,9 +46,9 @@ namespace HaloCE::Mod::Mario::MarioCamera {
                 next(param_1, param_2);
                 return;
             }
-            auto playerController = Halo1::getPlayerControllerPointer();
+            auto playerController = Engine::getPlayerControllerPointer();
             if (!playerController || !Memory::isAllocated(playerController)) return;
-            Halo1::PlayerController pc = *playerController;
+            Engine::PlayerController pc = *playerController;
             playerController->walkX = 0.0f;
             playerController->walkY = 0.0f;
             next(param_1, param_2);
@@ -59,7 +59,7 @@ namespace HaloCE::Mod::Mario::MarioCamera {
         UpdateCamera::addHandler(0, [](UpdateCamera::Next next, float unknown) {
             next(unknown);
             if (!active) return;
-            auto camera = Halo1::getPlayerCameraPointer();
+            auto camera = Engine::getPlayerCameraPointer();
             if (!camera || !Memory::isAllocated(camera)) return;
             camera->pos = getCameraPosition();
         }, 10);

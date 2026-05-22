@@ -4,7 +4,7 @@
 #include <mutex>
 #include <string>
 #include "imgui.h"
-#include "haloce/halo1/halo1.hpp"
+#include "engine/halo1.hpp"
 #include "utils/Strings.hpp"
 #include "Interpretations.hpp"
 #include "memory/Memory.hpp"
@@ -49,10 +49,10 @@ namespace HaloCE::Mod::UI {
     bool showTagBrowser = false;
 
     // Tag to inspect using interpretation ui.
-    extern "C" __declspec(dllexport) Halo1::Tag* inspectTag = nullptr;
+    extern "C" __declspec(dllexport) Engine::Tag* inspectTag = nullptr;
     bool showInspectWindow = false;
 
-    void setInspectTag(Halo1::Tag* tag) {
+    void setInspectTag(Engine::Tag* tag) {
         // Shift key down?
         if (ImGui::GetIO().KeyShift) {
             // Open in hex view instead
@@ -144,7 +144,7 @@ namespace HaloCE::Mod::UI {
 
             bool hasSearch = search[0] != 0 || groupIdFilterIndex != 0;
 
-            auto filterTag = [&](Halo1::Tag* tag) {
+            auto filterTag = [&](Engine::Tag* tag) {
                 auto filterGroupID = ids[groupIdFilterIndex].groupID;
                 if (
                     filterGroupID != GROUP_ID_ALL && 
@@ -184,7 +184,7 @@ namespace HaloCE::Mod::UI {
                         // Results will be a subset of previous results, filter them.
                         std::vector<int> newResults;
                         for (int index : searchResults) {
-                            auto tag = Halo1::getTag(index);
+                            auto tag = Engine::getTag(index);
                             if (filterTag(tag))
                                 newResults.push_back(index);
                         }
@@ -194,8 +194,8 @@ namespace HaloCE::Mod::UI {
                         searchResults.clear();
                         int i = 0;
                         while (!canceledSearch) {
-                            auto tag = Halo1::getTag(i);
-                            if (!Halo1::tagExists(tag)) 
+                            auto tag = Engine::getTag(i);
+                            if (!Engine::tagExists(tag)) 
                                 break;
                             if (filterTag(tag))
                                 searchResults.push_back(i);
@@ -232,10 +232,10 @@ namespace HaloCE::Mod::UI {
                     return;
                 }
 
-                auto tag = Halo1::getTag(index);
-                if (Halo1::tagExists(tag)) {
+                auto tag = Engine::getTag(index);
+                if (Engine::tagExists(tag)) {
                     auto path = tag->getResourcePath();
-                    if (!Halo1::validTagPath(path)) {
+                    if (!Engine::validTagPath(path)) {
                         ImGui::Text("%04d NULL", index);
                     } else {
                         char text[2048] = {0};
@@ -323,7 +323,7 @@ namespace HaloCE::Mod::UI {
                 // Render all tags
                 for (int i = 0; i < tagsPerPage; i++) {
                     int index = page * tagsPerPage + i;
-                    auto tag = Halo1::getTag(index);
+                    auto tag = Engine::getTag(index);
                     renderTag(index);
                 }
             }

@@ -1,12 +1,12 @@
 #include "Interpretations.hpp"
 #include "imgui.h"
-#include "haloce/halo1/halo1.hpp"
+#include "engine/halo1.hpp"
 #include "memory/Memory.hpp"
 #include "utils/Strings.hpp"
 #include "haloce/utils/Interpret.hpp"
 namespace HaloCE::Mod::UI {
     void interpretations(uint32_t value) {
-        auto result = Halo1::interpretU32(value);
+        auto result = Engine::interpretU32(value);
         if (result.mapPointer && Memory::isAllocated((uintptr_t)result.mapPointer))
         {
             ImGui::Text("Map Pointer: %p", (void *)result.mapPointer);
@@ -78,7 +78,7 @@ namespace HaloCE::Mod::UI {
             uint32_t value = entityAddr[i];
             if (value == 0)
                 continue;
-            if (!Halo1::hasInterpretation(value))
+            if (!Engine::hasInterpretation(value))
                 continue;
             char label[255] = {0};
 

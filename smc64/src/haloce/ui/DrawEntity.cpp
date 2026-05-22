@@ -4,7 +4,7 @@
 #include "DrawEntityCollision.hpp"
 
 namespace HaloCE::Mod::UI  {
-    void drawEntity(Halo1::Entity* entity) {
+    void drawEntity(Engine::Entity* entity) {
         // Draw bones
         drawBones(entity);
         // Draw collision

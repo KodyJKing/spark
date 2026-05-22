@@ -1,6 +1,6 @@
 #include "DynamicGeometry.hpp"
 
-#include "haloce/halo1/halo1.hpp"
+#include "engine/halo1.hpp"
 #include "./Coordinates.hpp"
 #include "BSPConversion.hpp"
 
@@ -18,53 +18,53 @@ namespace HaloCE::Mod::Mario::DynamicGeometry {
         std::vector<SM64Surface> surfaces;
     };
 
-    std::unordered_map<Halo1::Entity*, ObjectEntry> objectMap;
+    std::unordered_map<Engine::Entity*, ObjectEntry> objectMap;
 
-    // void dumpVertices(Halo1::Entity* entity, std::filesystem::path outputPath) {
+    // void dumpVertices(Engine::Entity* entity, std::filesystem::path outputPath) {
     //     auto entityTag = entity->tag();
     //     if (entityTag == nullptr) return;
     //     auto collisionTag = getCollisionGeometryTag(entityTag);
     //     if (collisionTag == nullptr) return;
-    //     auto collisionData = (Halo1::CollisionTagData*) collisionTag->getData();
+    //     auto collisionData = (Engine::CollisionTagData*) collisionTag->getData();
     //     if (collisionData == nullptr) return;
 
     //     auto nodeCount = collisionData->collisionNodes.count;
     //     if (nodeCount != 1) return;
-    //     auto node = collisionData->collisionNodes.get<Halo1::CollisionNode>(0);
+    //     auto node = collisionData->collisionNodes.get<Engine::CollisionNode>(0);
     //     if (node == nullptr) return;
-    //     auto bsp = node->collisionBsps.get<Halo1::CollisionBSP>(0);
+    //     auto bsp = node->collisionBsps.get<Engine::CollisionBSP>(0);
     //     if (bsp == nullptr) return;
 
     //     HaloCE::Mod::BSPConversion::dumpVertices(bsp, outputPath);
     // }
 
-    std::vector<SM64Surface> convertCollisionBSPToSM64Surfaces(Halo1::Entity* entity) {
+    std::vector<SM64Surface> convertCollisionBSPToSM64Surfaces(Engine::Entity* entity) {
         auto entityTag = entity->tag();
         if (entityTag == nullptr) return {};
         auto collisionTag = getCollisionGeometryTag(entityTag);
         if (collisionTag == nullptr) return {};
-        auto collisionData = (Halo1::CollisionTagData*) collisionTag->getData();
+        auto collisionData = (Engine::CollisionTagData*) collisionTag->getData();
         if (collisionData == nullptr) return {};
 
         auto nodeCount = collisionData->collisionNodes.count;
         if (nodeCount != 1) return {};
-        auto node = collisionData->collisionNodes.get<Halo1::CollisionNode>(0);
+        auto node = collisionData->collisionNodes.get<Engine::CollisionNode>(0);
         if (node == nullptr) return {};
-        auto bsp = node->collisionBsps.get<Halo1::CollisionBSP>(0);
+        auto bsp = node->collisionBsps.get<Engine::CollisionBSP>(0);
         if (bsp == nullptr) return {};
 
         return HaloCE::Mod::BSPConversion::convertBSP(bsp, SURFACE_NOT_SLIPPERY);
         // return HaloCE::Mod::BSPConversion::convertBSP(bsp, SURFACE_WALL_MISC);
     }
 
-    void allocateDynamicGeometryForEntity(Halo1::Entity* entity) {
+    void allocateDynamicGeometryForEntity(Engine::Entity* entity) {
         // Check if already allocated
         if (objectMap.find(entity) != objectMap.end()) return;
         
         SM64SurfaceObject surfaceObject = {};
 
         if (entity->worldBones.count() == 0) return;
-        Halo1::WorldTransform* bone = entity->worldBones.get(entity, 0);
+        Engine::WorldTransform* bone = entity->worldBones.get(entity, 0);
 
         auto surfaces = convertCollisionBSPToSM64Surfaces(entity);
         if (surfaces.empty()) return;
@@ -93,7 +93,7 @@ namespace HaloCE::Mod::Mario::DynamicGeometry {
         objectMap[entity] = std::move(entry);
     }
 
-    void deallocateDynamicGeometryForEntity(Halo1::Entity* entity) {
+    void deallocateDynamicGeometryForEntity(Engine::Entity* entity) {
         // Placeholder for deallocation logic
         auto it = objectMap.find(entity);
         if (it != objectMap.end()) {
@@ -107,13 +107,13 @@ namespace HaloCE::Mod::Mario::DynamicGeometry {
         Vec3 marioPos = Vec3{ marioState.position[0], marioState.position[1], marioState.position[2] };
         Vec3 marioWorldPos = Coordinates::marioToHalo(marioPos);
         
-        Halo1::foreachEntityRecord([&](Halo1::EntityRecord* entityRecord) {
+        Engine::foreachEntityRecord([&](Engine::EntityRecord* entityRecord) {
             if (!entityRecord) return;
             auto entity = entityRecord->entity();
             if (!entity) return;
 
             auto category = entity->entityCategory;
-            if (category != Halo1::EntityCategory_Scenery) return;
+            if (category != Engine::EntityCategory_Scenery) return;
             
             Vec3 entityPos = entity->pos;
             float distance = (entityPos - marioWorldPos).lengthSquared();

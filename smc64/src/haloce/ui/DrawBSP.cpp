@@ -4,15 +4,15 @@
 
 namespace HaloCE::Mod::UI  {
 
-    void drawBSPPoints(Halo1::CollisionBSP* bsp, Vec3 origin, Vec3 x, Vec3 y, Vec3 z) {
+    void drawBSPPoints(Engine::CollisionBSP* bsp, Vec3 origin, Vec3 x, Vec3 y, Vec3 z) {
         if ( !bsp ) return;
 
-        uint64_t vertexArrayAddress = Halo1::translateMapAddress( bsp->vertices.offset );
+        uint64_t vertexArrayAddress = Engine::translateMapAddress( bsp->vertices.offset );
         if ( !vertexArrayAddress ) return;
-        Halo1::BSPVertex* vertices = (Halo1::BSPVertex*) vertexArrayAddress;
+        Engine::BSPVertex* vertices = (Engine::BSPVertex*) vertexArrayAddress;
 
         for ( uint32_t i = 0; i < bsp->vertices.count; i++ ) {
-            Halo1::BSPVertex& vertex = vertices[i];
+            Engine::BSPVertex& vertex = vertices[i];
             Vec3 worldPos = x * vertex.pos.x + y * vertex.pos.y + z * vertex.pos.z + origin;
             Overlay::ESP::drawPoint( worldPos, IM_COL32( 0, 255, 255, 255 ) );
         }
@@ -20,7 +20,7 @@ namespace HaloCE::Mod::UI  {
 
     // This is for small BSPs, so don't use any special culling logic.
     // In all other respects, this is like the old implementation (renderESP_BSP).
-    void drawBSP(Halo1::CollisionBSP* bsp, Vec3 origin, Vec3 x, Vec3 y, Vec3 z) {
+    void drawBSP(Engine::CollisionBSP* bsp, Vec3 origin, Vec3 x, Vec3 y, Vec3 z) {
         namespace ESP = Overlay::ESP;
         Camera &camera = ESP::camera;
 
@@ -30,21 +30,21 @@ namespace HaloCE::Mod::UI  {
 
         auto bspVertexCount = bsp->vertices.count;
         if ( bspVertexCount == 0 ) return;
-        Halo1::BSPVertex* bspVertices = (Halo1::BSPVertex*) Halo1::translateMapAddress( bsp->vertices.offset );
+        Engine::BSPVertex* bspVertices = (Engine::BSPVertex*) Engine::translateMapAddress( bsp->vertices.offset );
         if (!bspVertices ) return;
 
         auto bspEdgeCount = bsp->edges.count;
         if ( bspEdgeCount == 0 ) return;
-        auto edgeArrayAddress = Halo1::translateMapAddress( bsp->edges.offset );
+        auto edgeArrayAddress = Engine::translateMapAddress( bsp->edges.offset );
         if ( !edgeArrayAddress ) return;
-        Halo1::BSPEdge* bspEdges = (Halo1::BSPEdge*) edgeArrayAddress;
+        Engine::BSPEdge* bspEdges = (Engine::BSPEdge*) edgeArrayAddress;
 
         auto bspSurfaceCount = bsp->surfaces.count;
         if ( bspSurfaceCount == 0 ) return;
-        Halo1::BSPSurface* bspSurfaces = (Halo1::BSPSurface*) Halo1::translateMapAddress( bsp->surfaces.offset );
+        Engine::BSPSurface* bspSurfaces = (Engine::BSPSurface*) Engine::translateMapAddress( bsp->surfaces.offset );
         if ( !bspSurfaces ) return;
 
-        auto planes = bsp->planes.get<Halo1::BSPPlane>(0);
+        auto planes = bsp->planes.get<Engine::BSPPlane>(0);
         
         uint8_t alpha = 0xFF;
         auto color = IM_COL32(255, 255, 0, alpha);
@@ -89,7 +89,7 @@ namespace HaloCE::Mod::UI  {
                     continue;
                 }
 
-                Halo1::BSPPlane* plane = &planes[surface->planeIndex];
+                Engine::BSPPlane* plane = &planes[surface->planeIndex];
                 Vec3 normal = plane->normal;
                 Vec3 worldNormal = x * normal.x + y * normal.y + z * normal.z;
                 Vec3 toCamera = ( camera.pos - toWorld( firstVertex->pos ) );

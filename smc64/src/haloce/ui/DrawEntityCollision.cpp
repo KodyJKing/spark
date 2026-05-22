@@ -3,7 +3,7 @@
 #include "DrawBSP.hpp"
 
 namespace HaloCE::Mod::UI  {
-    void drawEntityCollision(Halo1::Entity* entity) {
+    void drawEntityCollision(Engine::Entity* entity) {
         namespace ESP = Overlay::ESP;
         Camera &camera = ESP::camera;
 
@@ -13,15 +13,15 @@ namespace HaloCE::Mod::UI  {
 
         auto collisionTag = getCollisionGeometryTag(entity->tag());
         if (collisionTag == nullptr) return;
-        auto collisionData = (Halo1::CollisionTagData*) collisionTag->getData();
+        auto collisionData = (Engine::CollisionTagData*) collisionTag->getData();
         if (collisionData == nullptr) return;
         
         auto nodeCount = collisionData->collisionNodes.count;
         for (uint16_t i = 0; i < nodeCount; i++) {
-            auto node = collisionData->collisionNodes.get<Halo1::CollisionNode>(i);
+            auto node = collisionData->collisionNodes.get<Engine::CollisionNode>(i);
             if (node == nullptr) continue;
 
-            auto bsp = node->collisionBsps.get<Halo1::CollisionBSP>(0);
+            auto bsp = node->collisionBsps.get<Engine::CollisionBSP>(0);
             if (bsp == nullptr) continue;
 
             // // Blow up the BSPs in a sphere around the entity for visibility until we can associate them with a bone transform.

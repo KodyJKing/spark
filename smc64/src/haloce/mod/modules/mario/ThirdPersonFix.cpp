@@ -1,5 +1,5 @@
 #include "../common.hpp"
-#include "haloce/halo1/halo1.hpp"
+#include "engine/halo1.hpp"
 #include "hook/Hooks.hpp"
 
 namespace HaloCE::Mod::ThirdPersonFix {
@@ -7,22 +7,22 @@ namespace HaloCE::Mod::ThirdPersonFix {
     void registerHandlers() {
         // Suppress flares on player-held weapons (they render in the wrong place in third-person view)
         UpdateFlareTransform::addHandler(0, [](UpdateFlareTransform::Next next, uint32_t flareHandle) {
-            auto entry = Halo1::getFlareEntry(flareHandle);
+            auto entry = Engine::getFlareEntry(flareHandle);
             if (entry && entry->mountEntityHandle != NULL_HANDLE) {
-                if (entry->mountEntityHandle == Halo1::getHeldWeaponHandle()) {
+                if (entry->mountEntityHandle == Engine::getHeldWeaponHandle()) {
                     return;
                 }
             }
             next(flareHandle);
         });
 
-        SpawnProjectile::addHandler(0, [](SpawnProjectile::Next next, Halo1::ProjectileSpawnArgs* options, uint32_t flags) -> uint32_t {
-            if (options->ownerEntityHandle != Halo1::getPlayerHandle()) {
+        SpawnProjectile::addHandler(0, [](SpawnProjectile::Next next, Engine::ProjectileSpawnArgs* options, uint32_t flags) -> uint32_t {
+            if (options->ownerEntityHandle != Engine::getPlayerHandle()) {
                 return next(options, flags);
             }
 
             Vec3 spawnPosition = options->spawnPosition;
-            auto camera = Halo1::getPlayerCameraPointer();
+            auto camera = Engine::getPlayerCameraPointer();
             if (camera && Memory::isAllocated(camera)) {
                 float depth = (options->spawnPosition - camera->pos).dot(camera->fwd.normalize());
                 spawnPosition = camera->pos + camera->fwd.normalize() * depth;
@@ -31,7 +31,7 @@ namespace HaloCE::Mod::ThirdPersonFix {
             options->spawnPosition = spawnPosition;
             uint32_t projectileHandle = next(options, flags);
 
-            auto projectile = Halo1::getEntityPointer(projectileHandle);
+            auto projectile = Engine::getEntityPointer(projectileHandle);
             if (projectile && Memory::isAllocated(projectile)) {
                 if (camera && Memory::isAllocated(camera)) {
                     projectile->pos = spawnPosition;

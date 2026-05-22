@@ -9,7 +9,7 @@
 namespace {
     void updateEntityRegion(uint32_t entityHandle, void* unknown) {
         typedef uint64_t (*updateEntityRegion_t)( uint32_t entityHandle, void* unknown );
-        auto halo1Dll = Halo1::dllBase();
+        auto halo1Dll = Engine::dllBase();
         auto pUpdateEntityRegion = (updateEntityRegion_t) (halo1Dll + 0xB368B0U);
         pUpdateEntityRegion(entityHandle, unknown);
     }
@@ -18,13 +18,13 @@ namespace {
 namespace HaloCE::Mod::Mario::MarioModel {
     const char* marioTagPath = "smc64\\mario\\mario";
 
-    bool isMario(Halo1::Entity* entity) {
+    bool isMario(Engine::Entity* entity) {
         if (!entity) return false;
         return entity->fromResourcePath(marioTagPath);
     }
 
     bool isMario(uint32_t entityHandle) {
-        auto rec = Halo1::getEntityRecord( entityHandle );
+        auto rec = Engine::getEntityRecord( entityHandle );
         if (!rec) return false;
         auto entity = rec->entity();
         if (!entity) return false;
@@ -32,7 +32,7 @@ namespace HaloCE::Mod::Mario::MarioModel {
     }
 
     uint32_t playerWeaponHandle() {
-        auto playerEntity = Halo1::getPlayerEntity();
+        auto playerEntity = Engine::getPlayerEntity();
         if (!playerEntity) return 0xFFFFFFFF;
         return playerEntity->childHandle;
     }
@@ -54,14 +54,14 @@ namespace HaloCE::Mod::Mario::MarioModel {
 
         auto weaponHandle = playerWeaponHandle();
         if (weaponHandle == 0xFFFFFFFF) return;
-        auto rec = Halo1::getEntityRecord( weaponHandle );
+        auto rec = Engine::getEntityRecord( weaponHandle );
         if (!rec) return;
         auto weapon = rec->entity();
         if (!weapon) return;
         auto weaponRootBone = weapon->worldBones.get(weapon, 0);
         if (!weaponRootBone) return;
         
-        auto camera = Halo1::getPlayerCameraPointer();
+        auto camera = Engine::getPlayerCameraPointer();
         if (!camera) return;
 
         auto chest = getMarioBoneByName("chest");
@@ -85,7 +85,7 @@ namespace HaloCE::Mod::Mario::MarioModel {
         InverseKinematics::applyMarioIK(ikRequest);
     }
 
-    void updatePose( uint32_t entityHandle, Halo1::Entity* marioEntity) {
+    void updatePose( uint32_t entityHandle, Engine::Entity* marioEntity) {
         if (!marioEntity) return;
 
         // For now, just set all world bone transforms to identity rotation. Keep translation and scale.
@@ -112,7 +112,7 @@ namespace HaloCE::Mod::Mario::MarioModel {
 
     void updateWeaponPose( uint32_t weaponHandle ) {
         // This is a test, just place all weapon bones at mario's root bone position.
-        auto rec = Halo1::getEntityRecord( weaponHandle );
+        auto rec = Engine::getEntityRecord( weaponHandle );
         if (!rec) return;
         auto entity = rec->entity();
         if (!entity) return;
@@ -132,15 +132,15 @@ namespace HaloCE::Mod::Mario::MarioModel {
         }
         rootBone->pos = leftHandBone.pos + leftHandBone.x * 0.05f + rootBone->z * 0.0125f;
 
-        auto initialInverse = Halo1::inverseWorldTransform(rootBoneInitial);
-        auto relativeTransform = Halo1::multiplyWorldTransforms(
+        auto initialInverse = Engine::inverseWorldTransform(rootBoneInitial);
+        auto relativeTransform = Engine::multiplyWorldTransforms(
             *rootBone,
             initialInverse
         );
         auto boneCount = entity->worldBones.count();
         for (int i = 1; i < boneCount; i++) {
             auto& bone = worldBones[i];
-            bone = Halo1::multiplyWorldTransforms(relativeTransform, bone);
+            bone = Engine::multiplyWorldTransforms(relativeTransform, bone);
         }
 
         // auto boneCount = entity->worldBones.count();
@@ -158,7 +158,7 @@ namespace HaloCE::Mod::Mario::MarioModel {
 
     uint32_t marioHandle  = 0xFFFFFFFF;
 
-    void processEntity(uint32_t entityHandle, Halo1::Entity* entity) {
+    void processEntity(uint32_t entityHandle, Engine::Entity* entity) {
         if (!entity) return;
         if (isMario(entity)) {
             marioHandle = entityHandle;
@@ -170,10 +170,10 @@ namespace HaloCE::Mod::Mario::MarioModel {
 
         // When the Mario entity is far from home, it may not recieve a pose update tick. 
         // In lieu of a cleaner solution, I'm having the playedr update tick also update Mario.
-        auto playerHandle = Halo1::getPlayerHandle();
+        auto playerHandle = Engine::getPlayerHandle();
         if (entityHandle == playerHandle) {
             if (marioHandle != 0xFFFFFFFF) {
-                auto marioRec = Halo1::getEntityRecord( marioHandle );
+                auto marioRec = Engine::getEntityRecord( marioHandle );
                 if (!marioRec) return;
                 auto marioEntity = marioRec->entity();
                 if (!marioEntity) return;
@@ -182,22 +182,22 @@ namespace HaloCE::Mod::Mario::MarioModel {
         }
     }
 
-    void renderEntity(Halo1::RenderEntityRequest *request, Halo1::renderEntity_t renderEntityOriginal) {
+    void renderEntity(Engine::RenderEntityRequest *request, Engine::renderEntity_t renderEntityOriginal) {
         // if (!isMario(request->entityHandle)) return;
 
         auto renderedHandle = request->entityHandle;
-        auto playerHandle = Halo1::getPlayerHandle();
+        auto playerHandle = Engine::getPlayerHandle();
         if (renderedHandle != playerHandle) return;
         
         uint32_t weaponHandle = playerWeaponHandle();
         if (weaponHandle != 0xFFFFFFFF) {
-            Halo1::RenderEntityRequest childRequest = *request;
+            Engine::RenderEntityRequest childRequest = *request;
             childRequest.entityHandle = weaponHandle;
             renderEntityOriginal(&childRequest);
         }
 
         if (marioHandle != 0xFFFFFFFF) {
-            Halo1::RenderEntityRequest marioRequest = *request;
+            Engine::RenderEntityRequest marioRequest = *request;
             marioRequest.entityHandle = marioHandle;
             renderEntityOriginal(&marioRequest);
         }

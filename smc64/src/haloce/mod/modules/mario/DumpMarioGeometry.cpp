@@ -5,7 +5,7 @@
 #include "math/Vectors.hpp"
 #include "MarioSkeleton.hpp"
 
-#include "haloce/halo1/Halo1.hpp"
+#include "engine/halo1.hpp"
 #include "Coordinates.hpp"
 
 namespace HaloCE::Mod::Mario {
@@ -30,7 +30,7 @@ namespace HaloCE::Mod::Mario {
             marioGeometry.numTrianglesUsed = 0;
         }
 
-        auto playerPos = Halo1::getPlayerPosition();
+        auto playerPos = Engine::getPlayerPosition();
         if (playerPos.has_value()) {
             auto pos = playerPos.value();
             // Convert Halo CE coordinates to Super Mario 64 coordinates
