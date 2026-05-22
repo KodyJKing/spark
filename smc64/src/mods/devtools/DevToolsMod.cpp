@@ -5,11 +5,16 @@
 #include "mods/devtools/DevWindow.hpp"
 #include "spark/RenderBuses.hpp"
 #include "hook/Hooks.hpp"
-#include "haloce/mod/Mod.hpp"
+#include "overlay/VectorProfiler.hpp"
 #include "engine/halo1.hpp"
 
 void DevToolsMod::init() {
     using Bus = EventBus<void>;
+
+    UpdateAllEntities::addHandler(modId_, +[](void*, UpdateAllEntities::Cursor next) {
+        Overlay::ESP::VectorProfiler::start(GetCurrentThreadId());
+        next();
+    }, nullptr);
 
     UpdateEntity::addHandler(modId_, +[](void*, UpdateEntity::Cursor next, uint32_t entityHandle) -> uint64_t {
         auto rec = Engine::getEntityRecord(entityHandle);
@@ -38,5 +43,9 @@ void DevToolsMod::init() {
         Mod::DevTools::renderDebugWorld();
         next();
     }, nullptr);
+}
+
+void DevToolsMod::free() {
+    Overlay::ESP::VectorProfiler::stop();
 }
 

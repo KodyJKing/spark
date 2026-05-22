@@ -1,7 +1,7 @@
 #pragma once
 #include "mod/IMod.hpp"
 
-class DevToolsMod : public IMod {
+class MarioMod : public IMod {
 public:
     void init() override;
     void free() override;

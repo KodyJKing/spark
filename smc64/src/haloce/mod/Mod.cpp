@@ -12,44 +12,16 @@
 #include "memory/Memory.hpp"
 #include "engine/halo1.hpp"
 #include "DllMain.hpp"
-#include "modules/mario/Mario.hpp"
 #include "mods/freecam/FreecamMod.hpp"
-#include "overlay/VectorProfiler.hpp"
 #include "hook/Hooks.hpp"
 #include "mod/ModRegistry.hpp"
 #include "mods/devtools/DevToolsMod.hpp"
+#include "mods/mario/MarioMod.hpp"
 
 namespace HaloCE::Mod {
 
     uintptr_t halo1 = 0;
     ModRegistry registry;
-
-    //////////////////////////////////////////////////////////////////
-    // Hook handlers
-
-    void registerHandlers() {
-        UpdateAllEntities::addHandler(0, +[](void* /*ctx*/, UpdateAllEntities::Cursor next) {
-            Overlay::ESP::VectorProfiler::start(GetCurrentThreadId());
-            Mario::update();
-            next();
-        }, nullptr);
-
-        UpdateWorldBones::addHandler(0, +[](void* /*ctx*/, UpdateWorldBones::Cursor next, uint32_t entityHandle) {
-            auto rec = Engine::getEntityRecord(entityHandle);
-            if (!rec) return next(entityHandle);
-            auto entity = rec->entity();
-            if (!entity) return next(entityHandle);
-            next(entityHandle);
-            Mario::MarioModel::processEntity(entityHandle, entity);
-        }, nullptr);
-
-        RenderEntity::addHandler(0, +[](void* /*ctx*/, RenderEntity::Cursor next, Engine::RenderEntityRequest* request) {
-            next(request);
-            Mario::MarioModel::renderEntity(request, RenderEntity::original);
-        }, nullptr);
-    }
-
-    //////////////////////////////////////////////////////////////////
 
     bool isInstalled = false;
 
@@ -62,11 +34,10 @@ namespace HaloCE::Mod {
         halo1 = (uintptr_t) Utils::waitForModule(moduleName);
         std::cout << moduleName << ": " << (void*) halo1 << std::endl;
 
-        registerHandlers();
         registry.add(std::make_unique<FreecamMod>());
         registry.add(std::make_unique<DevToolsMod>());
+        registry.add(std::make_unique<MarioMod>());
         registry.initAll(halo1);
-        Mario::init();
 
         std::cout << "Mod installed." << std::endl;
     }
@@ -75,10 +46,6 @@ namespace HaloCE::Mod {
         if (!isInstalled)
             return;
         isInstalled = false;
-
-        Mario::free();
-
-        Overlay::ESP::VectorProfiler::stop();
 
         registry.freeAll();
 

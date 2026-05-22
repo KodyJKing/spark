@@ -3,7 +3,6 @@
 #include "overlay/ESP.hpp"
 #include "halomcc/HaloMCC.hpp"
 #include "memory/Memory.hpp"
-#include "haloce/mod/modules/mario/Mario.hpp"
 #include "overlay/VectorProfiler.hpp"
 #include "mods/devtools/DrawEntityCollision.hpp"
 #include "mods/devtools/DrawBones.hpp"
@@ -39,7 +38,6 @@ namespace Mod::DevTools {
         if (ImGui::IsKeyPressed(ImGuiKey_F7, false)) view.renderBsp = !view.renderBsp;
         if (view.renderBsp) renderESP_BSP();
 
-        HaloCE::Mod::Mario::debugRender(); // Todo: Move into Mario mod when that is implemented.
         Overlay::ESP::VectorProfiler::render();
     }
 

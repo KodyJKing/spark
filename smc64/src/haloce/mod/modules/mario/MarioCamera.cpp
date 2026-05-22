@@ -34,14 +34,14 @@ namespace HaloCE::Mod::Mario::MarioCamera {
         active = false;
     }
 
-    void registerHandlers() {
-        RenderFPVModel::addHandler(0, +[](void* /*ctx*/, RenderFPVModel::Cursor next) {
+    void registerHandlers(ModId modId) {
+        RenderFPVModel::addHandler(modId, +[](void* /*ctx*/, RenderFPVModel::Cursor next) {
             if (active) return;
             next();
         }, nullptr, 10);
 
         // Suppress walk input when Mario is possessing the player.
-        UpdatePlayerControls::addHandler(0, +[](void* /*ctx*/, UpdatePlayerControls::Cursor next, float* param_1, float* param_2) {
+        UpdatePlayerControls::addHandler(modId, +[](void* /*ctx*/, UpdatePlayerControls::Cursor next, float* param_1, float* param_2) {
             if (!active) {
                 next(param_1, param_2);
                 return;
@@ -56,7 +56,7 @@ namespace HaloCE::Mod::Mario::MarioCamera {
         }, nullptr, 10);
 
         // Override camera position with Mario's interpolated position.
-        UpdateCamera::addHandler(0, +[](void* /*ctx*/, UpdateCamera::Cursor next, float unknown) {
+        UpdateCamera::addHandler(modId, +[](void* /*ctx*/, UpdateCamera::Cursor next, float unknown) {
             next(unknown);
             if (!active) return;
             auto camera = Engine::getPlayerCameraPointer();

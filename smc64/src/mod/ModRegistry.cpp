@@ -26,6 +26,12 @@ void ModRegistry::freeAll() {
     for (auto& mod : mods_)
         Spark::unregisterHookHandlers(mod->modId_);
     Spark::uninstallAllHooks();
+
+    // Clear render phase handlers
+    Spark::onRenderDebugUI.clear();
+    Spark::onRenderDebugWorld.clear();
+    Spark::onRenderPauseMenuTabs.clear();
+
     mods_.clear();
     initialized_ = false;
 }

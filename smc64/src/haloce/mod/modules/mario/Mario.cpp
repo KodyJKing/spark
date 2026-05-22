@@ -129,7 +129,7 @@ namespace HaloCE::Mod::Mario {
 
     // Public:
     
-    void init() {
+    void init(ModId modId) {
         #ifdef ENABLE_MARIO
         // Get location of host exe file using Windows API
         char path[MAX_PATH];
@@ -155,9 +155,9 @@ namespace HaloCE::Mod::Mario {
         initTestLevel();
         initMario();
 
-        ThirdPersonFix::registerHandlers();
-        MarioPickingFix::registerHandlers();
-        MarioCamera::registerHandlers();
+        ThirdPersonFix::registerHandlers(modId);
+        MarioPickingFix::registerHandlers(modId);
+        MarioCamera::registerHandlers(modId);
         #endif
     }
 
