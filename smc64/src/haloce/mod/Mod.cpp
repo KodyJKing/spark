@@ -81,69 +81,6 @@ namespace HaloCE::Mod {
         Mario::MarioModel::processEntity( entityHandle, entity );
     }
 
-    typedef void (*damageEntity_t)(uint32_t entityHandle, uint16_t param_2, uint16_t param_3, uint64_t param_4, uint8_t* param_5, void* param_6, uint64_t param_7, uint64_t param_8, uint32_t* param_9, float* param_10, uint32_t* param_11, float damage, char param_13);
-    damageEntity_t originalDamageEntity = nullptr;
-    //
-    void hkDamageEntity(uint32_t entityHandle, uint16_t param_2, uint16_t param_3, uint64_t param_4, uint8_t* param_5, void* param_6, uint64_t param_7, uint64_t param_8, uint32_t* param_9, float* param_10, uint32_t* param_11, float damage, char param_13) {
-        UnloadLock lock; // No unloading while we're still executing hook code.
-        
-        if (!settings.enableTimeScale)
-            return originalDamageEntity(entityHandle, param_2, param_3, param_4, param_5, param_6, param_7, param_8, param_9, param_10, param_11, damage, param_13);
-        
-        auto rec = Halo1::getEntityRecord( entityHandle );
-        if (!rec)
-            return originalDamageEntity(entityHandle, param_2, param_3, param_4, param_5, param_6, param_7, param_8, param_9, param_10, param_11, damage, param_13);
-
-        if (rec->typeId == Halo1::TypeID_Player)
-            damage *= settings.playerDamageScale;
-        else
-            damage *= settings.npcDamageScale;
-
-
-        float oldHealth = 0.0f;
-        if (rec->entity())
-            oldHealth = rec->entity()->health;
-
-        originalDamageEntity(entityHandle, param_2, param_3, param_4, param_5, param_6, param_7, param_8, param_9, param_10, param_11, damage, param_13);
-
-        float newHealth = 0.0f;
-        if (rec->entity())
-            newHealth = rec->entity()->health;
-        
-        if (newHealth <= 0.0 && oldHealth > 0.0) {
-            std::cout << "Entity " << entityHandle << " died." << std::endl;
-        }
-    }
-
-    typedef float(*getShieldDamageResist_t)(uint32_t entityHandle, bool useExtraScalar);
-    getShieldDamageResist_t originalGetShieldDamageResist = nullptr;
-    //
-    float hkGetShieldDamageResist(uint32_t entityHandle, bool useExtraScalar) {
-        UnloadLock lock; // No unloading while we're still executing hook code.
-
-        auto rec = Halo1::getEntityRecord( entityHandle );
-        if (!rec)
-            return originalGetShieldDamageResist(entityHandle, useExtraScalar);
-
-        float result = originalGetShieldDamageResist(entityHandle, useExtraScalar);
-        if (rec->typeId == Halo1::TypeID_Player)
-            result /= settings.playerDamageScale;
-        else
-            result /= settings.npcDamageScale;
-
-        return result;
-    }
-
-    // updateActor updates AIs.
-    typedef void (*updateActor)(uint64_t actorHandle);
-    updateActor originalUpdateActor = nullptr;
-    //
-    void hkUpdateActor(uint64_t actorHandle) {
-        UnloadLock lock; // No unloading while we're still executing hook code.
-        // ...
-        originalUpdateActor(actorHandle);
-    }
-
     // renderEntity
     Halo1::renderEntity_t originalRenderEntity = nullptr;
     void hkRenderEntity(Halo1::RenderEntityRequest* request) {
