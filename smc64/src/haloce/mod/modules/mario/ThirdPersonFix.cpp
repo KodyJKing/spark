@@ -3,6 +3,21 @@
 
 namespace HaloCE::Mod::ThirdPersonFix {
 
+    typedef void (*updateFlareTransform)(uint32_t flareHandle);
+    updateFlareTransform originalUpdateFlareTransform = nullptr;
+    void hkUpdateFlareTransform(uint32_t flareHandle) {
+        UnloadLock lock;
+
+        auto entry = Halo1::getFlareEntry(flareHandle);
+        if (entry && entry->mountEntityHandle != NULL_HANDLE) {
+            if (entry->mountEntityHandle == Halo1::getHeldWeaponHandle()) {
+                return;
+            }
+        }
+
+        originalUpdateFlareTransform(flareHandle);
+    }
+
     typedef uint32_t (*spawnProjectile)(Halo1::ProjectileSpawnArgs* options, uint32_t flags);
     spawnProjectile originalSpawnProjectile = nullptr;
     uint32_t hkSpawnProjectile(Halo1::ProjectileSpawnArgs* options, uint32_t flags) {
@@ -42,12 +57,14 @@ namespace HaloCE::Mod::ThirdPersonFix {
     }
 
     void init(uintptr_t halo1) {
+        // Hook flare transform to suppress flares on player-held weapons (they render in the wrong place in third-person view)
+        HOOK_FUNC( UpdateFlareTransform, 0xBE7D70U );
         // Hook projectile spawn function
         HOOK_FUNC( SpawnProjectile, 0xB35FD4U );
     }
 
     void free() {
-        // Unhook projectile spawn function
+        MH_RemoveHook( (void*) originalUpdateFlareTransform );
         MH_RemoveHook( (void*) originalSpawnProjectile );
     }
 

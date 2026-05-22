@@ -20,6 +20,12 @@ namespace Halo1 {
     uint32_t getPlayerHandle() { return *(uint32_t*) ( dllBase() + 0x1C563F0U ); }
     PlayerController* getPlayerControllerPointer() { return * (PlayerController**) ( dllBase() + 0x2D8FE70U ); }
 
+    uint32_t getHeldWeaponHandle() {
+        auto playerEntity = getPlayerEntity();
+        if (!playerEntity) return 0xFFFFFFFF;
+        return playerEntity->childHandle;
+    }
+
     EntityRecord* getPlayerRecord() {
         auto rec = getEntityRecord( getPlayerHandle() );
         if ( !rec || !rec->entity() )

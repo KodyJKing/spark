@@ -6,6 +6,7 @@
 #include "math.hpp"
 #include "tag.hpp"
 #include "entity/index.hpp"
+#include "flares/index.hpp"
 #include "camera.hpp"
 #include "player.hpp"
 #include "map.hpp"

@@ -37,8 +37,9 @@ namespace Halo1 {
     CameraController *getPlayerCameraControllerPointer();
     void enterThirdPerson();
     uint32_t getPlayerHandle();
+    uint32_t getHeldWeaponHandle();
     PlayerController * getPlayerControllerPointer();
-    
+
     EntityRecord* getPlayerRecord();
     Entity *getPlayerEntity();
     std::optional<Vec3> getPlayerPosition();
