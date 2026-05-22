@@ -1,35 +1,50 @@
 #pragma once
 
 #include <vector>
-#include <functional>
 #include <algorithm>
 #include <cstddef>
 #include <shared_mutex>
 #include "mod/ModId.hpp"
 
 // Pure middleware dispatch — no MinHook coupling.
-// Handlers form an ordered chain; each receives a `next` continuation.
+// Handlers are raw function pointers + void* context (C-ABI-safe, no heap per dispatch).
+// Captureless lambdas convert implicitly; use + to force the conversion at the call site.
 // Lower priority value = outermost (runs first). Default priority = 0.
 template<typename Ret, typename... Args>
 struct EventBus {
-    using Next     = std::function<Ret(Args...)>;
-    using Handler  = std::function<Ret(Next, Args...)>;
-    using Terminal = std::function<Ret(Args...)>;
+    struct Cursor;
+    using TerminalFn = Ret(*)(void* ctx, Args...);
+    using AdvanceFn  = Ret(*)(Cursor self, Args...);
+    using HandlerFn  = Ret(*)(void* ctx, Cursor next, Args...);
+
+    // Lightweight value type passed to each handler as its `next` continuation.
+    // Trivially copyable; no heap allocation. `advance` is set at dispatch time
+    // and always refers to the owning DLL's instantiation.
+    struct Cursor {
+        AdvanceFn  advance;
+        void*      busData;
+        size_t     index;
+        TerminalFn termFn;
+        void*      termCtx;
+
+        Ret operator()(Args... args) const { return advance(*this, args...); }
+    };
 
     struct Entry {
-        ModId   owner;
-        int     priority;
-        Handler handler;
+        ModId     owner;
+        int       priority;
+        HandlerFn fn;
+        void*     ctx;
     };
 
     std::vector<Entry> handlers;
     std::shared_mutex  handlersMutex;
 
-    void addHandler(ModId owner, Handler h, int priority = 0) {
+    void addHandler(ModId owner, HandlerFn fn, void* ctx, int priority = 0) {
         std::unique_lock lock(handlersMutex);
         auto it = std::lower_bound(handlers.begin(), handlers.end(), priority,
             [](const Entry& e, int p) { return e.priority < p; });
-        handlers.insert(it, { owner, priority, std::move(h) });
+        handlers.insert(it, { owner, priority, fn, ctx });
     }
 
     void unregisterHandlers(ModId owner) {
@@ -45,19 +60,21 @@ struct EventBus {
         handlers.clear();
     }
 
-    // Dispatch through the handler chain; `terminal` is called when the chain is exhausted.
-    Ret dispatch(Terminal terminal, Args... args) {
+    // Dispatch through the handler chain; `termFn(termCtx, args...)` is called when exhausted.
+    Ret dispatch(TerminalFn termFn, void* termCtx, Args... args) {
         std::shared_lock slock(handlersMutex);
-        return dispatchImpl(0, terminal, args...);
+        Cursor cursor { &EventBus::doAdvance, this, 0, termFn, termCtx };
+        return doAdvance(cursor, args...);
     }
 
 private:
-    Ret dispatchImpl(size_t index, const Terminal& terminal, Args... args) {
-        if (index >= handlers.size())
-            return terminal(args...);
-        Next next = [this, index, &terminal](Args... a) {
-            return dispatchImpl(index + 1, terminal, a...);
-        };
-        return handlers[index].handler(next, args...);
+    static Ret doAdvance(Cursor cursor, Args... args) {
+        auto* self = static_cast<EventBus*>(cursor.busData);
+        if (cursor.index >= self->handlers.size())
+            return cursor.termFn(cursor.termCtx, args...);
+        const auto& e = self->handlers[cursor.index];
+        Cursor next = cursor;
+        next.index++;
+        return e.fn(e.ctx, next, args...);
     }
 };

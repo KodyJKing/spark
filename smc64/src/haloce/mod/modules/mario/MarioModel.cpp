@@ -169,7 +169,7 @@ namespace HaloCE::Mod::Mario::MarioModel {
         }
 
         // When the Mario entity is far from home, it may not recieve a pose update tick. 
-        // In lieu of a cleaner solution, I'm having the playedr update tick also update Mario.
+        // In lieu of a cleaner solution, I'm having the player update tick also update Mario.
         auto playerHandle = Engine::getPlayerHandle();
         if (entityHandle == playerHandle) {
             if (marioHandle != 0xFFFFFFFF) {

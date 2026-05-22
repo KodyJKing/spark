@@ -50,13 +50,14 @@ static void updateKeyboardControls(Engine::Camera* camera) {
 }
 
 void FreecamMod::init() {
-    RenderFPVModel::addHandler(modId_, [this](RenderFPVModel::Next next) {
-        if (enabled_) return;
+    RenderFPVModel::addHandler(modId_, +[](void* ctx, RenderFPVModel::Cursor next) {
+        if (static_cast<FreecamMod*>(ctx)->enabled_) return;
         next();
-    });
+    }, this);
 
-    UpdatePlayerControls::addHandler(modId_, [this](UpdatePlayerControls::Next next, float* param_1, float* param_2) {
-        if (!enabled_) {
+    UpdatePlayerControls::addHandler(modId_, +[](void* ctx, UpdatePlayerControls::Cursor next, float* param_1, float* param_2) {
+        auto* self = static_cast<FreecamMod*>(ctx);
+        if (!self->enabled_) {
             next(param_1, param_2);
             return;
         }
@@ -69,22 +70,23 @@ void FreecamMod::init() {
         playerController->actions = 0;
         next(param_1, param_2);
         *playerController = pc;
-    });
+    }, this);
 
-    UpdateCamera::addHandler(modId_, [this](UpdateCamera::Next next, float unknown) {
-        if (!enabled_)               return next(unknown);
+    UpdateCamera::addHandler(modId_, +[](void* ctx, UpdateCamera::Cursor next, float unknown) {
+        auto* self = static_cast<FreecamMod*>(ctx);
+        if (!self->enabled_)         return next(unknown);
         auto camera       = Engine::getPlayerCameraPointer();
         bool camAllocated = camera && Memory::isAllocated(camera);
         Vec3 camPos       = {0, 0, 0};
         if (camAllocated) camPos = camera->pos;
         next(unknown);
         if (camAllocated) camera->pos = camPos;
-    });
+    }, this);
 
-    UpdateAllEntities::addHandler(modId_, [this](UpdateAllEntities::Next next) {
-        update();
+    UpdateAllEntities::addHandler(modId_, +[](void* ctx, UpdateAllEntities::Cursor next) {
+        static_cast<FreecamMod*>(ctx)->update();
         next();
-    });
+    }, this);
 }
 
 void FreecamMod::update() {

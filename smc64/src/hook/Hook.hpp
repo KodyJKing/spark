@@ -9,15 +9,15 @@ template<uintptr_t Offset, typename Ret, typename... Args>
 struct Hook {
     using Bus     = EventBus<Ret, Args...>;
     using Fn      = Ret(*)(Args...);
-    using Handler = typename Bus::Handler;
-    using Next    = typename Bus::Next;
+    using Cursor  = typename Bus::Cursor;
+    using Handler = typename Bus::HandlerFn;
 
     inline static Bus       bus;
     inline static Fn        original = nullptr;
     inline static uintptr_t base     = 0;
 
-    static void addHandler(ModId owner, Handler h, int priority = 0) {
-        bus.addHandler(owner, std::move(h), priority);
+    static void addHandler(ModId owner, Handler fn, void* ctx, int priority = 0) {
+        bus.addHandler(owner, fn, ctx, priority);
     }
 
     static void unregisterHandlers(ModId owner) {
@@ -40,8 +40,13 @@ struct Hook {
     }
 
 private:
+    // Passes &original (an object pointer) as ctx — avoids fn-ptr → void* cast.
+    static Ret terminalShim(void* ctx, Args... args) {
+        return (*static_cast<Fn*>(ctx))(args...);
+    }
+
     static Ret detour(Args... args) {
         UnloadLock ulock;
-        return bus.dispatch(original, args...);
+        return bus.dispatch(terminalShim, &original, args...);
     }
 };

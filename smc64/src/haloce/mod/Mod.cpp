@@ -27,13 +27,13 @@ namespace HaloCE::Mod {
     // Hook handlers
 
     void registerHandlers() {
-        UpdateAllEntities::addHandler(0, [](UpdateAllEntities::Next next) {
+        UpdateAllEntities::addHandler(0, +[](void* /*ctx*/, UpdateAllEntities::Cursor next) {
             Overlay::ESP::VectorProfiler::start(GetCurrentThreadId());
             Mario::update();
             next();
-        });
+        }, nullptr);
 
-        UpdateEntity::addHandler(0, [](UpdateEntity::Next next, uint32_t entityHandle) -> uint64_t {
+        UpdateEntity::addHandler(0, +[](void* /*ctx*/, UpdateEntity::Cursor next, uint32_t entityHandle) -> uint64_t {
             auto rec = Engine::getEntityRecord(entityHandle);
             if (!rec) return next(entityHandle);
             auto entity = rec->entity();
@@ -43,21 +43,21 @@ namespace HaloCE::Mod {
                 if (playerRec && rec->id != playerRec->id) return 0;
             }
             return next(entityHandle);
-        });
+        }, nullptr);
 
-        UpdateWorldBones::addHandler(0, [](UpdateWorldBones::Next next, uint32_t entityHandle) {
+        UpdateWorldBones::addHandler(0, +[](void* /*ctx*/, UpdateWorldBones::Cursor next, uint32_t entityHandle) {
             auto rec = Engine::getEntityRecord(entityHandle);
             if (!rec) return next(entityHandle);
             auto entity = rec->entity();
             if (!entity) return next(entityHandle);
             next(entityHandle);
             Mario::MarioModel::processEntity(entityHandle, entity);
-        });
+        }, nullptr);
 
-        RenderEntity::addHandler(0, [](RenderEntity::Next next, Engine::RenderEntityRequest* request) {
+        RenderEntity::addHandler(0, +[](void* /*ctx*/, RenderEntity::Cursor next, Engine::RenderEntityRequest* request) {
             next(request);
             Mario::MarioModel::renderEntity(request, RenderEntity::original);
-        });
+        }, nullptr);
     }
 
     //////////////////////////////////////////////////////////////////
