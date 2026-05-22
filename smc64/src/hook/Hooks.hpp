@@ -8,7 +8,7 @@
 #include "hooks.def"
 #undef HOOK
 
-namespace SparkLoader {
+namespace Spark {
 
     inline void installAllHooks(uintptr_t base) {
         #define HOOK(Name, ...) Name::install(base);

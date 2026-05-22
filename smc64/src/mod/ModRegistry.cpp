@@ -15,7 +15,7 @@ void ModRegistry::add(std::unique_ptr<IMod> mod) {
 void ModRegistry::initAll(uintptr_t base) {
     base_ = base;
     initialized_ = true;
-    SparkLoader::installAllHooks(base_);
+    Spark::installAllHooks(base_);
     for (auto& mod : mods_)
         mod->init();
 }
@@ -24,8 +24,8 @@ void ModRegistry::freeAll() {
     for (int i = (int)mods_.size() - 1; i >= 0; --i)
         mods_[i]->free();
     for (auto& mod : mods_)
-        SparkLoader::unregisterAll(mod->modId_);
-    SparkLoader::uninstallAllHooks();
+        Spark::unregisterAll(mod->modId_);
+    Spark::uninstallAllHooks();
     mods_.clear();
     initialized_ = false;
 }
@@ -41,6 +41,6 @@ void ModRegistry::unload(IMod* target) {
         [target](const std::unique_ptr<IMod>& m) { return m.get() == target; });
     if (it == mods_.end()) return;
     (*it)->free();
-    SparkLoader::unregisterAll((*it)->modId_);
+    Spark::unregisterAll((*it)->modId_);
     mods_.erase(it);
 }
