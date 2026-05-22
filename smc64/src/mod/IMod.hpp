@@ -1,5 +1,5 @@
 #pragma once
-#include "hook/ModId.hpp"
+#include "mod/ModId.hpp"
 
 class ModRegistry;
 

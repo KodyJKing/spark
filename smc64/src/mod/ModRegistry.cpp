@@ -24,7 +24,7 @@ void ModRegistry::freeAll() {
     for (int i = (int)mods_.size() - 1; i >= 0; --i)
         mods_[i]->free();
     for (auto& mod : mods_)
-        Spark::unregisterAll(mod->modId_);
+        Spark::unregisterAllHooksForMod(mod->modId_);
     Spark::uninstallAllHooks();
     mods_.clear();
     initialized_ = false;
@@ -41,6 +41,6 @@ void ModRegistry::unload(IMod* target) {
         [target](const std::unique_ptr<IMod>& m) { return m.get() == target; });
     if (it == mods_.end()) return;
     (*it)->free();
-    Spark::unregisterAll((*it)->modId_);
+    Spark::unregisterAllHooksForMod((*it)->modId_);
     mods_.erase(it);
 }

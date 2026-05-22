@@ -8,7 +8,7 @@
 #include <shared_mutex>
 #include "MinHook.h"
 #include "utils/UnloadLock.hpp"
-#include "hook/ModId.hpp"
+#include "mod/ModId.hpp"
 
 template<uintptr_t Offset, typename Ret, typename... Args>
 struct Hook {
@@ -35,7 +35,7 @@ struct Hook {
         handlers.insert(it, { owner, priority, std::move(h) });
     }
 
-    static void unregisterAll(ModId owner) {
+    static void unregisterAllHooksForMod(ModId owner) {
         std::unique_lock lock(handlersMutex);
         handlers.erase(
             std::remove_if(handlers.begin(), handlers.end(),
