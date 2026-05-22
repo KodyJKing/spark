@@ -13,7 +13,7 @@
 #include "engine/halo1.hpp"
 #include "DllMain.hpp"
 #include "modules/mario/Mario.hpp"
-#include "modules/freecam.hpp"
+#include "mods/freecam/FreecamMod.hpp"
 #include "overlay/VectorProfiler.hpp"
 #include "hook/Hooks.hpp"
 #include "mod/ModRegistry.hpp"
@@ -29,7 +29,6 @@ namespace HaloCE::Mod {
     void registerHandlers() {
         UpdateAllEntities::addHandler(0, [](UpdateAllEntities::Next next) {
             Overlay::ESP::VectorProfiler::start(GetCurrentThreadId());
-            Freecam::update();
             Mario::update();
             next();
         });
@@ -78,7 +77,7 @@ namespace HaloCE::Mod {
         std::cout << moduleName << ": " << (void*) halo1 << std::endl;
 
         registerHandlers();
-        Freecam::registerHandlers();
+        registry.add(std::make_unique<FreecamMod>());
         registry.initAll(halo1);
         Mario::init();
 
