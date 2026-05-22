@@ -1,27 +1,13 @@
 #include <Windows.h>
-#include "DllMain.hpp"
 #include <iostream>
 #include <filesystem>
 #include "utils/Console.hpp"
 #include "utils/UnloadLock.hpp"
 #include "utils/Utils.hpp"
-#include "haloce/mod/Mod.hpp"
+#include "spark/Spark.hpp"
+#include "spark/SparkHost.hpp"
 #include "MinHook.h"
 #include "overlay/Overlay.hpp"
-
-namespace ModHost {
-    bool bReinit = false;
-    bool bExit = false;
-    void reinitialize() {
-        std::cout << "Reinitializing..." << std::endl;
-        bReinit = true;
-    }
-    void exit() {
-        std::cout << "Exiting..." << std::endl;
-        bExit = true;
-    }
-}
-
 
 // MainThread
 DWORD WINAPI MainThread(LPVOID _hModule) {
@@ -36,32 +22,32 @@ DWORD WINAPI MainThread(LPVOID _hModule) {
     }
 
     do {
-        ModHost::bReinit = false;
+        SparkHost::bReinit = false;
         
         MH_Initialize();
         Overlay::init();
         
-        while (!ModHost::bExit && !ModHost::bReinit) {
+        while (!SparkHost::bExit && !SparkHost::bReinit) {
             if (GetAsyncKeyState(VK_F8) & 1)
                 Console::toggleConsole();
             if ( Utils::isInjected() && (GetAsyncKeyState(VK_F9) & 1) ) { // Only allow uninjecting if the mod was injected.
-                ModHost::exit();
+                SparkHost::exit();
                 break;
             }
-            // if (GetAsyncKeyState(VK_F10) & 1) {
-            //     ModHost::reinitialize();
-            //     break;
-            // }
-            HaloCE::Mod::modThreadUpdate();
+            if (GetAsyncKeyState(VK_F10) & 1) {
+                SparkHost::reinitialize();
+                break;
+            }
+            Spark::modThreadUpdate();
             Sleep(1000 / 60);
         }
         
         waitForSafeUnload();
-        HaloCE::Mod::free();
+        Spark::free();
         Overlay::free();
         MH_Uninitialize();
         
-    } while (ModHost::bReinit);
+    } while (SparkHost::bReinit);
 
 
     waitForSafeUnload();

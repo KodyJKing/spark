@@ -107,7 +107,7 @@ namespace Overlay {
     void render() {
         UnloadLock lock; // Prevent unloading while rendering
 
-        if (ModHost::bExit)
+        if (SparkHost::bExit)
             return;
 
         bool paused = HaloMCC::isPauseMenuOpen();
