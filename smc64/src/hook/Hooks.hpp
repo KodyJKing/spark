@@ -22,4 +22,10 @@ namespace SparkLoader {
         #undef HOOK
     }
 
+    inline void unregisterAll(ModId owner) {
+        #define HOOK(Name, ...) Name::unregisterAll(owner);
+        #include "hooks.def"
+        #undef HOOK
+    }
+
 }

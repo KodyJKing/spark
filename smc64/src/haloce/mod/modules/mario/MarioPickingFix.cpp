@@ -7,7 +7,7 @@
 namespace HaloCE::Mod::Mario::MarioPickingFix {
 
     void registerHandlers() {
-        TryPickInteractable::addHandler([](TryPickInteractable::Next next, uint16_t p1, int16_t p2, uint32_t candidateEntityHandle, int16_t p4) {
+        TryPickInteractable::addHandler(0, [](TryPickInteractable::Next next, uint16_t p1, int16_t p2, uint32_t candidateEntityHandle, int16_t p4) {
             if (MarioModel::isMario(candidateEntityHandle)) {
                 return; // Suppress picking for the Mario model.
             }

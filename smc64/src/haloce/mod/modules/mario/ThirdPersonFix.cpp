@@ -6,7 +6,7 @@ namespace HaloCE::Mod::ThirdPersonFix {
 
     void registerHandlers() {
         // Suppress flares on player-held weapons (they render in the wrong place in third-person view)
-        UpdateFlareTransform::addHandler([](UpdateFlareTransform::Next next, uint32_t flareHandle) {
+        UpdateFlareTransform::addHandler(0, [](UpdateFlareTransform::Next next, uint32_t flareHandle) {
             auto entry = Halo1::getFlareEntry(flareHandle);
             if (entry && entry->mountEntityHandle != NULL_HANDLE) {
                 if (entry->mountEntityHandle == Halo1::getHeldWeaponHandle()) {
@@ -16,7 +16,7 @@ namespace HaloCE::Mod::ThirdPersonFix {
             next(flareHandle);
         });
 
-        SpawnProjectile::addHandler([](SpawnProjectile::Next next, Halo1::ProjectileSpawnArgs* options, uint32_t flags) -> uint32_t {
+        SpawnProjectile::addHandler(0, [](SpawnProjectile::Next next, Halo1::ProjectileSpawnArgs* options, uint32_t flags) -> uint32_t {
             if (options->ownerEntityHandle != Halo1::getPlayerHandle()) {
                 return next(options, flags);
             }

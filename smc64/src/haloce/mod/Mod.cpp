@@ -25,14 +25,14 @@ namespace HaloCE::Mod {
     // Hook handlers
 
     void registerHandlers() {
-        UpdateAllEntities::addHandler([](UpdateAllEntities::Next next) {
+        UpdateAllEntities::addHandler(0, [](UpdateAllEntities::Next next) {
             Overlay::ESP::VectorProfiler::start(GetCurrentThreadId());
             Freecam::update();
             Mario::update();
             next();
         });
 
-        UpdateEntity::addHandler([](UpdateEntity::Next next, uint32_t entityHandle) -> uint64_t {
+        UpdateEntity::addHandler(0, [](UpdateEntity::Next next, uint32_t entityHandle) -> uint64_t {
             auto rec = Halo1::getEntityRecord(entityHandle);
             if (!rec) return next(entityHandle);
             auto entity = rec->entity();
@@ -44,7 +44,7 @@ namespace HaloCE::Mod {
             return next(entityHandle);
         });
 
-        UpdateWorldBones::addHandler([](UpdateWorldBones::Next next, uint32_t entityHandle) {
+        UpdateWorldBones::addHandler(0, [](UpdateWorldBones::Next next, uint32_t entityHandle) {
             auto rec = Halo1::getEntityRecord(entityHandle);
             if (!rec) return next(entityHandle);
             auto entity = rec->entity();
@@ -53,7 +53,7 @@ namespace HaloCE::Mod {
             Mario::MarioModel::processEntity(entityHandle, entity);
         });
 
-        RenderEntity::addHandler([](RenderEntity::Next next, Halo1::RenderEntityRequest* request) {
+        RenderEntity::addHandler(0, [](RenderEntity::Next next, Halo1::RenderEntityRequest* request) {
             if (GetAsyncKeyState(VK_F10)) {
                 return next(request);
             }

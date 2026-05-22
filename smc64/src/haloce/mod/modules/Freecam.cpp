@@ -13,13 +13,13 @@ namespace HaloCE::Freecam {
     }
 
     void registerHandlers() {
-        RenderFPVModel::addHandler([](RenderFPVModel::Next next) {
+        RenderFPVModel::addHandler(0, [](RenderFPVModel::Next next) {
             if (isEnabled()) return;
             next();
         });
 
         // void updatePlayerControls(undefined4 *param_1, undefined4 *param_2)
-        UpdatePlayerControls::addHandler([](UpdatePlayerControls::Next next, float* param_1, float* param_2) {
+        UpdatePlayerControls::addHandler(0, [](UpdatePlayerControls::Next next, float* param_1, float* param_2) {
             if (!isEnabled()) {
                 next(param_1, param_2);
                 return;
@@ -39,7 +39,7 @@ namespace HaloCE::Freecam {
         });
 
         // Slight misnomer: This function updates *all* cameras, not a single camera.
-        UpdateCamera::addHandler([](UpdateCamera::Next next, float unknown) {
+        UpdateCamera::addHandler(0, [](UpdateCamera::Next next, float unknown) {
             if (GetAsyncKeyState(VK_F10)) {
                 return next(unknown);
             }
