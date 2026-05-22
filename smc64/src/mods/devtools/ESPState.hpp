@@ -42,4 +42,6 @@ namespace Mod::DevTools {
     inline ESPSettings espSettings = {};
     inline View view = {};
 
+    inline bool freezeTime = false;
+
 } // namespace Mod::DevTools

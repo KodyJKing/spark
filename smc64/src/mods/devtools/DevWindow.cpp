@@ -13,17 +13,11 @@ namespace Mod::DevTools {
 
     void checkHotKeys() {
         if (ImGui::IsKeyPressed(ImGuiKey_F2, false))
-            HaloCE::Mod::settings.freezeTime = !HaloCE::Mod::settings.freezeTime;
-    }
-
-    void settingsTab() {
-        ImGui::SeparatorText("Damage Scale");
-        ImGui::SliderFloat("Player", &HaloCE::Mod::settings.playerDamageScale, 0.0f, 5.0f, "%.1f");
-        ImGui::SliderFloat("NPC",    &HaloCE::Mod::settings.npcDamageScale,    0.0f, 5.0f, "%.1f");
+            Mod::DevTools::freezeTime = !Mod::DevTools::freezeTime;
     }
 
     void devTab() {
-        ImGui::Checkbox("Freeze Time", &HaloCE::Mod::settings.freezeTime);
+        ImGui::Checkbox("Freeze Time", &Mod::DevTools::freezeTime);
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("Toggle freezing of in-game time. (F2)");
 
         if (ImGui::CollapsingHeader("Tools")) {
@@ -104,10 +98,6 @@ namespace Mod::DevTools {
     }
 
     void renderPauseMenuTabs() {
-        if (ImGui::BeginTabItem("Settings")) {
-            settingsTab();
-            ImGui::EndTabItem();
-        }
         if (ImGui::BeginTabItem("Dev")) {
             devTab();
             ImGui::EndTabItem();

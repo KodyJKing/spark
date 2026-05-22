@@ -16,7 +16,7 @@ void DevToolsMod::init() {
         if (!rec) return next(entityHandle);
         auto entity = rec->entity();
         if (!entity) return next(entityHandle);
-        if (HaloCE::Mod::settings.freezeTime) {
+        if (Mod::DevTools::freezeTime) {
             auto playerRec = Engine::getPlayerRecord();
             if (playerRec && rec->id != playerRec->id) return 0;
         }
