@@ -7,7 +7,7 @@
 #include "spark/Spark.hpp"
 #include "spark/SparkHost.hpp"
 #include "MinHook.h"
-#include "overlay/Overlay.hpp"
+#include "spark/overlay/Overlay.hpp"
 
 // MainThread
 DWORD WINAPI MainThread(LPVOID _hModule) {
@@ -25,7 +25,7 @@ DWORD WINAPI MainThread(LPVOID _hModule) {
         SparkHost::bReinit = false;
         
         MH_Initialize();
-        Overlay::init();
+        Spark::Overlay::init();
         
         while (!SparkHost::bExit && !SparkHost::bReinit) {
             if (GetAsyncKeyState(VK_F8) & 1)
@@ -44,7 +44,7 @@ DWORD WINAPI MainThread(LPVOID _hModule) {
         
         waitForSafeUnload();
         Spark::free();
-        Overlay::free();
+        Spark::Overlay::free();
         MH_Uninitialize();
         
     } while (SparkHost::bReinit);

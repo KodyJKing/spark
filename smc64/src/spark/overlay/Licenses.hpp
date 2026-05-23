@@ -5,7 +5,7 @@
       \n   ->   \\n\\\n
 */
 
-namespace Licenses {
+namespace Spark::Licenses {
 
 const char* imGui = 
 "The MIT License (MIT)\n\

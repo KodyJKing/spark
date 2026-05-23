@@ -1,7 +1,7 @@
 #pragma once
 #include <Windows.h>
 
-namespace Overlay {
+namespace Spark::Overlay {
         HWND getGameWindow();
         void initializeContext(HWND targetWindow);
         void render();

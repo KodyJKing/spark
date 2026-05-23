@@ -5,14 +5,14 @@
 #include "mods/devtools/DevWindow.hpp"
 #include "spark/RenderBuses.hpp"
 #include "spark/hook/Hooks.hpp"
-#include "overlay/VectorProfiler.hpp"
+#include "mods/devtools/VectorProfiler.hpp"
 #include "engine/halo1.hpp"
 
 void DevToolsMod::init() {
     using Bus = Spark::EventBus<void>;
 
     Spark::UpdateAllEntities::addHandler(modId_, +[](void*, Spark::UpdateAllEntities::Cursor next) {
-        Overlay::ESP::VectorProfiler::start(GetCurrentThreadId());
+        Mod::DevTools::VectorProfiler::start(GetCurrentThreadId());
         next();
     }, nullptr);
 
@@ -46,6 +46,6 @@ void DevToolsMod::init() {
 }
 
 void DevToolsMod::free() {
-    Overlay::ESP::VectorProfiler::stop();
+    Mod::DevTools::VectorProfiler::stop();
 }
 

@@ -184,7 +184,7 @@ static HRESULT WINAPI hkCreateSwapChainForComposition(IDXGIFactory* pFactory,
     return oCreateSwapChainForComposition(pFactory, pDevice, pDesc, pRestrictToOutput, ppSwapChain);
 }
 
-namespace DX11Hook {
+namespace Spark::Overlay::DX11Hook {
     std::atomic_bool isUnhooking = false;
 
 	HWND findMainWindow( ) {
@@ -321,7 +321,7 @@ static void CleanupDeviceD3D11( ) {
 }
 
 static void RenderImGui_DX11(IDXGISwapChain* pSwapChain) {
-    if (DX11Hook::isUnhooking)
+    if (Spark::Overlay::DX11Hook::isUnhooking)
         return;
 
     if (!ImGui::GetIO( ).BackendRendererUserData) {
@@ -338,7 +338,7 @@ static void RenderImGui_DX11(IDXGISwapChain* pSwapChain) {
     if (ImGui::GetCurrentContext( ) && g_pd3dRenderTarget) {
         ImGui_ImplDX11_NewFrame( );
 
-        Overlay::render();
+        Spark::Overlay::render();
 
         ImGui::Render( );
         g_pd3dDeviceContext->OMSetRenderTargets(1, &g_pd3dRenderTarget, NULL);

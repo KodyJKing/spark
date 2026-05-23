@@ -1,10 +1,10 @@
 #include "mods/devtools/DrawEntityCollision.hpp"
-#include "overlay/ESP.hpp"
+#include "spark/overlay/ESP.hpp"
 #include "DrawBSP.hpp"
 
 namespace Mod::DevTools {
     void drawEntityCollision(Engine::Entity* entity) {
-        namespace ESP = Overlay::ESP;
+        namespace ESP = Spark::Overlay::ESP;
         Camera &camera = ESP::camera;
 
         auto collisionTag = getCollisionGeometryTag(entity->tag());

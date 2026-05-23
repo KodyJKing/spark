@@ -1,10 +1,10 @@
 #include "mods/devtools/ESPWindow.hpp"
 #include "imgui.h"
-#include "overlay/ESP.hpp"
+#include "spark/overlay/ESP.hpp"
 #include "engine/halo1.hpp"
 #include "halomcc/HaloMCC.hpp"
 #include "memory/Memory.hpp"
-#include "cheatengine/Messages.hpp"
+#include "mods/devtools/cheatengine/Messages.hpp"
 #include "utils/ImGuiUtils.hpp"
 #include <string>
 
@@ -161,7 +161,7 @@ namespace Mod::DevTools {
 
             if (ImGui::BeginTabItem("Camera")) {
                 if (paused) ImGui::SliderFloat("Fov Adjust", &espSettings.fovScale, 0.0f, 2.0f);
-                Camera& camera = Overlay::ESP::camera;
+                Camera& camera = Spark::Overlay::ESP::camera;
                 ImGui::Text("Pos: %.2f %.2f %.2f", camera.pos.x, camera.pos.y, camera.pos.z);
                 ImGui::Text("Fwd: %.2f %.2f %.2f", camera.fwd.x, camera.fwd.y, camera.fwd.z);
                 ImGui::Text("Fov: %.2f", camera.fov);

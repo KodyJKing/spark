@@ -1,6 +1,6 @@
 #include "mods/devtools/DrawBSP.hpp"
 
-#include "overlay/ESP.hpp"
+#include "spark/overlay/ESP.hpp"
 
 namespace Mod::DevTools {
 
@@ -14,14 +14,14 @@ namespace Mod::DevTools {
         for ( uint32_t i = 0; i < bsp->vertices.count; i++ ) {
             Engine::BSPVertex& vertex = vertices[i];
             Vec3 worldPos = x * vertex.pos.x + y * vertex.pos.y + z * vertex.pos.z + origin;
-            Overlay::ESP::drawPoint( worldPos, IM_COL32( 0, 255, 255, 255 ) );
+            Spark::Overlay::ESP::drawPoint( worldPos, IM_COL32( 0, 255, 255, 255 ) );
         }
     }
 
     // This is for small BSPs, so don't use any special culling logic.
     // In all other respects, this is like the old implementation (renderESP_BSP).
     void drawBSP(Engine::CollisionBSP* bsp, Vec3 origin, Vec3 x, Vec3 y, Vec3 z) {
-        namespace ESP = Overlay::ESP;
+        namespace ESP = Spark::Overlay::ESP;
         Camera &camera = ESP::camera;
 
         auto toWorld = [&]( Vec3 localPos ) -> Vec3 {

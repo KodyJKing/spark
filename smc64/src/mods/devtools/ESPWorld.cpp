@@ -1,9 +1,9 @@
 #include "mods/devtools/ESPWorld.hpp"
 #include "imgui.h"
-#include "overlay/ESP.hpp"
+#include "spark/overlay/ESP.hpp"
 #include "halomcc/HaloMCC.hpp"
 #include "memory/Memory.hpp"
-#include "overlay/VectorProfiler.hpp"
+#include "mods/devtools/VectorProfiler.hpp"
 #include "mods/devtools/DrawEntityCollision.hpp"
 #include "mods/devtools/DrawBones.hpp"
 #include <vector>
@@ -38,11 +38,11 @@ namespace Mod::DevTools {
         if (ImGui::IsKeyPressed(ImGuiKey_F7, false)) view.renderBsp = !view.renderBsp;
         if (view.renderBsp) renderESP_BSP();
 
-        Overlay::ESP::VectorProfiler::render();
+        Mod::DevTools::VectorProfiler::render();
     }
 
     void renderESP_entities() {
-        namespace ESP = Overlay::ESP;
+        namespace ESP = Spark::Overlay::ESP;
         Camera& camera = ESP::camera;
 
         std::vector<Engine::Entity*> entitiesToDraw;
@@ -93,7 +93,7 @@ namespace Mod::DevTools {
     }
 
     void renderESP_BSP() {
-        namespace ESP = Overlay::ESP;
+        namespace ESP = Spark::Overlay::ESP;
         Camera& camera = ESP::camera;
 
         uint32_t bspVertexCount = Engine::getBSPVertexCount();

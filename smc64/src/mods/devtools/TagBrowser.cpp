@@ -8,7 +8,7 @@
 #include "utils/Strings.hpp"
 #include "Interpretations.hpp"
 #include "memory/Memory.hpp"
-#include "cheatengine/Messages.hpp"
+#include "mods/devtools/cheatengine/Messages.hpp"
 
 namespace Mod::DevTools {
 

@@ -4,7 +4,7 @@
 
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "imgui.h"
-#include "overlay/ESP.hpp"
+#include "spark/overlay/ESP.hpp"
 #include "Coordinates.hpp"
 
 namespace HaloCE::Mod::Mario {
@@ -106,7 +106,7 @@ namespace HaloCE::Mod::Mario {
     }
 
     void drawMarioBones(SM64MarioGeometryBuffers& marioGeometry) {
-        namespace ESP = Overlay::ESP;
+        namespace ESP = Spark::Overlay::ESP;
         Camera &camera = ESP::camera;
 
         auto getVertexPos = [&](int32_t index) -> Vec3 {

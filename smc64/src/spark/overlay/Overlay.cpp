@@ -5,8 +5,7 @@
 #include "DX11Hook.hpp"
 #include "halomcc/HaloMCC.hpp"
 #include "Licenses.hpp"
-#include "overlay/ESP.hpp"
-#include "overlay/VectorProfiler.hpp"
+#include "spark/overlay/ESP.hpp"
 #include "utils/UnloadLock.hpp"
 #include "math/Math.hpp"
 #include "version.h"
@@ -18,7 +17,7 @@
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-namespace Overlay {
+namespace Spark::Overlay {
 
     HWND gameWindow;
 
@@ -35,10 +34,10 @@ namespace Overlay {
 
     void credits() {
         ImGui::SeparatorText("Credits");
-        if ( ImGui::CollapsingHeader("ImGui") ) ImGui::TextWrapped(Licenses::imGui);
-        if ( ImGui::CollapsingHeader("MinHook") ) ImGui::TextWrapped(Licenses::minHook);
-        if ( ImGui::CollapsingHeader("Zydis") ) ImGui::TextWrapped(Licenses::zydis);
-        if ( ImGui::CollapsingHeader("UniversalHookX") ) ImGui::TextWrapped(Licenses::universalHookX);
+        if ( ImGui::CollapsingHeader("ImGui") ) ImGui::TextWrapped(Spark::Licenses::imGui);
+        if ( ImGui::CollapsingHeader("MinHook") ) ImGui::TextWrapped(Spark::Licenses::minHook);
+        if ( ImGui::CollapsingHeader("Zydis") ) ImGui::TextWrapped(Spark::Licenses::zydis);
+        if ( ImGui::CollapsingHeader("UniversalHookX") ) ImGui::TextWrapped(Spark::Licenses::universalHookX);
         ImGui::TextWrapped("Thanks to Kavawuvi for their documentation of the Halo CE map and tag format.");
     }
 

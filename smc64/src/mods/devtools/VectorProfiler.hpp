@@ -6,7 +6,7 @@
 
 #include <Windows.h>
 
-namespace Overlay::ESP::VectorProfiler {
+namespace Mod::DevTools::VectorProfiler {
 	void start(DWORD threadId);
 	void stop();
 	void render();

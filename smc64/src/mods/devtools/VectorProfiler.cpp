@@ -2,7 +2,7 @@
  * An ESP util for finding vectors in memory. Polls a given threadId for pointers to vectors. Writes them to a buffer if they are in range of the Camera.
  */
 
-#include "ESP.hpp"
+#include "spark/overlay/ESP.hpp"
 #include "math/Vectors.hpp"
 #include "memory/Memory.hpp"
 #include <array>
@@ -61,11 +61,11 @@ struct VectorProfiler {
         if (!maybeValue.has_value()) return;
         auto value = maybeValue.value();
 
-        auto diff = value - Overlay::ESP::camera.pos;
+        auto diff = value - Spark::Overlay::ESP::camera.pos;
         if (diff.lengthSquared() > maxDistance * maxDistance) return;
         auto diffNormalized = diff.normalize();
-        auto maxDot = cosf(Overlay::ESP::camera.fov / 2.0f);
-        if (diffNormalized.dot(Overlay::ESP::camera.fwd) < maxDot) return;
+        auto maxDot = cosf(Spark::Overlay::ESP::camera.fov / 2.0f);
+        if (diffNormalized.dot(Spark::Overlay::ESP::camera.fwd) < maxDot) return;
 
         addVector(pointer, rip, offset);
     }
@@ -206,9 +206,9 @@ struct VectorProfiler {
             if (!vectors[i].initialized) continue;
 
             auto pos = vectors[i].vector;
-            auto diff = pos - Overlay::ESP::camera.pos;
+            auto diff = pos - Spark::Overlay::ESP::camera.pos;
             auto diffNormalized = diff.normalize();
-            auto dot = diffNormalized.dot(Overlay::ESP::camera.fwd);
+            auto dot = diffNormalized.dot(Spark::Overlay::ESP::camera.fwd);
             if (dot > bestDot) {
                 bestDot = dot;
                 selected = &vectors[i];
@@ -225,7 +225,7 @@ struct VectorProfiler {
                 color = 0xFF00FFFF;
             }
 
-            Overlay::ESP::drawPoint(pos, color);
+            Spark::Overlay::ESP::drawPoint(pos, color);
         }
 
         if (selected) {
@@ -237,7 +237,7 @@ struct VectorProfiler {
 
 VectorProfiler profiler;
 
-namespace Overlay::ESP::VectorProfiler {
+namespace Mod::DevTools::VectorProfiler {
     void start(DWORD threadId) {
         #ifdef ENABLE_VECTOR_PROFILER
         profiler.startThread(threadId);

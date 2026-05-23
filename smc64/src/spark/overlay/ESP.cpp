@@ -1,6 +1,6 @@
 #include "ESP.hpp"
 
-namespace Overlay::ESP {
+namespace Spark::Overlay::ESP {
 
     Camera camera;
 

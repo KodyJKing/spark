@@ -13,8 +13,8 @@ namespace Spark {
     inline EventBus<void> onRenderDebugUI;
 
     // Fires inside the ESP world-space draw window.
-    // Spark syncs Overlay::ESP::camera to the player camera before dispatch.
-    // Handlers use Overlay::ESP draw calls.
+    // Spark syncs Spark::Overlay::ESP::camera to the player camera before dispatch.
+    // Handlers use Spark::Overlay::ESP draw calls.
     inline EventBus<void> onRenderDebugWorld;
 
     // Terminal for void buses — does nothing.

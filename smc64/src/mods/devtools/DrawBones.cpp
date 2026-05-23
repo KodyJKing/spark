@@ -1,9 +1,9 @@
 #include "mods/devtools/DrawBones.hpp"
-#include "overlay/ESP.hpp"
+#include "spark/overlay/ESP.hpp"
 
 namespace Mod::DevTools {
     void drawBones(Engine::Entity* entity) {
-        namespace ESP = Overlay::ESP;
+        namespace ESP = Spark::Overlay::ESP;
         Camera &camera = ESP::camera;
 
         auto boneCount = entity->worldBones.count();

@@ -5,7 +5,7 @@
 #include "math/Vectors.hpp"
 #include "imgui.h"
 
-namespace Overlay::ESP {
+namespace Spark::Overlay::ESP {
     extern Camera camera;
 
     void updateScreenSize();
