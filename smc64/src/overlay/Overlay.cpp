@@ -13,7 +13,7 @@
 
 #include "spark/RenderBuses.hpp"
 #include "engine/halo1.hpp"
-#include "DllMain.hpp"
+#include "spark/SparkHost.hpp"
 
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);

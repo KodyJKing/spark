@@ -4,19 +4,19 @@
 #include "mods/devtools/ESPWorld.hpp"
 #include "mods/devtools/DevWindow.hpp"
 #include "spark/RenderBuses.hpp"
-#include "hook/Hooks.hpp"
+#include "spark/hook/Hooks.hpp"
 #include "overlay/VectorProfiler.hpp"
 #include "engine/halo1.hpp"
 
 void DevToolsMod::init() {
-    using Bus = EventBus<void>;
+    using Bus = Spark::EventBus<void>;
 
-    UpdateAllEntities::addHandler(modId_, +[](void*, UpdateAllEntities::Cursor next) {
+    Spark::UpdateAllEntities::addHandler(modId_, +[](void*, Spark::UpdateAllEntities::Cursor next) {
         Overlay::ESP::VectorProfiler::start(GetCurrentThreadId());
         next();
     }, nullptr);
 
-    UpdateEntity::addHandler(modId_, +[](void*, UpdateEntity::Cursor next, uint32_t entityHandle) -> uint64_t {
+    Spark::UpdateEntity::addHandler(modId_, +[](void*, Spark::UpdateEntity::Cursor next, uint32_t entityHandle) -> uint64_t {
         auto rec = Engine::getEntityRecord(entityHandle);
         if (!rec) return next(entityHandle);
         auto entity = rec->entity();

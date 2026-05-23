@@ -1,5 +1,5 @@
 #pragma once
-#include "hook/EventBus.hpp"
+#include "spark/EventBus.hpp"
 #include "spark/Spark.hpp"
 
 namespace Spark {

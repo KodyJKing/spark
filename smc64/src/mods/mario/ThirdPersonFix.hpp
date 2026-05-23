@@ -1,7 +1,7 @@
 #pragma once
 
-#include "mod/ModId.hpp"
+#include "spark/mod/ModId.hpp"
 
 namespace HaloCE::Mod::ThirdPersonFix {
-    void registerHandlers(ModId modId);
+    void registerHandlers(Spark::ModId modId);
 }

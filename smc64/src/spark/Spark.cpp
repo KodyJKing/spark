@@ -12,8 +12,8 @@
 #include "memory/Memory.hpp"
 #include "engine/halo1.hpp"
 #include "mods/freecam/FreecamMod.hpp"
-#include "hook/Hooks.hpp"
-#include "mod/ModRegistry.hpp"
+#include "spark/hook/Hooks.hpp"
+#include "spark/mod/ModRegistry.hpp"
 #include "mods/devtools/DevToolsMod.hpp"
 #include "mods/mario/MarioMod.hpp"
 

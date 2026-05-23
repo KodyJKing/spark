@@ -129,7 +129,7 @@ namespace HaloCE::Mod::Mario {
 
     // Public:
     
-    void init(ModId modId) {
+    void init(Spark::ModId modId) {
         #ifdef ENABLE_MARIO
         // Get location of host exe file using Windows API
         char path[MAX_PATH];

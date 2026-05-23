@@ -1,7 +1,7 @@
 #pragma once
-#include "mod/IMod.hpp"
+#include "spark/mod/IMod.hpp"
 
-class DevToolsMod : public IMod {
+class DevToolsMod : public Spark::IMod {
 public:
     void init() override;
     void free() override;

@@ -1,18 +1,18 @@
 #include "MarioMod.hpp"
-#include "hook/Hooks.hpp"
+#include "spark/hook/Hooks.hpp"
 #include "spark/RenderBuses.hpp"
 #include "Mario.hpp"
 #include "engine/halo1.hpp"
 
 void MarioMod::init() {
-    using Bus = EventBus<void>;
+    using Bus = Spark::EventBus<void>;
 
-    UpdateAllEntities::addHandler(modId_, +[](void*, UpdateAllEntities::Cursor next) {
+    Spark::UpdateAllEntities::addHandler(modId_, +[](void*, Spark::UpdateAllEntities::Cursor next) {
         HaloCE::Mod::Mario::update();
         next();
     }, nullptr);
 
-    UpdateWorldBones::addHandler(modId_, +[](void*, UpdateWorldBones::Cursor next, uint32_t entityHandle) {
+    Spark::UpdateWorldBones::addHandler(modId_, +[](void*, Spark::UpdateWorldBones::Cursor next, uint32_t entityHandle) {
         auto rec = Engine::getEntityRecord(entityHandle);
         if (!rec) return next(entityHandle);
         auto entity = rec->entity();
@@ -21,9 +21,9 @@ void MarioMod::init() {
         HaloCE::Mod::Mario::MarioModel::processEntity(entityHandle, entity);
     }, nullptr);
 
-    RenderEntity::addHandler(modId_, +[](void*, RenderEntity::Cursor next, Engine::RenderEntityRequest* request) {
+    Spark::RenderEntity::addHandler(modId_, +[](void*, Spark::RenderEntity::Cursor next, Engine::RenderEntityRequest* request) {
         next(request);
-        HaloCE::Mod::Mario::MarioModel::renderEntity(request, RenderEntity::original);
+        HaloCE::Mod::Mario::MarioModel::renderEntity(request, Spark::RenderEntity::original);
     }, nullptr);
 
     Spark::onRenderDebugWorld.addHandler(modId_, +[](void*, Bus::Cursor next) {

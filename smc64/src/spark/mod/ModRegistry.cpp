@@ -1,6 +1,8 @@
 #include "ModRegistry.hpp"
-#include "hook/Hooks.hpp"
+#include "spark/hook/Hooks.hpp"
 #include <algorithm>
+
+namespace Spark {
 
 ModId ModRegistry::assignId(IMod& mod) {
     mod.modId_ = nextId_++;
@@ -15,7 +17,7 @@ void ModRegistry::add(std::unique_ptr<IMod> mod) {
 void ModRegistry::initAll(uintptr_t base) {
     base_ = base;
     initialized_ = true;
-    Spark::installAllHooks(base_);
+    installAllHooks(base_);
     for (auto& mod : mods_)
         mod->init();
 }
@@ -24,13 +26,13 @@ void ModRegistry::freeAll() {
     for (int i = (int)mods_.size() - 1; i >= 0; --i)
         mods_[i]->free();
     for (auto& mod : mods_)
-        Spark::unregisterHookHandlers(mod->modId_);
-    Spark::uninstallAllHooks();
+        unregisterHookHandlers(mod->modId_);
+    uninstallAllHooks();
 
     // Clear render phase handlers
-    Spark::onRenderDebugUI.clear();
-    Spark::onRenderDebugWorld.clear();
-    Spark::onRenderPauseMenuTabs.clear();
+    onRenderDebugUI.clear();
+    onRenderDebugWorld.clear();
+    onRenderPauseMenuTabs.clear();
 
     mods_.clear();
     initialized_ = false;
@@ -47,12 +49,14 @@ void ModRegistry::unload(IMod* target) {
         [target](const std::unique_ptr<IMod>& m) { return m.get() == target; });
     if (it == mods_.end()) return;
     (*it)->free();
-    Spark::unregisterHookHandlers((*it)->modId_);
+    unregisterHookHandlers((*it)->modId_);
 
     // Unregister render phase handlers
-    Spark::onRenderDebugUI.unregisterHandlers((*it)->modId_);
-    Spark::onRenderDebugWorld.unregisterHandlers((*it)->modId_);
-    Spark::onRenderPauseMenuTabs.unregisterHandlers((*it)->modId_);
+    onRenderDebugUI.unregisterHandlers((*it)->modId_);
+    onRenderDebugWorld.unregisterHandlers((*it)->modId_);
+    onRenderPauseMenuTabs.unregisterHandlers((*it)->modId_);
 
     mods_.erase(it);
 }
+
+} // namespace Spark

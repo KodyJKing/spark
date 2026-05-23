@@ -1,9 +1,11 @@
 #pragma once
 #include <vector>
 #include <memory>
-#include "mod/IMod.hpp"
+#include "spark/mod/IMod.hpp"
 
 struct ID3D11DeviceContext;
+
+namespace Spark {
 
 class ModRegistry {
 public:
@@ -30,3 +32,5 @@ private:
 
     ModId assignId(IMod& mod);
 };
+
+} // namespace Spark

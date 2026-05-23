@@ -3,7 +3,9 @@
 #include <cstdint>
 #include "MinHook.h"
 #include "utils/UnloadLock.hpp"
-#include "hook/EventBus.hpp"
+#include "spark/EventBus.hpp"
+
+namespace Spark {
 
 template<uintptr_t Offset, typename Ret, typename... Args>
 struct Hook {
@@ -50,3 +52,5 @@ private:
         return bus.dispatch(terminalShim, &original, args...);
     }
 };
+
+} // namespace Spark

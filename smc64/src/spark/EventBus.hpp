@@ -4,12 +4,14 @@
 #include <algorithm>
 #include <cstddef>
 #include <shared_mutex>
-#include "mod/ModId.hpp"
+#include "spark/mod/ModId.hpp"
 
 // Pure middleware dispatch — no MinHook coupling.
 // Handlers are raw function pointers + void* context (C-ABI-safe, no heap per dispatch).
 // Captureless lambdas convert implicitly; use + to force the conversion at the call site.
 // Lower priority value = outermost (runs first). Default priority = 0.
+namespace Spark {
+
 template<typename Ret, typename... Args>
 struct EventBus {
     struct Cursor;
@@ -79,3 +81,5 @@ private:
         return e.fn(e.ctx, next, args...);
     }
 };
+
+} // namespace Spark

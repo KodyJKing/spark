@@ -1,11 +1,11 @@
 #include "engine/halo1.hpp"
-#include "hook/Hooks.hpp"
+#include "spark/hook/Hooks.hpp"
 
 namespace HaloCE::Mod::ThirdPersonFix {
 
-    void registerHandlers(ModId modId) {
+    void registerHandlers(Spark::ModId modId) {
         // Suppress flares on player-held weapons (they render in the wrong place in third-person view)
-        UpdateFlareTransform::addHandler(modId, +[](void* /*ctx*/, UpdateFlareTransform::Cursor next, uint32_t flareHandle) {
+        Spark::UpdateFlareTransform::addHandler(modId, +[](void* /*ctx*/, Spark::UpdateFlareTransform::Cursor next, uint32_t flareHandle) {
             auto entry = Engine::getFlareEntry(flareHandle);
             if (entry && entry->mountEntityHandle != NULL_HANDLE) {
                 if (entry->mountEntityHandle == Engine::getHeldWeaponHandle()) {
@@ -15,7 +15,7 @@ namespace HaloCE::Mod::ThirdPersonFix {
             next(flareHandle);
         }, nullptr);
 
-        SpawnProjectile::addHandler(modId, +[](void* /*ctx*/, SpawnProjectile::Cursor next, Engine::ProjectileSpawnArgs* options, uint32_t flags) -> uint32_t {
+        Spark::SpawnProjectile::addHandler(modId, +[](void* /*ctx*/, Spark::SpawnProjectile::Cursor next, Engine::ProjectileSpawnArgs* options, uint32_t flags) -> uint32_t {
             if (options->ownerEntityHandle != Engine::getPlayerHandle()) {
                 return next(options, flags);
             }

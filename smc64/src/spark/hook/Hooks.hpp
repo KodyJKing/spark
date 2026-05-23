@@ -4,12 +4,13 @@
 #include "engine/halo1.hpp"
 #include "spark/RenderBuses.hpp"
 
+namespace Spark {
+
 // Generate a named type alias for each hook.
 #define HOOK(Name, Ret, Offset, ...) using Name = Hook<Offset, Ret, __VA_ARGS__>;
 #include "hooks.def"
 #undef HOOK
 
-namespace Spark {
 
     inline void installAllHooks(uintptr_t base) {
         #define HOOK(Name, ...) Name::install(base);

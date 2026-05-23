@@ -1,5 +1,5 @@
 #include "MarioCamera.hpp"
-#include "hook/Hooks.hpp"
+#include "spark/hook/Hooks.hpp"
 #include "memory/Memory.hpp"
 
 namespace HaloCE::Mod::Mario::MarioCamera {
@@ -34,14 +34,14 @@ namespace HaloCE::Mod::Mario::MarioCamera {
         active = false;
     }
 
-    void registerHandlers(ModId modId) {
-        RenderFPVModel::addHandler(modId, +[](void* /*ctx*/, RenderFPVModel::Cursor next) {
+    void registerHandlers(Spark::ModId modId) {
+        Spark::RenderFPVModel::addHandler(modId, +[](void* /*ctx*/, Spark::RenderFPVModel::Cursor next) {
             if (active) return;
             next();
         }, nullptr, 10);
 
         // Suppress walk input when Mario is possessing the player.
-        UpdatePlayerControls::addHandler(modId, +[](void* /*ctx*/, UpdatePlayerControls::Cursor next, float* param_1, float* param_2) {
+        Spark::UpdatePlayerControls::addHandler(modId, +[](void* /*ctx*/, Spark::UpdatePlayerControls::Cursor next, float* param_1, float* param_2) {
             if (!active) {
                 next(param_1, param_2);
                 return;
@@ -56,7 +56,7 @@ namespace HaloCE::Mod::Mario::MarioCamera {
         }, nullptr, 10);
 
         // Override camera position with Mario's interpolated position.
-        UpdateCamera::addHandler(modId, +[](void* /*ctx*/, UpdateCamera::Cursor next, float unknown) {
+        Spark::UpdateCamera::addHandler(modId, +[](void* /*ctx*/, Spark::UpdateCamera::Cursor next, float unknown) {
             next(unknown);
             if (!active) return;
             auto camera = Engine::getPlayerCameraPointer();
