@@ -42,7 +42,7 @@ namespace Spark::Overlay {
     }
 
     void mainModWindow() {
-        ImGui::Begin("SMC64");
+        ImGui::Begin("Spark");
 
         // Default window size
         auto winSize = ImVec2(300, 400);
@@ -52,7 +52,7 @@ namespace Spark::Overlay {
         ImGui::SetWindowPos(ImVec2(displaySize.x - winSize.x - 10, displaySize.y - winSize.y - 10), ImGuiCond_Once);
 
         // Tabs
-        if (ImGui::BeginTabBar("SMC64 Tabs")) {
+        if (ImGui::BeginTabBar("Spark Tabs")) {
             if (ImGui::BeginTabItem("About")) {
                 const char* config =
                     #ifdef _DEBUG
@@ -60,7 +60,7 @@ namespace Spark::Overlay {
                     #else
                         "Release";
                     #endif
-                ImGui::Text("SMC64 %s %s", config, SMC64_VERSION_STRING);
+                ImGui::Text("Spark %s %s", config, SMC64_VERSION_STRING);
                 ImGui::Text("Built %s, %s", __DATE__, __TIME__);
                 credits();
                 ImGui::EndTabItem();
@@ -87,7 +87,7 @@ namespace Spark::Overlay {
         ImGui::PushStyleVar(ImGuiStyleVar_Alpha, alpha);
 
         ImGui::Begin(
-            "##SMC64Indicator", nullptr,
+            "##SparkIndicator", nullptr,
             ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | 
             ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBackground
         );
@@ -97,7 +97,7 @@ namespace Spark::Overlay {
             auto windowSize = ImGui::GetWindowSize();
             ImGui::SetWindowPos(ImVec2((displaySize.x - windowSize.x) / 2, 0));
 
-            ImGui::Text("SMC64 Loaded");
+            ImGui::Text("Spark Loaded");
         ImGui::End();
 
         ImGui::PopStyleVar();
