@@ -50,12 +50,12 @@ static void updateKeyboardControls(Engine::Camera* camera) {
 }
 
 void FreecamMod::init() {
-    Spark::RenderFPVModel::addHandler(modId_, +[](void* ctx, Spark::RenderFPVModel::Cursor next) {
+    Spark::RenderFPVModel::addHandler(modId_, +[](void* ctx, auto next) {
         if (static_cast<FreecamMod*>(ctx)->enabled_) return;
         next();
     }, this);
 
-    Spark::UpdatePlayerControls::addHandler(modId_, +[](void* ctx, Spark::UpdatePlayerControls::Cursor next, float* param_1, float* param_2) {
+    Spark::UpdatePlayerControls::addHandler(modId_, +[](void* ctx, auto next, float* param_1, float* param_2) {
         auto* self = static_cast<FreecamMod*>(ctx);
         if (!self->enabled_) {
             next(param_1, param_2);
@@ -72,7 +72,7 @@ void FreecamMod::init() {
         *playerController = pc;
     }, this);
 
-    Spark::UpdateCamera::addHandler(modId_, +[](void* ctx, Spark::UpdateCamera::Cursor next, float unknown) {
+    Spark::UpdateCamera::addHandler(modId_, +[](void* ctx, auto next, float unknown) {
         auto* self = static_cast<FreecamMod*>(ctx);
         if (!self->enabled_)         return next(unknown);
         auto camera       = Engine::getPlayerCameraPointer();
@@ -83,7 +83,7 @@ void FreecamMod::init() {
         if (camAllocated) camera->pos = camPos;
     }, this);
 
-    Spark::UpdateAllEntities::addHandler(modId_, +[](void* ctx, Spark::UpdateAllEntities::Cursor next) {
+    Spark::UpdateAllEntities::addHandler(modId_, +[](void* ctx, auto next) {
         static_cast<FreecamMod*>(ctx)->update();
         next();
     }, this);

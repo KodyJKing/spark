@@ -7,12 +7,12 @@
 void MarioMod::init() {
     using Bus = Spark::EventBus<void>;
 
-    Spark::UpdateAllEntities::addHandler(modId_, +[](void*, Spark::UpdateAllEntities::Cursor next) {
+    Spark::UpdateAllEntities::addHandler(modId_, +[](void*, auto next) {
         HaloCE::Mod::Mario::update();
         next();
     }, nullptr);
 
-    Spark::UpdateWorldBones::addHandler(modId_, +[](void*, Spark::UpdateWorldBones::Cursor next, uint32_t entityHandle) {
+    Spark::UpdateWorldBones::addHandler(modId_, +[](void*, auto next, uint32_t entityHandle) {
         auto rec = Engine::getEntityRecord(entityHandle);
         if (!rec) return next(entityHandle);
         auto entity = rec->entity();
@@ -21,7 +21,7 @@ void MarioMod::init() {
         HaloCE::Mod::Mario::MarioModel::processEntity(entityHandle, entity);
     }, nullptr);
 
-    Spark::RenderEntity::addHandler(modId_, +[](void*, Spark::RenderEntity::Cursor next, Engine::RenderEntityRequest* request) {
+    Spark::RenderEntity::addHandler(modId_, +[](void*, auto next, Engine::RenderEntityRequest* request) {
         next(request);
         HaloCE::Mod::Mario::MarioModel::renderEntity(request, Spark::RenderEntity::original);
     }, nullptr);

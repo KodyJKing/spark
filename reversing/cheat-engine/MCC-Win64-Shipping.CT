@@ -5016,6 +5016,29 @@ dealloc(newmem)
         <Byte>0F</Byte>
       </After>
     </CodeEntry>
+    <CodeEntry>
+      <Description>damageRelatedFunction01</Description>
+      <AddressString>halo1.dll+B9EA28</AddressString>
+      <Before>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+        <Byte>5E</Byte>
+        <Byte>C3</Byte>
+      </Before>
+      <Actual>
+        <Byte>48</Byte>
+        <Byte>8B</Byte>
+        <Byte>C4</Byte>
+      </Actual>
+      <After>
+        <Byte>55</Byte>
+        <Byte>53</Byte>
+        <Byte>56</Byte>
+        <Byte>57</Byte>
+        <Byte>41</Byte>
+      </After>
+    </CodeEntry>
   </CheatCodes>
   <UserdefinedSymbols>
     <SymbolEntry>
@@ -5037,6 +5060,14 @@ dealloc(newmem)
     <SymbolEntry>
       <Name>renderFlares</Name>
       <Address>halo1.dll+BE5BB8</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>damageEntity</Name>
+      <Address>halo1.dll+B9FBD0</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>damageRelatedFunction01</Name>
+      <Address>halo1.dll+B9EA28</Address>
     </SymbolEntry>
   </UserdefinedSymbols>
   <Structures StructVersion="2">
@@ -7674,11 +7705,10 @@ dealloc(newmem)
         <Element Offset="4" Vartype="2 Bytes" Bytesize="2" OffsetHex="00000004" Description="shaderIndex" DisplayMethod="hexadecimal"/>
         <Element Offset="6" Vartype="Byte" Bytesize="1" RLECount="2" OffsetHex="00000006" DisplayMethod="hexadecimal"/>
         <Element Offset="8" Vartype="Float" Bytesize="4" RLECount="4" OffsetHex="00000008" DisplayMethod="unsigned integer"/>
-        <Element Offset="24" Vartype="4 Bytes" Bytesize="4" RLECount="2" OffsetHex="00000018" DisplayMethod="hexadecimal"/>
+        <Element Offset="24" Vartype="4 Bytes" Bytesize="4" OffsetHex="00000018" DisplayMethod="hexadecimal"/>
         <Element Offset="28" Vartype="Float" Bytesize="4" OffsetHex="0000001C" DisplayMethod="unsigned integer"/>
-        <Element Offset="32" Vartype="4 Bytes" Bytesize="4" OffsetHex="00000020" DisplayMethod="unsigned integer"/>
-        <Element Offset="32" Vartype="4 Bytes" Bytesize="4" OffsetHex="00000020" DisplayMethod="hexadecimal"/>
-        <Element Offset="36" Vartype="4 Bytes" Bytesize="4" RLECount="10" OffsetHex="00000024" DisplayMethod="unsigned integer"/>
+        <Element Offset="28" Vartype="4 Bytes" Bytesize="4" RLECount="2" OffsetHex="0000001C" DisplayMethod="hexadecimal"/>
+        <Element Offset="32" Vartype="4 Bytes" Bytesize="4" RLECount="11" OffsetHex="00000020" DisplayMethod="unsigned integer"/>
         <Element Offset="76" Vartype="4 Bytes" Bytesize="4" RLECount="2" OffsetHex="0000004C" DisplayMethod="hexadecimal"/>
         <Element Offset="84" Vartype="4 Bytes" Bytesize="4" RLECount="2" OffsetHex="00000054" DisplayMethod="unsigned integer"/>
         <Element Offset="92" Vartype="4 Bytes" Bytesize="4" OffsetHex="0000005C" DisplayMethod="hexadecimal"/>
@@ -7919,6 +7949,11 @@ dealloc(newmem)
       <Address>"halo1.dll"+B89D2A</Address>
       <Comment>get particle tag data pointer
 </Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B9EA28</Address>
+      <Header>unknown8 damageRelatedFunction(DamageEvent* event, uint32_t entityHandle)
+</Header>
     </DisassemblerComment>
     <DisassemblerComment>
       <Address>"halo1.dll"+B9F67B</Address>

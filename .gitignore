@@ -18,3 +18,4 @@ paired_sensors.txt
 cheat-engine/data
 
 reversing/binary-ninja/*.bndb
+reversing/cheat-engine/traces

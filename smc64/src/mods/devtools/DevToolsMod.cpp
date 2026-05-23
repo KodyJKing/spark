@@ -11,12 +11,12 @@
 void DevToolsMod::init() {
     using Bus = Spark::EventBus<void>;
 
-    Spark::UpdateAllEntities::addHandler(modId_, +[](void*, Spark::UpdateAllEntities::Cursor next) {
+    Spark::UpdateAllEntities::addHandler(modId_, +[](void*, auto next) {
         Mod::DevTools::VectorProfiler::start(GetCurrentThreadId());
         next();
     }, nullptr);
 
-    Spark::UpdateEntity::addHandler(modId_, +[](void*, Spark::UpdateEntity::Cursor next, uint32_t entityHandle) -> uint64_t {
+    Spark::UpdateEntity::addHandler(modId_, +[](void*, auto next, uint32_t entityHandle) -> uint64_t {
         auto rec = Engine::getEntityRecord(entityHandle);
         if (!rec) return next(entityHandle);
         auto entity = rec->entity();
@@ -43,9 +43,16 @@ void DevToolsMod::init() {
         Mod::DevTools::renderDebugWorld();
         next();
     }, nullptr);
+
+    Spark::DamageEntity::addHandler(modId_, +[](void*, auto next, Engine::DamageEvent* event, uint32_t entityHandle, uint16_t param_3, uint16_t param_4, int16_t param_5, uint64_t param_6) {
+        if (Mod::DevTools::invincibility) {
+            if (entityHandle == Engine::getPlayerHandle()) 
+                return;
+        }
+        next(event, entityHandle, param_3, param_4, param_5, param_6);
+    }, nullptr);
 }
 
 void DevToolsMod::free() {
     Mod::DevTools::VectorProfiler::stop();
 }
-

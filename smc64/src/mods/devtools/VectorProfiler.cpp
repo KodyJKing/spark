@@ -1,5 +1,7 @@
 /*
  * An ESP util for finding vectors in memory. Polls a given threadId for pointers to vectors. Writes them to a buffer if they are in range of the Camera.
+ * 
+ * Todo: Use native DX11 and draw points in bulk.
  */
 
 #include "spark/overlay/ESP.hpp"
@@ -238,6 +240,7 @@ struct VectorProfiler {
 VectorProfiler profiler;
 
 namespace Mod::DevTools::VectorProfiler {
+    // Should probably be called tickGameThread based off how this wound up being used.
     void start(DWORD threadId) {
         #ifdef ENABLE_VECTOR_PROFILER
         profiler.startThread(threadId);

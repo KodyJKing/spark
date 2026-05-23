@@ -43,5 +43,6 @@ namespace Mod::DevTools {
     inline View view = {};
 
     inline bool freezeTime = false;
+    inline bool invincibility = false;
 
 } // namespace Mod::DevTools
