@@ -7,10 +7,14 @@ struct ID3D11DeviceContext;
 
 namespace Spark {
 
+struct IModDeleter {
+    void operator()(IMod* p) const { p->destroy(); }
+};
+
 class ModRegistry {
 public:
     // Add a mod before initAll(). Assigns its modId_.
-    void add(std::unique_ptr<IMod> mod);
+    void add(IMod* mod);
 
     // Two-phase startup: registerHandlers() all → installAllHooks(base) → init() all.
     void initAll(uintptr_t base);
@@ -19,13 +23,13 @@ public:
     void freeAll();
 
     // Hot-load after initAll(): assign id, registerHandlers(), init().
-    void load(std::unique_ptr<IMod> mod);
+    void load(IMod* mod);
 
     // Hot-unload: free(), unregisterHandlers(id), destroy.
     void unload(IMod* mod);
 
 private:
-    std::vector<std::unique_ptr<IMod>> mods_;
+    std::vector<std::unique_ptr<IMod, IModDeleter>> mods_;
     ModId nextId_ = 1;
     bool initialized_ = false;
     uintptr_t base_ = 0;

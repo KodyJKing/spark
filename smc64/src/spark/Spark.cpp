@@ -5,7 +5,6 @@
 #include <vector>
 #include <unordered_map>
 #include <unordered_set>
-#include "MinHook.h"
 #include "utils/Utils.hpp"
 #include "utils/UnloadLock.hpp"
 #include "math/Math.hpp"
@@ -33,9 +32,9 @@ namespace Spark {
         halo1 = (uintptr_t) Utils::waitForModule(moduleName);
         std::cout << moduleName << ": " << (void*) halo1 << std::endl;
 
-        registry.add(std::make_unique<FreecamMod>());
-        registry.add(std::make_unique<DevToolsMod>());
-        registry.add(std::make_unique<MarioMod>());
+        registry.add(new FreecamMod());
+        registry.add(new DevToolsMod());
+        registry.add(new MarioMod());
         registry.initAll(halo1);
 
         std::cout << "Mods installed." << std::endl;

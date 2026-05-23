@@ -9,9 +9,9 @@ ModId ModRegistry::assignId(IMod& mod) {
     return mod.modId_;
 }
 
-void ModRegistry::add(std::unique_ptr<IMod> mod) {
+void ModRegistry::add(IMod* mod) {
     assignId(*mod);
-    mods_.push_back(std::move(mod));
+    mods_.push_back(std::unique_ptr<IMod, IModDeleter>(mod));
 }
 
 void ModRegistry::initAll(uintptr_t base) {
@@ -38,15 +38,15 @@ void ModRegistry::freeAll() {
     initialized_ = false;
 }
 
-void ModRegistry::load(std::unique_ptr<IMod> mod) {
+void ModRegistry::load(IMod* mod) {
     assignId(*mod);
     mod->init();
-    mods_.push_back(std::move(mod));
+    mods_.push_back(std::unique_ptr<IMod, IModDeleter>(mod));
 }
 
 void ModRegistry::unload(IMod* target) {
     auto it = std::find_if(mods_.begin(), mods_.end(),
-        [target](const std::unique_ptr<IMod>& m) { return m.get() == target; });
+        [target](const std::unique_ptr<IMod, IModDeleter>& m) { return m.get() == target; });
     if (it == mods_.end()) return;
     (*it)->free();
     unregisterHookHandlers((*it)->modId_);
