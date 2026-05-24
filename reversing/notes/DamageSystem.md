@@ -24,11 +24,11 @@ Defined in `smc64/src/engine/types/damage_event.hpp`. Total size reported by Ghi
 | Offset | Type | Name | Confidence | Notes |
 |--------|------|------|-----------|-------|
 | 0x00 | `uint32_t` | `damageTypeTagHandle` | **Confirmed** | Tag handle for the damage effect definition |
-| 0x04 | `uint32_t` | `sourceType` | High | Value `4` appears in a vehicle-seat check; likely an enum **[UNVERIFIED: enum values]** |
+| 0x04 | `uint32_t` | `sourceType` | **Confirmed** | Per-weapon object type index — **not** a coarse category enum. Confirmed dynamically: PlasmaPistol=`0x11`, PlasmaRifle=`0x12` (consecutive, confirming weapon-archetype granularity). Value `4` in the vehicle-seat check is likely a specific vehicle type ID, not a generic vehicle category. Name may be misleading; semantics closer to "source object type ID". `sourceTypeIndex` at `0x14` is now the primary candidate for coarse damage category. **[UNVERIFIED: melee, fall, environment/no-attacker values]** |
 | 0x08 | `uint32_t` | `flags` | High | Bitfield — see below |
 | 0x0c | `uint32_t` | `interactorHandle` | High | Entity handle looked up in InteractThings; cleared to `0xFFFFFFFF` if stale |
 | 0x10 | `uint32_t` | `attackerHandle` | High | Source entity handle passed to `getTypedEntityPointer` |
-| 0x14 | `int16_t` | `sourceTypeIndex` | Medium | Compared to `-1` (none) and `7` (unknown); used to look up per-source damage modifiers **[UNVERIFIED]** |
+| 0x14 | `int16_t` | `sourceTypeIndex` | Medium | Compared to `-1` (none) and `7` (unknown); used to look up per-source damage modifiers. Now a **higher-priority** candidate for coarse damage category (bullet / melee / grenade / vehicle / fall), given that `sourceType` at `0x04` turned out to be per-weapon granularity. **[UNVERIFIED]** |
 | 0x16 | `uint8_t[0x16]` | `_unk0x16` | Unknown | 22 bytes completely unaccounted for |
 | 0x2c | `Vec3` | `hitPosition` | **Confirmed** | World-space position of the hit point; verified dynamically (was initially swapped with hitDirection) |
 | 0x38 | `Vec3` | `hitDirection` | **Confirmed** | Direction vector of the incoming damage; verified dynamically |
@@ -121,7 +121,7 @@ Priority order:
 
 1. ~~**Confirm `hitDirection` vs `impactPosition` at 0x2c / 0x38**~~ — **RESOLVED.** Fields were swapped from initial analysis. `hitPosition` at 0x2c, `hitDirection` at 0x38. Verified dynamically.
 
-2. **Enumerate `sourceType` enum** — trigger melee, grenade, bullet, vehicle crush, fall damage. Log `event->sourceType` each time.
+2. ~~**Enumerate `sourceType` enum**~~ — **PARTIALLY RESOLVED.** Field is a per-weapon object type index, not a coarse category enum. Confirmed dynamically: PlasmaPistol=`0x11`, PlasmaRifle=`0x12`. Consecutive values for related weapons confirm it tracks weapon archetype rather than delivery mechanism. Value `4` in the vehicle-seat check likely refers to a specific vehicle type ID. Outstanding: melee, fall damage, and environment (no attacker) values still unknown. `sourceTypeIndex` at `0x14` is now the higher-priority candidate for coarse category and should be added to the next logging script.
 
 3. **Enumerate `flags` bits** — headshot vs. body, explosive vs. direct, friendly fire. Log `event->flags`.
 

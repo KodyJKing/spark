@@ -812,73 +812,13 @@ halo1.dll+BE615D: F3 0F 59 3D 6B 99 D6 00  - mulss xmm7,[halo1.dll+194FAD0]
       <GroupHeader>1</GroupHeader>
     </CheatEntry>
     <CheatEntry>
-      <ID>104</ID>
-      <Description>"Auto Assemble script"</Description>
+      <ID>101</ID>
+      <Description>"Test"</Description>
       <VariableType>Auto Assembler Script</VariableType>
-      <AssemblerScript>{ Game   : MCC-Win64-Shipping.exe
-  Version: 
-  Date   : 2026-05-21
-  Author : Kody
-
-  This script does blah blah blah
-}
-
-define(address,"halo1.dll"+BE7D70)
-define(bytes,48 89 5C 24 10)
-
-[ENABLE]
-
-assert(address,bytes)
-alloc(newmem,$1000,"halo1.dll"+BE7D70)
-
-label(code)
-label(return)
-
-newmem:
-
-code:
-  ret
-  jmp return
-
-address:
-  jmp newmem
-return:
+      <AssemblerScript>[ENABLE]
 
 [DISABLE]
 
-address:
-  db bytes
-  // mov [rsp+10],rbx
-
-dealloc(newmem)
-
-{
-// ORIGINAL CODE - INJECTION POINT: 7FFD769C7D70
-
-7FFD769C7D52: 48 8D 0D CF 8A DF 01  - lea rcx,[7FFD787C0828]
-7FFD769C7D59: E8 A2 A3 08 00        - call 7FFD76A52100
-7FFD769C7D5E: B8 FB FF 00 00        - mov eax,0000FFFB
-7FFD769C7D63: 66 21 43 02           - and [rbx+02],ax
-7FFD769C7D67: 48 83 C4 20           - add rsp,20
-7FFD769C7D6B: 5B                    - pop rbx
-7FFD769C7D6C: C3                    - ret 
-7FFD769C7D6D: CC                    - int 3 
-7FFD769C7D6E: CC                    - int 3 
-7FFD769C7D6F: CC                    - int 3 
-// ---------- INJECTING HERE ----------
-7FFD769C7D70: 48 89 5C 24 10        - mov [rsp+10],rbx
-// ---------- DONE INJECTING  ----------
-7FFD769C7D75: 48 89 74 24 18        - mov [rsp+18],rsi
-7FFD769C7D7A: 55                    - push rbp
-7FFD769C7D7B: 48 8D 6C 24 F0        - lea rbp,[rsp-10]
-7FFD769C7D80: 48 81 EC 10 01 00 00  - sub rsp,00000110
-7FFD769C7D87: 48 8B 05 82 D2 F8 00  - mov rax,[7FFD77955010]
-7FFD769C7D8E: 48 33 C4              - xor rax,rsp
-7FFD769C7D91: 48 89 45 00           - mov [rbp+00],rax
-7FFD769C7D95: 48 8B 05 64 8B DF 01  - mov rax,[7FFD787C0900]
-7FFD769C7D9C: 8B F1                 - mov esi,ecx
-7FFD769C7D9E: 0F B7 C9              - movzx ecx,cx
-}
 </AssemblerScript>
     </CheatEntry>
   </CheatEntries>
@@ -7676,11 +7616,10 @@ dealloc(newmem)
         <Element Offset="4" Vartype="2 Bytes" Bytesize="2" OffsetHex="00000004" Description="shaderIndex" DisplayMethod="hexadecimal"/>
         <Element Offset="6" Vartype="Byte" Bytesize="1" RLECount="2" OffsetHex="00000006" DisplayMethod="hexadecimal"/>
         <Element Offset="8" Vartype="Float" Bytesize="4" RLECount="4" OffsetHex="00000008" DisplayMethod="unsigned integer"/>
-        <Element Offset="24" Vartype="4 Bytes" Bytesize="4" RLECount="2" OffsetHex="00000018" DisplayMethod="hexadecimal"/>
+        <Element Offset="24" Vartype="4 Bytes" Bytesize="4" OffsetHex="00000018" DisplayMethod="hexadecimal"/>
         <Element Offset="28" Vartype="Float" Bytesize="4" OffsetHex="0000001C" DisplayMethod="unsigned integer"/>
-        <Element Offset="32" Vartype="4 Bytes" Bytesize="4" OffsetHex="00000020" DisplayMethod="unsigned integer"/>
-        <Element Offset="32" Vartype="4 Bytes" Bytesize="4" OffsetHex="00000020" DisplayMethod="hexadecimal"/>
-        <Element Offset="36" Vartype="4 Bytes" Bytesize="4" RLECount="10" OffsetHex="00000024" DisplayMethod="unsigned integer"/>
+        <Element Offset="28" Vartype="4 Bytes" Bytesize="4" RLECount="2" OffsetHex="0000001C" DisplayMethod="hexadecimal"/>
+        <Element Offset="32" Vartype="4 Bytes" Bytesize="4" RLECount="11" OffsetHex="00000020" DisplayMethod="unsigned integer"/>
         <Element Offset="76" Vartype="4 Bytes" Bytesize="4" RLECount="2" OffsetHex="0000004C" DisplayMethod="hexadecimal"/>
         <Element Offset="84" Vartype="4 Bytes" Bytesize="4" RLECount="2" OffsetHex="00000054" DisplayMethod="unsigned integer"/>
         <Element Offset="92" Vartype="4 Bytes" Bytesize="4" OffsetHex="0000005C" DisplayMethod="hexadecimal"/>
