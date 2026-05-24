@@ -19,3 +19,7 @@ cheat-engine/data
 
 reversing/binary-ninja/*.bndb
 reversing/cheat-engine/traces
+reversing/ghidra/*.gpr
+reversing/ghidra/*.lock
+reversing/ghidra/*.lock~
+reversing/ghidra/Halo MCC.rep/**
