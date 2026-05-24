@@ -15,8 +15,8 @@ namespace Engine {
         uint32_t attackerHandle;       // 0x10 - source entity handle
         uint16_t sourceTypeIndex;      // 0x14 - damage source index (-1 = none, 7 = ?)
         uint8_t  _unk0x16[0x16];       // 0x16
-        Vec3     hitDirection;         // 0x2c
-        Vec3     impactPosition;       // 0x38
+        Vec3     hitPosition;          // 0x2c
+        Vec3     hitDirection;         // 0x38
         float    baseDamage;           // 0x44
         float    damageMultiplier;     // 0x48 - scaled by shields/vehicle occupant count
         float    resultHealth;         // 0x4c - output: recipient health after damage
@@ -25,8 +25,8 @@ namespace Engine {
 
     static_assert(offsetof(DamageEvent, flags)            == 0x08);
     static_assert(offsetof(DamageEvent, attackerHandle)   == 0x10);
-    static_assert(offsetof(DamageEvent, hitDirection)     == 0x2c);
-    static_assert(offsetof(DamageEvent, impactPosition)   == 0x38);
+    static_assert(offsetof(DamageEvent, hitPosition)     == 0x2c);
+    static_assert(offsetof(DamageEvent, hitDirection)   == 0x38);
     static_assert(offsetof(DamageEvent, materialType)     == 0x50);
 
 }

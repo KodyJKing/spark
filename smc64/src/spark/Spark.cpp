@@ -14,6 +14,7 @@
 #include "spark/hook/Hooks.hpp"
 #include "spark/mod/ModRegistry.hpp"
 #include "mods/devtools/DevToolsMod.hpp"
+#include "mods/hooklog/HookLogMod.hpp"
 #include "mods/mario/MarioMod.hpp"
 
 namespace Spark {
@@ -34,6 +35,7 @@ namespace Spark {
 
         registry.add(new FreecamMod());
         registry.add(new DevToolsMod());
+        registry.add(new HookLogMod());
         // registry.add(new MarioMod());
         registry.initAll(halo1);
 

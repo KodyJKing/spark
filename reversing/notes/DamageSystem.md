@@ -30,8 +30,8 @@ Defined in `smc64/src/engine/types/damage_event.hpp`. Total size reported by Ghi
 | 0x10 | `uint32_t` | `attackerHandle` | High | Source entity handle passed to `getTypedEntityPointer` |
 | 0x14 | `int16_t` | `sourceTypeIndex` | Medium | Compared to `-1` (none) and `7` (unknown); used to look up per-source damage modifiers **[UNVERIFIED]** |
 | 0x16 | `uint8_t[0x16]` | `_unk0x16` | Unknown | 22 bytes completely unaccounted for |
-| 0x2c | `Vec3` | `hitDirection` | Medium | Passed by pointer to effect spawn functions alongside `impactPosition`; which is direction vs. position is inferred from argument order **[UNVERIFIED]** |
-| 0x38 | `Vec3` | `impactPosition` | Medium | See above **[UNVERIFIED]** |
+| 0x2c | `Vec3` | `hitPosition` | **Confirmed** | World-space position of the hit point; verified dynamically (was initially swapped with hitDirection) |
+| 0x38 | `Vec3` | `hitDirection` | **Confirmed** | Direction vector of the incoming damage; verified dynamically |
 | 0x44 | `float` | `baseDamage` | High | Read in the randomized damage lerp calculation |
 | 0x48 | `float` | `damageMultiplier` | High | Written by the vehicle-occupant loop (divided by occupant count) |
 | 0x4c | `float` | `resultHealth` | Medium | Written at end of per-entity loop; likely output **[UNVERIFIED: read vs. write]** |
@@ -119,7 +119,7 @@ Defined in `smc64/src/engine/types/damage_event.hpp`. Total size reported by Ghi
 
 Priority order:
 
-1. **Confirm `hitDirection` vs `impactPosition` at 0x2c / 0x38** — fire at a known surface at a known angle, break on `damageEntity02`, read the Vec3 values. Expect `impactPosition` to match world coords of hit point.
+1. ~~**Confirm `hitDirection` vs `impactPosition` at 0x2c / 0x38**~~ — **RESOLVED.** Fields were swapped from initial analysis. `hitPosition` at 0x2c, `hitDirection` at 0x38. Verified dynamically.
 
 2. **Enumerate `sourceType` enum** — trigger melee, grenade, bullet, vehicle crush, fall damage. Log `event->sourceType` each time.
 

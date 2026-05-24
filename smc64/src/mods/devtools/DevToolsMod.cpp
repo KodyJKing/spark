@@ -44,12 +44,12 @@ void DevToolsMod::init() {
         next();
     }, nullptr);
 
-    Spark::DamageEntity::addHandler(modId_, +[](void*, auto next, Engine::DamageEvent* event, uint32_t entityHandle, uint16_t param_3, uint16_t param_4, int16_t param_5, uint64_t param_6) {
+    Spark::DamageEntity::addHandler(modId_, +[](void*, auto next, Engine::DamageEvent* event, uint32_t entityHandle, uint16_t param_3, uint16_t param_4, int16_t hitBoneIndex, uint64_t param_6) {
         if (Mod::DevTools::invincibility) {
             if (entityHandle == Engine::getPlayerHandle()) 
                 return;
         }
-        next(event, entityHandle, param_3, param_4, param_5, param_6);
+        next(event, entityHandle, param_3, param_4, hitBoneIndex, param_6);
     }, nullptr);
 }
 
