@@ -1,0 +1,3 @@
+#!/bin/sh
+msg=$(git log -1 --pretty=%s)
+powershell.exe -ExecutionPolicy RemoteSigned -File "$(git rev-parse --show-toplevel)/scripts/backup_ghidra.ps1" -Message "$msg"

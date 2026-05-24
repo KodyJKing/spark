@@ -62,5 +62,5 @@
 
 - Tooling
     - Cheat Engine:
-        - Implement external tag browser in Cheat Engine.
-        - Implement external entity browser.
+        x Implement external tag browser in Cheat Engine.
+        x Implement external entity browser.
