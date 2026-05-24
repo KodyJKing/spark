@@ -270,14 +270,7 @@ namespace HaloCE::Mod::Mario {
                     if (distance > 5.0f) {
                         marioToCheif();
                     } else {
-                        // Cheif to Mario
-                        float dz = difference.z;
-                        float limit = 0.2f;
-                        // Allow some vertical difference, to keep Cheif grounded.
-                        if (abs(dz) > limit) {
-                            dz = (dz > 0) ? limit : -limit;
-                        }
-                        player->pos = marioWorldPos + Vec3{0, 0, dz};
+                        player->pos = marioWorldPos;
                     }
                 }
             }
