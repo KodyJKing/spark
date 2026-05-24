@@ -1,4 +1,5 @@
 local instances = {}
+dofile("lua/ghidra/ghidra_ui.lua")
 
 function ghLoad(force)
     if not force and #instances > 0 then return end
@@ -52,4 +53,9 @@ function ghDump(rip)
     if count == 0 then
         print("  (no variables found for RIP 0x" .. string.format("%x", rip) .. ")")
     end
+end
+
+function debugger_onBreakpoint()
+    local ann = ghAnnotate(RIP)
+    ghUpdateUI(RIP, ann)
 end
