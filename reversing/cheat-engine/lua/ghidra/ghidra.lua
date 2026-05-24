@@ -1,32 +1,23 @@
-local instances = {}
-local functions = {}
+local ChunkIndex = dofile("lua/ghidra/chunk_index.lua")
 
-local functionChunks = {}
+local instances = {}
+
+local functionIndex = nil
+local globalIndex  = nil
 
 dofile("lua/ghidra/ghidra_ui.lua")
-
-function chunkBy(values, keyFunc)
-    local out = {}
-    for _, v in ipairs(values) do
-        local key = keyFunc(v)
-        if out[key] == nil then out[key] = {} end
-        table.insert(out[key], v)
-    end
-    return out
-end
-
-function getFunctionChunkId(rip)
-    return math.floor(rip / 0x4000)
-end
 
 function ghLoad(force)
     if force or #instances == 0 then 
         instances = dofile("lua/ghidra/scripts/out/instances.lua")
     end
-    if force or #functions == 0 then
-        functions = dofile("lua/ghidra/scripts/out/functions.lua")
-        -- Chunk into 16KB groups by start address for faster lookup in ghAnnotateFunction.
-        functionChunks = chunkBy(functions, function(f) return getFunctionChunkId(f.start) end)
+    if force or functionIndex == nil then
+        local functions = dofile("lua/ghidra/scripts/out/functions.lua")
+        functionIndex = ChunkIndex.new(functions, function(f) return f.start end)
+    end
+    if force or globalIndex == nil then
+        local globals = dofile("lua/ghidra/scripts/out/globals.lua")
+        globalIndex = ChunkIndex.new(globals, function(g) return g.address end)
     end
 end
 
@@ -63,24 +54,24 @@ function ghAnnotate(rip)
     return out
 end
 
-function ghAnnotateFunction(rip)
+function ghAnnotateAddress(rip)
     if rip == nil then rip = RIP end
     ghLoad(false)
 
-    local chunk = functionChunks[getFunctionChunkId(rip)]
-    if chunk == nil then return nil end
+    -- Globals take priority: exact address match.
+    local g = globalIndex:lookupExact(rip)
+    if g ~= nil then return g.name end
 
-    for _, f in ipairs(chunk) do
-        if rip >= f.start and rip <= f.stop then
-            local offset = rip - f.start
-            if offset == 0 then
-                return f.name
-             else
-                 return f.name .. string.format("+0x%X", offset)
-             end
-        end
+    -- Fall back to function range lookup.
+    local f = functionIndex:lookupRange(rip)
+    if f == nil then return nil end
+
+    local offset = rip - f.start
+    if offset == 0 then
+        return f.name
+    else
+        return f.name .. string.format("+0x%X", offset)
     end
-    return nil
 end
 
 -- Prints annotations for the given rip to the console.
@@ -99,5 +90,5 @@ function ghDump(rip)
     end
 end
 
-local id = registerAddressLookupCallback(ghAnnotateFunction)
+local id = registerAddressLookupCallback(ghAnnotateAddress)
 table.insert(reloadFns, function() unregisterAddressLookupCallback(id) end)
