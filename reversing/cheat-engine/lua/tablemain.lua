@@ -11,6 +11,7 @@ dofile("lua/functions/halo1.lua")
 dofile("lua/functions/string_scan.lua")
 dofile("lua/register_address_symbol.lua")
 dofile("lua/bp_freeze.lua")
+dofile("lua/ghidra/ghidra.lua")
 -- dofile("lua/float_fuzz.lua")
 
 local forms         = reloadPackage("lua/functions/forms")
