@@ -24,11 +24,11 @@ local function ensureForm()
     _memo.Font.Size = 10
     _memo.ScrollBars = ssVertical
 
-    _form.show()
+    _form.hide()
 end
 
 function ghUpdateUI(rip, ann)
-    ensureForm()
+    if not _form then return end
 
     local lines = {}
     table.insert(lines, string.format("RIP  0x%016x", rip))
@@ -50,5 +50,33 @@ function ghUpdateUI(rip, ann)
 
     _memo.Lines.Text = table.concat(lines, "\n")
 
+    -- if not _form.Visible then _form.show() end
+end
+
+local function showForm()
+    ensureForm()
     if not _form.Visible then _form.show() end
+end
+
+local forms = require("lua/functions/forms")
+local memoryView = getMemoryViewForm()
+-- Add button to open from context menu in disassembly view
+if memoryView ~= nil then
+    forms.addMenuItem(
+        memoryView.debuggerpopup.Items,
+        {"Ghidra", "Show hints"},
+        function(item)
+            item.OnClick = function(sender)
+                showForm()
+                local address = memoryView.DisassemblerView.SelectedAddress
+                ghUpdateUI(address, ghAnnotate(address))
+            end
+        end
+    )
+
+    memoryView.DisassemblerView.OnSelectionChange = function (sender, address, address2)
+        if not _form or not _form.Visible then return end
+        local ann = ghAnnotate(address)
+        ghUpdateUI(address, ann)
+    end
 end

@@ -58,7 +58,7 @@ public class DumpLocals extends GhidraScript {
         } catch (Exception e) {
             outDir = new File(System.getProperty("java.io.tmpdir"));
         }
-        File luaFile = new File(outDir, "instances.lua");
+        File luaFile = new File(outDir, "out/instances.lua");
 
         DecompInterface decomp = new DecompInterface();
         decomp.setOptions(new DecompileOptions());

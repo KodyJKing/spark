@@ -3,6 +3,9 @@ function reloadPackage(path)
     return require(path)
 end
 
+-- Add cleanup functions to this table.
+reloadFns = {}
+
 dofile("lua/functions/globals.lua")
 dofile("lua/highlight_entity_memview.lua")
 dofile("lua/ipc.lua")
@@ -44,7 +47,11 @@ forms.addMenuItem(
     {"Halo CE", "Reload", "Script"},
     function(item)
         item.OnClick = function(sender)
-            reopenProcess()
+            -- reopenProcess()
+            for _, fn in ipairs(reloadFns) do
+                fn()
+            end
+            reloadFns = {}
             dofile("lua/tablemain.lua")
         end
     end

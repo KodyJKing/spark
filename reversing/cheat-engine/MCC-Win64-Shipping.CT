@@ -5040,36 +5040,7 @@ dealloc(newmem)
       </After>
     </CodeEntry>
   </CheatCodes>
-  <UserdefinedSymbols>
-    <SymbolEntry>
-      <Name>getTagDataPointer</Name>
-      <Address>halo1.dll+A9B648</Address>
-    </SymbolEntry>
-    <SymbolEntry>
-      <Name>getWeaponHud</Name>
-      <Address>halo1.dll+ADA404</Address>
-    </SymbolEntry>
-    <SymbolEntry>
-      <Name>renderWeaponPickupOffer</Name>
-      <Address>halo1.dll+B12EF8</Address>
-    </SymbolEntry>
-    <SymbolEntry>
-      <Name>getTypedEntityPointer</Name>
-      <Address>halo1.dll+B389A4</Address>
-    </SymbolEntry>
-    <SymbolEntry>
-      <Name>renderFlares</Name>
-      <Address>halo1.dll+BE5BB8</Address>
-    </SymbolEntry>
-    <SymbolEntry>
-      <Name>damageEntity</Name>
-      <Address>halo1.dll+B9FBD0</Address>
-    </SymbolEntry>
-    <SymbolEntry>
-      <Name>damageRelatedFunction01</Name>
-      <Address>halo1.dll+B9EA28</Address>
-    </SymbolEntry>
-  </UserdefinedSymbols>
+  <UserdefinedSymbols/>
   <Structures StructVersion="2">
     <Structure Name="Entity" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" RLECompression="1" AutoCreateStructsize="4096">
       <Elements>
