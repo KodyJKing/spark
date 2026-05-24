@@ -26,6 +26,7 @@
 #include "MarioCamera.hpp"
 #include "ThirdPersonFix.hpp"
 #include "MarioPickingFix.hpp"
+#include "FallDamageFix.hpp"
 #include "MarioSkeleton.hpp"
 #include "MarioModel.hpp"
 
@@ -33,7 +34,6 @@
 
 namespace HaloCE::Mod::Mario {
 
-    // Internal:
     bool enableMario = true;
     bool possessMario = true;
 
@@ -157,6 +157,7 @@ namespace HaloCE::Mod::Mario {
 
         ThirdPersonFix::registerHandlers(modId);
         MarioPickingFix::registerHandlers(modId);
+        FallDamageFix::registerHandlers(modId);
         MarioCamera::registerHandlers(modId);
         #endif
     }
