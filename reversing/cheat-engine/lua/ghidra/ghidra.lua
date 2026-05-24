@@ -7,17 +7,27 @@ local globalIndex  = nil
 
 dofile("lua/ghidra/ghidra_ui.lua")
 
+local function resolveAddresses(items)
+    for _, item in ipairs(items) do
+        item.start = getAddress(item.start)
+        if item.stop ~= nil then
+            item.stop = getAddress(item.stop)
+        end
+    end
+    return items
+end
+
 function ghLoad(force)
     if force or #instances == 0 then 
         instances = dofile("lua/ghidra/scripts/out/instances.lua")
     end
     if force or functionIndex == nil then
-        local functions = dofile("lua/ghidra/scripts/out/functions.lua")
+        local functions = resolveAddresses(dofile("lua/ghidra/scripts/out/functions.lua"))
         functionIndex = ChunkIndex.new(functions, function(f) return f.start end)
     end
     if force or globalIndex == nil then
-        local globals = dofile("lua/ghidra/scripts/out/globals.lua")
-        globalIndex = ChunkIndex.new(globals, function(g) return g.address end)
+        local globals = resolveAddresses(dofile("lua/ghidra/scripts/out/globals.lua"))
+        globalIndex = ChunkIndex.new(globals, function(g) return g.start end)
     end
 end
 
@@ -58,8 +68,8 @@ function ghAnnotateAddress(rip)
     if rip == nil then rip = RIP end
     ghLoad(false)
 
-    -- Globals take priority: exact address match.
-    local g = globalIndex:lookupExact(rip)
+    -- Globals take priority: range lookup.
+    local g = globalIndex:lookupRange(rip)
     if g ~= nil then return g.name end
 
     -- Fall back to function range lookup.

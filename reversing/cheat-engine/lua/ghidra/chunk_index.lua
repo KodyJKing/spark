@@ -19,22 +19,13 @@ function ChunkIndex.new(items, addressFunc)
     return self
 end
 
--- Returns the first item in the bucket where item.address == addr, or nil.
-function ChunkIndex:lookupExact(addr)
-    local bucket = self._buckets[math.floor(addr / CHUNK_SIZE)]
-    if bucket == nil then return nil end
-    for _, item in ipairs(bucket) do
-        if item.address == addr then return item end
-    end
-    return nil
-end
-
 -- Returns the first item in the bucket where addr >= item.start and addr <= item.stop, or nil.
+-- item.stop is optional; if nil it is treated as item.start (single-address item).
 function ChunkIndex:lookupRange(addr)
     local bucket = self._buckets[math.floor(addr / CHUNK_SIZE)]
     if bucket == nil then return nil end
     for _, item in ipairs(bucket) do
-        if addr >= item.start and addr <= item.stop then return item end
+        if addr >= item.start and addr <= (item.stop or item.start) then return item end
     end
     return nil
 end
