@@ -14,6 +14,7 @@
 #include "tags/index.hpp"
 #include "types/index.hpp"
 #include "scripting/Scripting.hpp"
+#include "scripting/TerminalOutput.hpp"
 
 namespace Engine {
     bool isCameraLoaded();

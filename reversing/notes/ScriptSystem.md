@@ -1,5 +1,7 @@
 # Script System (HaloScript / BlamScript)
 
+https://c20.reclaimers.net/h1/scripting/
+
 The full HaloScript compiler, function table, and console variable system is **intact** in MCC's halo1.dll. Nothing relevant appears to have been stripped.
 
 **Confirmed working expressions (via `_consoleSubmit`):**
@@ -129,11 +131,74 @@ Errors: `"script type must be \"startup\", \"dormant\", \"continuous\", or \"sta
 
 ---
 
+## HaloScript `print` Builtin
+
+### `hs_print_builtin` — `0xACA4AC` (VA: `7fff49afa4ac`)
+
+The implementation of `(print <expr>)` in HaloScript.
+
+**Signature:** `void(undefined8 unused, ulonglong script_thread_idx, char is_error)`
+
+| Param | Role |
+|---|---|
+| `param_1` | Unused (padding / calling convention artifact) |
+| `param_2` | Script thread index; lower 16 bits index into hs_thread_datum table at `DAT_7fff4ac65098` (stride `0x514`) |
+| `param_3` | `'\0'` = normal eval; non-`'\0'` = error/type-mismatch path |
+
+**Normal path (`param_3 == 0`):**
+
+1. **`FUN_7fff49afc640(param_2, 4, 2, &local_428)`** — evaluates the argument expression; typed value returned via `local_428`
+2. **Type ID resolution** — walks the HS syntax node table (`DAT_7fff4ac721a0`) via a chain of `ushort` dereferences starting from `expr[6]` (child index) to reach the argument's return type ID (`lVar3`)
+3. **`hs_type_to_string_table[type_id](type_id, value, local_418, 0x400)`** — type-specific value→string converter; fills a 1024-byte stack buffer (`local_418`)
+4. **`FUN_7fff49b61800(0, local_418)`** — outputs the string to the terminal, BUT only if:
+   - `DAT__dev_mode_flag != 0` (probable developer/devmode flag), OR
+   - `DAT__log_verbosity_level > 3` (probable verbosity/log level)
+5. **`hs_thread_advance_pc(param_2)`** — advances the HS VM program counter (yield/step thread)
+
+**Error path (`param_3 != 0`):** calls `FUN_7fff49afbdc0` to report a type-mismatch error back to the evaluator.
+
+### `hs_type_to_string_table` — `DAT_7fff4a8b69a0`
+
+Array of 8-byte function pointers, indexed by HaloScript type ID. Each entry is a function:
+```
+void fn(int type_id, value, char* out_buf, int buf_size)
+```
+Converts a typed HS value to its string representation. Called by `hs_print_builtin` before terminal output.
+
+### `hs_thread_advance_pc` — `0xACBFAC` (VA: `7fff49afbfac`)
+
+Advances the HS VM program counter for a thread. Called at the end of every builtin to yield execution.
+Reads `expr[6]` (current PC expression index), follows to `expr[0x22]` (next expression), and writes it back to `expr[6]`.
+
+### `FUN_7fff49b61800` — `0xB31800` (VA: `7fff49b61800`)
+
+Terminal/console output sink. Takes `(int channel, char* message)`. Channel `0` = default.
+Called conditionally from `hs_print_builtin` (gated by dev/verbosity flags) and unconditionally from `FUN_7fff49b50dd8`.
+
+**Hook note:** To intercept all `(print ...)` output regardless of dev flags, hook `hs_print_builtin` and read `local_418` (rsp-relative stack buffer) after step 3. Alternatively, check whether `DAT_7fff4bedb940` and `DAT_7fff4ac710e7` are set at runtime in MCC's shipped config — if `FUN_7fff49b61800` is always reached, hooking it is simpler.
+
+### Key addresses
+
+| Symbol | Offset | VA | Notes |
+|---|---|---|---|
+| `hs_print_builtin` | `0xACA4AC` | `7fff49afa4ac` | Main hook target |
+| `hs_type_to_string_table` | data | `7fff4a8b69a0` | fn ptr array by type ID |
+| `hs_thread_advance_pc` | `0xACBFAC` | `7fff49afbfac` | HS VM PC advance |
+| `FUN_7fff49b61800` | `0xB31800` | `7fff49b61800` | Terminal output sink |
+| `DAT__dev_mode_flag` | data | `7fff4bedb940` | Probable dev mode flag (char, != 0) |
+| `DAT__log_verbosity_level` | data | `7fff4ac710e7` | Probable verbosity level (byte, > 3 threshold) |
+
+---
+
 ## Open Questions / Next Steps
 
 - [ ] Write CE AA script to call `_consoleSubmit` from a hotkey with an arbitrary string
 - [ ] Identify the console **display / render** function (terminal UI)
 - [ ] Clarify whether `_blamScriptOrConsoleStrings` covers only engine globals or also console commands
+- [ ] Check at runtime whether `DAT__dev_mode_flag` / `DAT__log_verbosity_level` are always set in shipped MCC — determines if `FUN_7fff49b61800` is a reliable hook target or if `hs_print_builtin` itself must be hooked
+- [ ] Explore `FUN_7fff49afc640` — likely `hs_eval_expression(thread_idx, type, flags, out_value)` 
+- [ ] Explore `FUN_7fff49afbdc0` — error/type-mismatch reporter called from `hs_print_builtin` error path
+- [ ] Map out `hs_type_to_string_table` entries — identify which type IDs correspond to int/real/string/boolean/unit etc.
 - [ ] Resolve `DAT_MapBase` / `DAT_RelocatedMapBase` symbols
 - [ ] Explore `FUN_7fff49b50508` (called in `_compileScriptVariableRef` to look up a script by index — likely `getScriptByIndex` or similar)
 - [ ] Explore `FUN_7fff49b5031c` (called in `_compileGlobalDeclaration` and `_compileScriptDeclaration` — likely `registerScriptName`)

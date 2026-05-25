@@ -27,7 +27,29 @@ When writing Cheat Engine AA hypothesis test scripts, follow the conventions in 
 
 When defining structs, keep Ghidra and source in sync: use the MCP struct tools (mcp_ghidra_add_struct_field, mcp_ghidra_create_struct, etc.) alongside edits to smc64\src\engine\types\. Add static_assert offset checks for key fields, especially the last named field.
 
-When naming functions or variables in Ghidra, prefix names with an underscore (e.g. _spawnDamageEffect) when confidence is medium or lower. High-confidence names get no prefix. Document the rationale for all names in reversing\notes. For extemely low confidence guesses, use a double underscore prefix. When reading code be aware that some older labels don't adhere perfectly to this convention.
+## Conventions
+
+### Function / Variable Naming
+
+Prefix Ghidra function and variable names based on confidence:
+
+| Confidence | Prefix | Example |
+|---|---|---|
+| High | _(none)_ | `spawnDamageEffect` |
+| Medium or lower | `_` | `_spawnDamageEffect` |
+| Extremely low | `__` | `__spawnDamageEffect` |
+
+Document the rationale for all names in `reversing\notes`. Older labels may not adhere perfectly to this convention.
+
+### Data Global Naming
+
+When renaming a `DAT_` global, keep the `DAT_` prefix so it remains visually distinct as a data address. Apply the confidence underscore after the prefix:
+
+| Confidence | Format | Example |
+|---|---|---|
+| High | `DAT_name` | `DAT_hs_thread_table` |
+| Medium or lower | `DAT__name` | `DAT__dev_mode_flag` |
+| Extremely low | `DAT___name` | `DAT___unknown_counter` |
 
 ## Reporting Offsets
 
@@ -42,6 +64,8 @@ python .github/agents/scripts/ghidra_offset.py <name_or_address> [...]
 The script reads the current image base from the Ghidra HTTP server each run, so the shifting base is handled automatically. Always present results as:
 - **VA:** `0x7fff...`
 - **Offset:** `0x...`
+
+## See also
 
 Some other places you may find useful information are:
 - smc64\src\spark\hook\HookTable.hpp
