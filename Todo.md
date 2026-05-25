@@ -17,7 +17,7 @@
 
 - Gameplay:
     - Movement:
-        - Implement collision with vehicles, bipeds and other moving objects.
+        - > Implement collision with vehicles, bipeds and other moving objects.
         - Fix wall kicks for near-vertical walls.
             - Place a vertical wall between Mario and a wall when he is airborne and close.
         - Implement ridable jackal shield. (rideable as koopa shell)

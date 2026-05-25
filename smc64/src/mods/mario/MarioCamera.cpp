@@ -1,6 +1,8 @@
 #include "MarioCamera.hpp"
 #include "spark/hook/Hooks.hpp"
 #include "memory/Memory.hpp"
+#include "halomcc/HaloMCC.hpp"
+#include <iostream>
 
 namespace HaloCE::Mod::Mario::MarioCamera {
 
@@ -8,10 +10,16 @@ namespace HaloCE::Mod::Mario::MarioCamera {
     static Vec3     cameraPosition       = {0, 0, 0};
     static Vec3     cameraVelocity       = {0, 0, 0};
     static uint32_t framesSinceLastUpdate = 0;
+    static uint32_t lastTickInterval      = 2;
+
 
     static Vec3 getCameraPosition() {
+        uint32_t effectiveInterval = lastTickInterval;
+        if (HaloMCC::isPauseMenuOpen() || effectiveInterval == 0) 
+            effectiveInterval = 1;
+
         // Extrapolate camera on non-update frames. Without this, the camera jitters terribly.
-        float dt = (framesSinceLastUpdate % 2) * 0.5f;
+        float dt = (framesSinceLastUpdate % effectiveInterval) / (float) effectiveInterval;
         auto camera = Engine::getPlayerCameraPointer();
         if (!camera) return Vec3{0, 0, 0};
         Vec3 result = cameraPosition
@@ -26,6 +34,7 @@ namespace HaloCE::Mod::Mario::MarioCamera {
     void onUpdate(Vec3 marioWorldPos) {
         cameraVelocity  = marioWorldPos - cameraPosition;
         cameraPosition  = marioWorldPos;
+        lastTickInterval = framesSinceLastUpdate;
         framesSinceLastUpdate = 0;
         active = true;
     }

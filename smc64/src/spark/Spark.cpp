@@ -36,7 +36,7 @@ namespace Spark {
         registry.add(new FreecamMod());
         registry.add(new DevToolsMod());
         registry.add(new HookLogMod());
-        // registry.add(new MarioMod());
+        registry.add(new MarioMod());
         registry.initAll(halo1);
 
         std::cout << "Mods installed." << std::endl;
