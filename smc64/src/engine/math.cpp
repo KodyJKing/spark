@@ -37,4 +37,20 @@ namespace Engine {
             pos
         };
     }
+
+    void orthonormalize(Engine::WorldTransform &wt) {
+        Vec3 x = wt.x.normalize();
+
+        Vec3 y = wt.z.cross(x).normalize();
+        Vec3 z = x.cross(wt.y).normalize();
+
+        if (z.length() < 0.001f || y.length() < 0.001f) {
+            z = x.cross(wt.y).normalize();
+            y = z.cross(x).normalize();
+        }
+
+        wt.x = x;
+        wt.y = y;
+        wt.z = z;
+    }
 }

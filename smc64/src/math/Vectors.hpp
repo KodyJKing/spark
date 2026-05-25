@@ -31,6 +31,7 @@ struct Vec3 {
 
     static Vec3 lerp( Vec3& a, Vec3& b, float t );
     Vec3 lerp( Vec3& other, float t );
+    Vec3 projectToCone(Vec3 coneDirection, float coneAngle);
 };
 
 struct Vec3i {

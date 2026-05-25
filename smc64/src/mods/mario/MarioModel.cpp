@@ -43,8 +43,17 @@ namespace HaloCE::Mod::Mario::MarioModel {
     }
 
     bool marioArmsBusy() {
+        auto camera = Engine::getPlayerCameraPointer();
+        if (camera) {
+            auto chest = getMarioBoneByName("chest");
+            auto marioForward = chest.z * -1.0f;
+            float alignment = marioForward.dot(camera->fwd);
+            if (alignment < 0) return true;
+        }
+
         if (marioState.action == ACT_IDLE) return false;
         if (marioState.action == ACT_RIDING_SHELL_GROUND) return false;
+
         return true;
     }
 
@@ -71,18 +80,19 @@ namespace HaloCE::Mod::Mario::MarioModel {
         auto right = weaponRootBone->y;
 
         auto base = rightArm.pos;
-        auto target = base + fwd - right * 0.5f;
+        Vec3 coneDir = (chest.z + chest.y * 0.7f).normalize() * -1.0f;
+        auto dir = (fwd - right * 0.5f).normalize().projectToCone(coneDir, 0.6f);
+        auto target = base + dir;
 
         InverseKinematics::MarioIKRequest ikRequest;
         ikRequest.limb = InverseKinematics::MarioIKRequest::Limb::LeftArm;
         ikRequest.targetPosition = target;
         InverseKinematics::applyMarioIK(ikRequest);
 
-        if (marioRightArmBusy()) return;
-
-        ikRequest.limb = InverseKinematics::MarioIKRequest::Limb::RightArm;
-        ikRequest.targetPosition = target + right * 0.05f;
-        InverseKinematics::applyMarioIK(ikRequest);
+        // if (marioRightArmBusy()) return;
+        // ikRequest.limb = InverseKinematics::MarioIKRequest::Limb::RightArm;
+        // ikRequest.targetPosition = target + right * 0.05f;
+        // InverseKinematics::applyMarioIK(ikRequest);
     }
 
     void updatePose( uint32_t entityHandle, Engine::Entity* marioEntity) {
@@ -124,13 +134,13 @@ namespace HaloCE::Mod::Mario::MarioModel {
 
         auto weaponRootBone = &weaponBones[0];
         auto rootBoneInitial = weaponRootBone[0];
+        
+        weaponRootBone->pos = leftHandBone.pos + leftHandBone.x * 0.05f + weaponRootBone->z * 0.0125f;
         if (marioArmsBusy()) {
             weaponRootBone->x = leftHandBone.x;
             weaponRootBone->y = leftHandBone.y;
             weaponRootBone->z = leftHandBone.z;
-            weaponRootBone->pos = leftHandBone.pos;
         }
-        weaponRootBone->pos = leftHandBone.pos + leftHandBone.x * 0.05f + weaponRootBone->z * 0.0125f;
 
         auto initialInverse = Engine::inverseWorldTransform(rootBoneInitial);
         auto relativeTransform = Engine::multiplyWorldTransforms(

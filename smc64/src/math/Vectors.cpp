@@ -54,6 +54,23 @@ Vec3 Vec3::lerp( Vec3& b, float t ) {
     return *this + (b - *this) * t;
 }
 
+Vec3 Vec3::projectToCone(Vec3 coneDirection, float coneAngle) {
+    Vec3 dirNorm = coneDirection.normalize();
+    Vec3 thisNorm = this->normalize();
+
+    float cosAngle = cosf(coneAngle);
+    float dot = thisNorm.dot(dirNorm);
+
+    if (dot > cosAngle) {
+        // Already within the cone
+        return *this;
+    }
+
+    Vec3 rejection = thisNorm - dirNorm * dot;
+    Vec3 rejectionNorm = rejection.normalize();
+    return dirNorm * cosAngle + rejectionNorm * sinf(coneAngle);
+}
+
 ////////////////////////////////////////
 // Vec3i
 

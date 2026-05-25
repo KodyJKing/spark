@@ -189,6 +189,9 @@ namespace HaloCE::Mod::Mario {
         // If stick input is non-zero, don't align to look direction.
         if (marioInputs.stickX != 0 || marioInputs.stickY != 0) return false;
 
+        auto playerController = Engine::getPlayerControllerPointer();
+        bool triggerDown = playerController && playerController->gunTrigger > 0.5f;
+
         // Only align to look direction when Mario is idle, to avoid interfering with other actions.
         return marioState.action == ACT_IDLE || marioState.action == ACT_RIDING_SHELL_GROUND;
     }
@@ -203,6 +206,16 @@ namespace HaloCE::Mod::Mario {
         return marioState.action != ACT_IDLE;
     }
 
+    float facingTolerance() {
+        const float PI = 3.14159265f;
+        auto playerController = Engine::getPlayerControllerPointer();
+        bool triggerDown = playerController && playerController->gunTrigger > 0.5f;
+        if (triggerDown) {
+            return PI / 6.0f; // If aiming, allow a wider tolerance for facing the look direction.
+        }
+        return PI / 2.0;
+    }
+
     void faceLookDirection(Vec3 lookDirection) {
         if (!shouldAlignToLook()) return;
 
@@ -213,8 +226,7 @@ namespace HaloCE::Mod::Mario {
         float dot = sinf(yaw) * sinf(desiredYaw) + cosf(yaw) * cosf(desiredYaw);
         float diff = acosf(dot);
         
-        const float PI = 3.14159265f;
-        if (diff < PI / 3.0) return; // Already facing the right direction
+        if (diff < facingTolerance()) return; // Already facing the right direction
 
         if (shouldAlignGradual()) {
             float cross = cosf(yaw) * sinf(desiredYaw) - sinf(yaw) * cosf(desiredYaw);
@@ -263,7 +275,6 @@ namespace HaloCE::Mod::Mario {
                 auto player = playerRec->entity();
                 if (player) {
                     Vec3 marioWorldPos = marioWorldPosition();
-                    // Vec3 difference = marioWorldPos - player->pos;
                     Vec3 difference = player->pos - marioWorldPos;
                     float distance = difference.length();
                     // If Cheif teleported, move Mario to Cheif

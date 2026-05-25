@@ -18,4 +18,5 @@ namespace Engine {
 
     Engine::WorldTransform inverseWorldTransform(Engine::WorldTransform &wt);
     Engine::WorldTransform multiplyWorldTransforms(Engine::WorldTransform & a, Engine::WorldTransform & b);
+    void orthonormalize(Engine::WorldTransform &wt);
 }
