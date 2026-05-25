@@ -12,7 +12,7 @@ namespace Mod::DevTools {
         float color[4]; // RGBA; {0,0,0,0} = use default text color
     };
 
-    static char  s_inputBuf[512] = {};
+    static char  s_inputBuf[512] = "game_speed_value 0.5";
     static std::vector<HistoryEntry> s_history;
     static bool  s_scrollToBottom = false;
 

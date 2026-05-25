@@ -18,64 +18,64 @@ namespace HaloCE::Mod::Mario::InverseKinematics {
 
     void addPivotOffset(IKRequest& request, float sign) {
         for (auto& bone : request.bones) {
-            Vec3 worldPivotOffset = bone.currentTransform.x * bone.pivotOffset.x + bone.currentTransform.y * bone.pivotOffset.y + bone.currentTransform.z * bone.pivotOffset.z;
+            Vec3 worldPivotOffset = bone.currentTransform.x * bone.pivotOffset.x 
+                + bone.currentTransform.y * bone.pivotOffset.y 
+                + bone.currentTransform.z * bone.pivotOffset.z;
             bone.currentTransform.pos += worldPivotOffset * sign;
             bone.initialTransform.pos += worldPivotOffset * sign;
         }
     }
 
     void solveLimbIK(IKRequest& request) {
-        
+
+        auto& bones = request.bones;
+
         addPivotOffset(request, 1.0f);
         inferBoneLengths(request);
         setupCurrentTransformsFromInitial(request);
 
+        auto direction = [](Vec3 from, Vec3 to) { return (to - from).normalize(); };
+
+        auto orthonormalize = [](IKBone& bone) {
+            Vec3 xDir = bone.currentTransform.x;
+            Vec3 yDir = bone.currentTransform.y;
+            Vec3 newZDir = xDir.cross(yDir).normalize();
+            Vec3 newYDir = newZDir.cross(xDir).normalize();
+
+            if (newZDir.length() < 0.001f || newYDir.length() < 0.001f) {
+                // Degenerate case, use z as reference instead.
+                Vec3 zDir = bone.currentTransform.z;
+                newYDir = zDir.cross(xDir).normalize();
+                newZDir = xDir.cross(newYDir).normalize();
+            }
+
+            bone.currentTransform.y = newYDir;
+            bone.currentTransform.z = newZDir;
+        };
+
+        auto forwardUpdate = [&](IKBone& bone, Vec3 target, float length, float sign) {
+            Vec3 dir = direction(bone.currentTransform.pos, target);
+            bone.currentTransform.pos = target - dir * length;
+            bone.currentTransform.x = dir * sign;
+            orthonormalize(bone);
+        };
+
+        auto backwardUpdate = [&](IKBone& bone, Vec3 target) {
+            forwardUpdate(bone, target, bone.length, 1.0f);
+        };
+
         // Solve via FABRIK. No joint constraints for now, just length constraints.
         const int iterationLimit = 10;
         for (int i = 0; i < iterationLimit; i++) {
-            
-            // Backwards pass: set end effector to target and move down the chain.
-            // Special handling for last bone.
-            Vec3 dir = (request.targetPosition - request.bones.back().currentTransform.pos).normalize();
-            request.bones.back().currentTransform.pos = request.targetPosition - dir * request.bones.back().length;
-            for (int j = (int)request.bones.size() - 2; j >= 0; j--) {
-                Vec3 dir = (request.bones[j].currentTransform.pos - request.bones[j + 1].currentTransform.pos).normalize();
-                request.bones[j].currentTransform.pos = request.bones[j + 1].currentTransform.pos + dir * request.bones[j].length;
+            backwardUpdate(bones.back(), request.targetPosition);
+            for (int j = (int)bones.size() - 2; j >= 0; j--) {
+                backwardUpdate(bones[j], bones[j + 1].currentTransform.pos);
             }
-
             // Forwards pass: set root to initial position and move up the chain.
-            request.bones[0].currentTransform.pos = request.bones[0].initialTransform.pos;
-            for (size_t j = 1; j < request.bones.size(); j++) {
-                Vec3 dir = (request.bones[j].currentTransform.pos - request.bones[j - 1].currentTransform.pos).normalize();
-                request.bones[j].currentTransform.pos = request.bones[j - 1].currentTransform.pos + dir * request.bones[j - 1].length;
+            bones[0].currentTransform.pos = bones[0].initialTransform.pos;
+            for (size_t j = 1; j < bones.size(); j++) {
+                forwardUpdate(bones[j], bones[j-1].currentTransform.pos, bones[j - 1].length, -1.0f);
             }
-        }
-
-        // Project old bone orientations onto new positions.
-        for (int i = 0; i < (int)request.bones.size() - 1; i++) {
-            Vec3 newXDir = (request.bones[i + 1].currentTransform.pos - request.bones[i].currentTransform.pos).normalize();
-            request.bones[i].currentTransform.x = newXDir;
-
-            // Re-orthonormalize y and z based on original orientation:
-            Vec3 yDir = request.bones[i].initialTransform.y;
-            Vec3 newZDir = newXDir.cross(yDir).normalize();
-            Vec3 newYDir = newZDir.cross(newXDir).normalize();
-            request.bones[i].currentTransform.y = newYDir;
-            request.bones[i].currentTransform.z = newZDir;
-        }
-        
-        // Special handling for last bone.
-        {
-            Vec3 newXDir = (request.targetPosition - request.bones.back().currentTransform.pos).normalize();
-
-            request.bones.back().currentTransform.x = newXDir;
-
-            // Re-orthonormalize y and z based on original orientation:
-            Vec3 yDir = request.bones.back().initialTransform.y;
-            Vec3 newZDir = newXDir.cross(yDir).normalize();
-            Vec3 newYDir = newZDir.cross(newXDir).normalize();
-            request.bones.back().currentTransform.y = newYDir;
-            request.bones.back().currentTransform.z = newZDir;
         }
 
         addPivotOffset(request, -1.0f);

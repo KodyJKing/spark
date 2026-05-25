@@ -140,7 +140,7 @@ namespace HaloCE::Mod::Mario {
             Engine::WorldTransform basis = getBoneBasis(bone, marioGeometry);
             drawNormal(basis.pos, basis.x, IM_COL32(255, 0, 0, 255)); // Red = forward
             drawNormal(basis.pos, basis.y, IM_COL32(0, 255, 0, 255)); // Green = right
-            drawNormal(basis.pos, basis.z, IM_COL32(0, 0, 255, 255));   // Blue = up
+            drawNormal(basis.pos, basis.z, IM_COL32(0, 0, 255, 255)); // Blue = up
         }
     }
 

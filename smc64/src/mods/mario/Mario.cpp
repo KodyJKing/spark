@@ -226,7 +226,7 @@ namespace HaloCE::Mod::Mario {
         sm64_set_mario_faceangle(marioId, desiredYaw);
         if (shouldWalkOnAlign()) {
             sm64_set_mario_action(marioId, ACT_WALKING);
-            sm64_set_mario_forward_velocity(marioId, 10.0f);
+            sm64_set_mario_forward_velocity(marioId, 5.0f);
         }
     }
 

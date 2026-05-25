@@ -114,32 +114,32 @@ namespace HaloCE::Mod::Mario::MarioModel {
         // This is a test, just place all weapon bones at mario's root bone position.
         auto rec = Engine::getEntityRecord( weaponHandle );
         if (!rec) return;
-        auto entity = rec->entity();
-        if (!entity) return;
+        auto weaponEntity = rec->entity();
+        if (!weaponEntity) return;
 
-        auto worldBones = entity->worldBones.get(entity, 0);
-        if (!worldBones) return;
+        auto weaponBones = weaponEntity->worldBones.get(weaponEntity, 0);
+        if (!weaponBones) return;
 
         auto leftHandBone = getMarioBoneByName("left_hand");
 
-        auto rootBone = &worldBones[0];
-        auto rootBoneInitial = rootBone[0];
+        auto weaponRootBone = &weaponBones[0];
+        auto rootBoneInitial = weaponRootBone[0];
         if (marioArmsBusy()) {
-            rootBone->x = leftHandBone.x;
-            rootBone->y = leftHandBone.y;
-            rootBone->z = leftHandBone.z;
-            rootBone->pos = leftHandBone.pos;
+            weaponRootBone->x = leftHandBone.x;
+            weaponRootBone->y = leftHandBone.y;
+            weaponRootBone->z = leftHandBone.z;
+            weaponRootBone->pos = leftHandBone.pos;
         }
-        rootBone->pos = leftHandBone.pos + leftHandBone.x * 0.05f + rootBone->z * 0.0125f;
+        weaponRootBone->pos = leftHandBone.pos + leftHandBone.x * 0.05f + weaponRootBone->z * 0.0125f;
 
         auto initialInverse = Engine::inverseWorldTransform(rootBoneInitial);
         auto relativeTransform = Engine::multiplyWorldTransforms(
-            *rootBone,
+            *weaponRootBone,
             initialInverse
         );
-        auto boneCount = entity->worldBones.count();
+        auto boneCount = weaponEntity->worldBones.count();
         for (int i = 1; i < boneCount; i++) {
-            auto& bone = worldBones[i];
+            auto& bone = weaponBones[i];
             bone = Engine::multiplyWorldTransforms(relativeTransform, bone);
         }
 
