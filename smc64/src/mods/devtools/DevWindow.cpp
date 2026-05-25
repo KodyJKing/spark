@@ -1,4 +1,5 @@
 #include "mods/devtools/DevWindow.hpp"
+#include "mods/devtools/ScriptConsole.hpp"
 #include "imgui.h"
 #include "engine/halo1.hpp"
 #include "memory/Memory.hpp"
@@ -107,6 +108,10 @@ namespace Mod::DevTools {
     void renderPauseMenuTabs() {
         if (ImGui::BeginTabItem("Dev")) {
             devTab();
+            ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem("Console")) {
+            renderScriptConsoleTab();
             ImGui::EndTabItem();
         }
     }

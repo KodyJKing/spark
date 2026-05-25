@@ -13,6 +13,7 @@
 #include "bsp/index.hpp"
 #include "tags/index.hpp"
 #include "types/index.hpp"
+#include "scripting/Scripting.hpp"
 
 namespace Engine {
     bool isCameraLoaded();
