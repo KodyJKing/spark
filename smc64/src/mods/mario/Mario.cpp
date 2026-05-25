@@ -242,8 +242,27 @@ namespace HaloCE::Mod::Mario {
         }
     }
 
+    float gamespeed = 1.0f;
+    void setGameSpeed(float speed) {
+        if (gamespeed == speed) return;
+        gamespeed = speed;
+        char buffer[64];
+        snprintf(buffer, sizeof(buffer), "game_speed_value %.2f", speed);
+        Engine::Scripting::submit(buffer);
+    }
+
+    void updateGameSpeed() {
+        if (GetAsyncKeyState(VK_CONTROL) & 0x8000) {
+            setGameSpeed(0.1f);
+        } else {
+            setGameSpeed(1.0f);
+        } 
+    }
+
     void update() {
         #ifdef ENABLE_MARIO
+
+        updateGameSpeed();
 
         MarioCamera::onUpdate(marioWorldPosition());
 
