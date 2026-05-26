@@ -251,9 +251,14 @@ namespace HaloCE::Mod::Mario {
         Engine::Scripting::submit(buffer);
     }
 
-    void updateGameSpeed() {
-        if (GetAsyncKeyState(VK_CONTROL) & 0x8000) {
-            setGameSpeed(0.1f);
+    void updateGameSpeed(Engine::Entity& player) {
+        bool airborne = (marioState.action & ACT_FLAG_AIR) != 0;
+        bool hasSheilds = player.shield > 0;
+        bool canSlowdown = airborne && hasSheilds;
+        bool slowDown = canSlowdown && (GetAsyncKeyState(VK_CONTROL) & 0x8000);
+        if (slowDown) {
+            player.shield -= 0.05f;
+            setGameSpeed(0.25f);
         } else {
             setGameSpeed(1.0f);
         } 
@@ -262,7 +267,13 @@ namespace HaloCE::Mod::Mario {
     void update() {
         #ifdef ENABLE_MARIO
 
-        updateGameSpeed();
+        auto playerRec = Engine::getPlayerRecord();
+        if (!playerRec) return;
+        auto player = playerRec->entity();
+        if (!player) return;
+
+        updateGameSpeed(*player);
+        Engine::Scripting::submit("object_set_scale (player0) 0.5 1");
 
         MarioCamera::onUpdate(marioWorldPosition());
 
@@ -289,20 +300,14 @@ namespace HaloCE::Mod::Mario {
         DynamicGeometry::update(marioState);
 
         if (possessMario) {
-            auto playerRec = Engine::getPlayerRecord();
-            if (playerRec) {
-                auto player = playerRec->entity();
-                if (player) {
-                    Vec3 marioWorldPos = marioWorldPosition();
-                    Vec3 difference = player->pos - marioWorldPos;
-                    float distance = difference.length();
-                    // If Cheif teleported, move Mario to Cheif
-                    if (distance > 5.0f) {
-                        marioToCheif();
-                    } else {
-                        player->pos = marioWorldPos;
-                    }
-                }
+            Vec3 marioWorldPos = marioWorldPosition();
+            Vec3 difference = player->pos - marioWorldPos;
+            float distance = difference.length();
+            // If Cheif teleported, move Mario to Cheif
+            if (distance > 5.0f) {
+                marioToCheif();
+            } else {
+                player->pos = marioWorldPos;
             }
             Mario::updateInput(marioInputs, marioState, Engine::getPlayerCameraPointer());
         } else {

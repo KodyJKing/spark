@@ -24,9 +24,9 @@ namespace HaloCE::Mod::Mario::MarioCamera {
         if (!camera) return Vec3{0, 0, 0};
         Vec3 result = cameraPosition
             + cameraVelocity * dt
-            + camera->fwd * -1.0f
+            + camera->fwd * -1.2f
             + camera->fwd.cross(camera->up) * 0.25f
-            + Vec3{0, 0, 0.5f};
+            + Vec3{0, 0, 0.25f};
         framesSinceLastUpdate++;
         return result;
     }
