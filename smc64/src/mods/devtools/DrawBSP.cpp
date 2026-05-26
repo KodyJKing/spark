@@ -89,6 +89,8 @@ namespace Mod::DevTools {
                     continue;
                 }
 
+                if (surface->planeIndex >= bsp->planes.count)
+                    continue; // Invalid plane, skip it.
                 Engine::BSPPlane* plane = &planes[surface->planeIndex];
                 Vec3 normal = plane->normal;
                 Vec3 worldNormal = x * normal.x + y * normal.y + z * normal.z;

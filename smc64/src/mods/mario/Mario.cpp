@@ -213,7 +213,10 @@ namespace HaloCE::Mod::Mario {
         if (triggerDown) {
             return PI / 6.0f; // If aiming, allow a wider tolerance for facing the look direction.
         }
-        return PI / 2.0;
+        if (marioState.action == ACT_RIDING_SHELL_GROUND) {
+            return PI / 2.0f;
+        }
+        return PI * 2.0f;
     }
 
     void faceLookDirection(Vec3 lookDirection) {
