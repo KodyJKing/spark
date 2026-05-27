@@ -1,5 +1,6 @@
 #include "MarioGameSpeed.hpp"
 
+#include "MarioAudio.hpp"
 #include "MarioState.hpp"
 #include "engine/halo1.hpp"
 #include "decomp/sm64.h"
@@ -9,15 +10,18 @@
 
 namespace HaloCE::Mod::Mario {
 
+    float smoothedGameSpeed = 1.0f;
     float gamespeed = 1.0f;
 
     void setGameSpeed(float speed) {
-        if (gamespeed == speed) return;
+        // if (gamespeed == speed) return;
         gamespeed = speed;
         char buffer[64];
         snprintf(buffer, sizeof(buffer), "game_speed_value %.2f", speed);
         Engine::Scripting::submit(buffer);
+        MarioAudio::setGameSpeed(speed);
     }
+
 
     void updateGameSpeed(Engine::Entity& player) {
         bool airborne = (marioState.action & ACT_FLAG_AIR) != 0;
@@ -26,10 +30,16 @@ namespace HaloCE::Mod::Mario {
         bool slowDown = canSlowdown && (GetAsyncKeyState(VK_CONTROL) & 0x8000);
         if (slowDown) {
             player.shield -= 0.05f;
-            setGameSpeed(0.25f);
+            gamespeed = 0.25f;
         } else {
-            setGameSpeed(1.0f);
+            gamespeed = 1.0f;
         }
+
+        // Smoothly interpolate the game speed to avoid abrupt changes.
+        float smoothingFactor = 0.2f; // Adjust this for faster/slower smoothing
+        smoothedGameSpeed += (gamespeed - smoothedGameSpeed) * smoothingFactor;
+
+        setGameSpeed(smoothedGameSpeed);
     }
 
 }

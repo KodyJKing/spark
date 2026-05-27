@@ -21,6 +21,7 @@
 #include "MarioGameSpeed.hpp"
 #include "MarioShieldRegen.hpp"
 
+#include "MarioAudio.hpp"
 #include "MarioCamera.hpp"
 #include "ThirdPersonFix.hpp"
 #include "MarioPickingFix.hpp"
@@ -133,6 +134,7 @@ namespace HaloCE::Mod::Mario {
 
         sm64_register_debug_print_function(debugPrint);
 
+        MarioAudio::init(rom);
         initTestLevel();
         initMario();
 
@@ -146,6 +148,7 @@ namespace HaloCE::Mod::Mario {
     void free() {
         #ifdef ENABLE_MARIO
         sm64_global_terminate();
+        MarioAudio::free();
 
         if (texture) {
             ::free(texture);
@@ -234,8 +237,12 @@ namespace HaloCE::Mod::Mario {
         
         faceLookDirection(Engine::getPlayerCameraPointer()->fwd);
 
-        sm64_mario_tick(marioId, &marioInputs, &marioState, &marioGeometry);
+        {
+            std::lock_guard<std::mutex> sm64Lock(MarioAudio::sm64Mutex());
+            sm64_mario_tick(marioId, &marioInputs, &marioState, &marioGeometry);
+        }
         sm64_set_mario_water_level(marioId, -999999.99f);
+        MarioAudio::update();
 
         updateMarioPose(marioGeometry);
 
