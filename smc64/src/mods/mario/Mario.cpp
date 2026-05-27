@@ -19,6 +19,7 @@
 #include "DynamicGeometry.hpp"
 #include "MarioFacing.hpp"
 #include "MarioGameSpeed.hpp"
+#include "MarioShieldRegen.hpp"
 
 #include "MarioCamera.hpp"
 #include "ThirdPersonFix.hpp"
@@ -189,6 +190,7 @@ namespace HaloCE::Mod::Mario {
         if (!player) return;
 
         updateGameSpeed(*player);
+        updateShieldRegen(*player);
         Engine::Scripting::submit("object_set_scale (player0) 0.5 1");
 
         MarioCamera::onUpdate(marioWorldPosition());
