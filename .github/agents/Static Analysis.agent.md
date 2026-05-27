@@ -51,6 +51,14 @@ When renaming a `DAT_` global, keep the `DAT_` prefix so it remains visually dis
 | Medium or lower | `DAT__name` | `DAT__dev_mode_flag` |
 | Extremely low | `DAT___name` | `DAT___unknown_counter` |
 
+### No Raw VAs in Comments or Notes
+
+halo1.dll is frequently rebased in Ghidra to match the live process. **Never embed raw VAs (e.g. `0x7fff5009f230`) in Ghidra comments or in `reversing\notes` documents** — they become silently stale after the next rebase.
+
+If a function, label, or global is worth referencing, give it a name first (even a speculative one — or a neutral placeholder like a Greek letter) and reference it by name. The name survives rebasing; the address does not.
+
+> **Note on older files:** Notes and Ghidra comments generated before this convention was established may contain raw VAs that are no longer valid. Treat any bare `0x7fff...` address in older documents as a snapshot that may need to be re-resolved via the offset script or Ghidra search.
+
 ## Reporting Offsets
 
 This applies to functions, mid-function instructions, data addresses — any VA that needs to be referenced from outside Ghidra (e.g. in Cheat Engine auto-assembler scripts to test hypotheses).
