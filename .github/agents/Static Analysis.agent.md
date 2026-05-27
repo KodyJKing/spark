@@ -61,7 +61,13 @@ Use the offset script to resolve one or more names or addresses at once:
 python .github/agents/scripts/ghidra_offset.py <name_or_address> [...]
 ```
 
-The script reads the current image base from the Ghidra HTTP server each run, so the shifting base is handled automatically. Always present results as:
+`<name_or_address>` is either a **function name** (looked up via the Ghidra HTTP server) or an **absolute VA as shown in Ghidra** (e.g. `0x7fff495dea28`). The script subtracts the current image base to produce the module-relative offset. It does **not** accept offsets as input — always pass names or absolute VAs from Ghidra.
+
+The script reads the current image base from the Ghidra HTTP server each run, so the shifting base is handled automatically.
+
+**If the script is unavailable**, manually compute the offset: find the current image base in Ghidra (e.g. via the Segments window or `list_segments`) and subtract it from the absolute VA shown in Ghidra.
+
+Always present results as:
 - **VA:** `0x7fff...`
 - **Offset:** `0x...`
 

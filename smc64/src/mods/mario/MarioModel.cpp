@@ -42,16 +42,25 @@ namespace HaloCE::Mod::Mario::MarioModel {
         return true;
     }
 
+    Vec3 preferredArmDirection() {
+        auto chest = getMarioBoneByName("chest");
+        return (chest.z + chest.y * 0.7f).normalize() * -1.0f;
+    }
+
     bool marioArmsBusy() {
         auto camera = Engine::getPlayerCameraPointer();
         if (camera) {
-            auto chest = getMarioBoneByName("chest");
-            auto marioForward = chest.z * -1.0f;
+            auto marioForward = preferredArmDirection();
             float alignment = marioForward.dot(camera->fwd);
             if (alignment < 0) return true;
         }
 
+        // If punching, don't IK to weapon.
+        if (marioState.action == ACT_PUNCHING) return true;
+
+        return false; // ???
         if (marioState.action == ACT_IDLE) return false;
+        if (marioState.action == ACT_WALKING) return false;
         if (marioState.action == ACT_RIDING_SHELL_GROUND) return false;
 
         return true;
@@ -80,7 +89,7 @@ namespace HaloCE::Mod::Mario::MarioModel {
         auto right = weaponRootBone->y;
 
         auto base = rightArm.pos;
-        Vec3 coneDir = (chest.z + chest.y * 0.7f).normalize() * -1.0f;
+        Vec3 coneDir = preferredArmDirection();
         auto dir = (fwd - right * 0.5f).normalize().projectToCone(coneDir, 0.6f);
         auto target = base + dir;
 

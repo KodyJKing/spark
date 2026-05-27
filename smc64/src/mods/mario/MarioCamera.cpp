@@ -19,7 +19,9 @@ namespace HaloCE::Mod::Mario::MarioCamera {
             effectiveInterval = 1;
 
         // Extrapolate camera on non-update frames. Without this, the camera jitters terribly.
-        float dt = (framesSinceLastUpdate % effectiveInterval) / (float) effectiveInterval;
+        float dt = (framesSinceLastUpdate) / (float) effectiveInterval;
+        if (dt > 1.0f) dt = 1.0f; // Don't extrapolate too far, to avoid going through walls.
+        
         auto camera = Engine::getPlayerCameraPointer();
         if (!camera) return Vec3{0, 0, 0};
         Vec3 result = cameraPosition
