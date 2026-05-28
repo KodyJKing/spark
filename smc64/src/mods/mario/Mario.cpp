@@ -29,6 +29,7 @@
 #include "MarioSkeleton.hpp"
 #include "MarioModel.hpp"
 #include "MarioMelee.hpp"
+#include "MarioWeaponOffset.hpp"
 
 namespace HaloCE::Mod::Mario {
 
@@ -143,6 +144,7 @@ namespace HaloCE::Mod::Mario {
         MarioPickingFix::registerHandlers(modId);
         FallDamageFix::registerHandlers(modId);
         MarioCamera::registerHandlers(modId);
+        MarioWeaponOffset::registerHandlers(modId);
         #endif
     }
 

@@ -16,6 +16,8 @@
 #include <cmath>
 #include <algorithm>
 
+// #define DEBUG_MARIO_MELEE 1
+
 namespace HaloCE::Mod::Mario::MarioMelee {
 
     // ── Tunable constants ──────────────────────────────────────────────────────
@@ -24,7 +26,7 @@ namespace HaloCE::Mod::Mario::MarioMelee {
     static constexpr float kFootRadius              = 0.06f;  // world units
     static constexpr float kFootOffset              = 0.05f;  // distance from foot bone to center of foot hit sphere
     static constexpr float kBipedCapsuleRadius      = 0.15f;  // world units
-    static constexpr float kBipedCapsuleHalfHeight  = 0.35f;  // half-height of cylinder segment
+    static constexpr float kBipedCapsuleHalfHeight  = 0.25f;  // half-height of cylinder segment
     static constexpr float kVehicleCapsuleRadius    = 0.80f;
     static constexpr float kVehicleCapsuleHalfHeight = 0.50f;
     static constexpr float kMeleeDamage             = 0.01f;
@@ -204,6 +206,7 @@ namespace HaloCE::Mod::Mario::MarioMelee {
     }
 
     void debugRender() {
+        #ifdef DEBUG_MARIO_MELEE
         if (!enableMario || !possessMario) return;
 
         namespace ESP = Spark::Overlay::ESP;
@@ -246,6 +249,7 @@ namespace HaloCE::Mod::Mario::MarioMelee {
                 : IM_COL32(60, 255, 60,  200);
             drawCapsule3D(capsuleCenter, entity->up, capsR, capsHH, col);
         });
+        #endif
     }
 
 }

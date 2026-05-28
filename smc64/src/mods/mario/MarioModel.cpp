@@ -2,6 +2,7 @@
 #include "MarioModel.hpp"
 #include "MarioSkeleton.hpp" 
 #include "MarioInverseKinematics.hpp"
+#include "MarioWeaponOffset.hpp"
 #include <string>
 #include "decomp/sm64.h"
 #include "Coordinates.hpp"
@@ -144,7 +145,9 @@ namespace HaloCE::Mod::Mario::MarioModel {
         auto weaponRootBone = &weaponBones[0];
         auto rootBoneInitial = weaponRootBone[0];
         
-        weaponRootBone->pos = leftHandBone.pos + leftHandBone.x * 0.05f + weaponRootBone->z * 0.0125f;
+        MarioWeaponOffset::Offset off;
+        MarioWeaponOffset::getWeaponOffset(weaponHandle, off);
+        weaponRootBone->pos = leftHandBone.pos + leftHandBone.x * off.x + leftHandBone.y * off.y + leftHandBone.z * off.z;
         if (marioArmsBusy()) {
             weaponRootBone->x = leftHandBone.x;
             weaponRootBone->y = leftHandBone.y;
