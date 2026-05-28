@@ -22,7 +22,7 @@ namespace HaloCE::Mod::Mario::MarioWeaponOffset {
         { "weapons\\rocket launcher\\rocket launcher", { -0.0570f, -0.0020f, 0.0180f } },
     };
 
-    Offset offset;
+    Vec3 offset = { 0.05f, 0.0f, 0.0f };
 
     static bool  sOpen = true;
     static float sStep = 0.001f;

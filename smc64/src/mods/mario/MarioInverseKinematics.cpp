@@ -67,7 +67,7 @@ namespace HaloCE::Mod::Mario::InverseKinematics {
         // Solve via FABRIK. No joint constraints for now, just length constraints.
         const int iterationLimit = 10;
         for (int i = 0; i < iterationLimit; i++) {
-            backwardUpdate(bones.back(), request.targetPosition);
+            backwardUpdate(bones.back(), request.targetTransform.pos);
             for (int j = (int)bones.size() - 2; j >= 0; j--) {
                 backwardUpdate(bones[j], bones[j + 1].currentTransform.pos);
             }
@@ -79,6 +79,13 @@ namespace HaloCE::Mod::Mario::InverseKinematics {
         }
 
         addPivotOffset(request, -1.0f);
+
+        if (request.enforceRotation) {
+            auto& end = bones.back();
+            end.currentTransform.x = request.targetTransform.x;
+            end.currentTransform.y = request.targetTransform.y;
+            end.currentTransform.z = request.targetTransform.z;
+        }
     }
 
     void applyMarioIK(MarioIKRequest& request) {
@@ -108,7 +115,8 @@ namespace HaloCE::Mod::Mario::InverseKinematics {
             ikRequest.bones.push_back({ initialTransform, length, pivotOffset });
         }
 
-        ikRequest.targetPosition = request.targetPosition;
+        ikRequest.targetTransform = request.targetTransform;
+        ikRequest.enforceRotation = request.enforceRotation;
         solveLimbIK(ikRequest);
 
         // Apply solved IK transforms back to Mario's skeleton.

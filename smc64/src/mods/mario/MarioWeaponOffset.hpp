@@ -1,6 +1,7 @@
 #pragma once
 
 #include "spark/mod/ModId.hpp"
+#include "math/Vectors.hpp"
 #include <string>
 #include <unordered_map>
 
@@ -10,11 +11,7 @@ namespace HaloCE::Mod::Mario::MarioWeaponOffset {
     //   x = along hand X (typically forward / grip axis)
     //   y = along hand Y
     //   z = along hand Z
-    struct Offset {
-        float x = 0.05f;
-        float y = 0.0f;
-        float z = 0.0f;
-    };
+    using Offset = Vec3;
 
     // Per-weapon-tag offsets. Key = tag resource path (e.g. "weapons\\pistol\\pistol").
     extern std::unordered_map<std::string, Offset> offsetMap;

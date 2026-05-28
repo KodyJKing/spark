@@ -15,7 +15,8 @@ namespace HaloCE::Mod::Mario::InverseKinematics {
 
     struct IKRequest {
         std::vector<IKBone> bones;
-        Vec3 targetPosition;
+        Engine::WorldTransform targetTransform;
+        bool enforceRotation = false;
     };
 
     void solveLimbIK(IKRequest& request);
@@ -25,7 +26,8 @@ namespace HaloCE::Mod::Mario::InverseKinematics {
             LeftArm,
             RightArm,
         } limb;
-        Vec3 targetPosition;
+        Engine::WorldTransform targetTransform;
+        bool enforceRotation = false;
     };
 
     void applyMarioIK(MarioIKRequest& request);

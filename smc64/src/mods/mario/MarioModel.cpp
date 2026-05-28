@@ -96,12 +96,14 @@ namespace HaloCE::Mod::Mario::MarioModel {
 
         InverseKinematics::MarioIKRequest ikRequest;
         ikRequest.limb = InverseKinematics::MarioIKRequest::Limb::LeftArm;
-        ikRequest.targetPosition = target;
+        ikRequest.targetTransform = *weaponRootBone;
+        ikRequest.targetTransform.pos = target;
+        ikRequest.enforceRotation = true;
         InverseKinematics::applyMarioIK(ikRequest);
 
         // if (marioRightArmBusy()) return;
         // ikRequest.limb = InverseKinematics::MarioIKRequest::Limb::RightArm;
-        // ikRequest.targetPosition = target + right * 0.05f;
+        // ikRequest.targetTransform.pos = target + right * 0.05f;
         // InverseKinematics::applyMarioIK(ikRequest);
     }
 
@@ -147,7 +149,7 @@ namespace HaloCE::Mod::Mario::MarioModel {
         
         MarioWeaponOffset::Offset off;
         MarioWeaponOffset::getWeaponOffset(weaponHandle, off);
-        weaponRootBone->pos = leftHandBone.pos + leftHandBone.x * off.x + leftHandBone.y * off.y + leftHandBone.z * off.z;
+        weaponRootBone->pos = leftHandBone.transformPoint(off);
         if (marioArmsBusy()) {
             weaponRootBone->x = leftHandBone.x;
             weaponRootBone->y = leftHandBone.y;
