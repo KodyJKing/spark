@@ -51,6 +51,32 @@ void DevToolsMod::init() {
         }
         next(event, entityHandle, param_3, param_4, hitBoneIndex, param_6);
     }, nullptr);
+
+    // TEMP: Numpad8 held → apply damage to the player.
+    Spark::UpdateAllEntities::addHandler(modId_, +[](void*, auto next) {
+        if (GetAsyncKeyState(VK_NUMPAD8) & 0x8000) {
+            auto playerHandle = Engine::getPlayerHandle();
+            if (playerHandle != NULL_HANDLE && Spark::DamageEntity::original) {
+                auto* dmgTag = Engine::findTag("weapons\\frag grenade\\explosion", "jpt!");
+                if (dmgTag) {
+                    Engine::DamageEvent event{};
+                    event.damageTypeTagHandle = dmgTag->tagID;
+                    event.flags               = 0x1; // single-entity target
+                    event.interactorHandle    = NULL_HANDLE;
+                    event.attackerHandle      = NULL_HANDLE;
+                    event.sourceTypeIndex     = (uint16_t)-1;
+                    if (auto pos = Engine::getPlayerPosition()) {
+                        event.hitPosition = *pos;
+                    }
+                    event.hitDirection     = {0.f, 1.f, 0.f};
+                    event.baseDamage       = 0.01f;
+                    event.damageMultiplier = 1.0f;
+                    Spark::DamageEntity::original(&event, playerHandle, 0, 0, -1, 0);
+                }
+            }
+        }
+        next();
+    }, nullptr);
 }
 
 void DevToolsMod::free() {

@@ -28,6 +28,7 @@
 #include "FallDamageFix.hpp"
 #include "MarioSkeleton.hpp"
 #include "MarioModel.hpp"
+#include "MarioMelee.hpp"
 
 namespace HaloCE::Mod::Mario {
 
@@ -132,7 +133,7 @@ namespace HaloCE::Mod::Mario {
         sm64_global_terminate();
         sm64_global_init(rom, texture);
 
-        sm64_register_debug_print_function(debugPrint);
+        // sm64_register_debug_print_function(debugPrint);
 
         MarioAudio::init(rom);
         initTestLevel();
@@ -245,6 +246,7 @@ namespace HaloCE::Mod::Mario {
         MarioAudio::update();
 
         updateMarioPose(marioGeometry);
+        MarioMelee::tick();
 
         bool inForbiddenState = false
             || (marioState.action == ACT_START_SLEEPING)

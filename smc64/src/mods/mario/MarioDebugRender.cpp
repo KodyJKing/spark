@@ -9,6 +9,7 @@
 #include "MarioState.hpp"
 #include "MarioModel.hpp"
 #include "MarioSkeleton.hpp"
+#include "MarioMelee.hpp"
 #include "Coordinates.hpp"
 
 namespace HaloCE::Mod::Mario {
@@ -134,6 +135,7 @@ namespace HaloCE::Mod::Mario {
         }
 
         drawMarioBones(marioGeometry);
+        MarioMelee::debugRender();
 
         marioDebugWindow(wallData);
 

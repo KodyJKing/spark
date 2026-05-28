@@ -5,6 +5,21 @@
 #include "spark/RenderBuses.hpp"
 #include "engine/halo1.hpp"
 #include <iostream>
+#include <sstream>
+#include <stdint.h>
+
+static std::string tagInfoStr(uint32_t tagId, std::string prefix = "  ") {
+    std::ostringstream ss;
+    auto tag = Engine::getTag(tagId);
+    if (!tag) {
+        ss << prefix << "Tag ID " << (void*)(uintptr_t)tagId << " is null or invalid.\n";
+        return ss.str();
+    }
+    ss << prefix << "Tag ID: " << (void*)(uintptr_t)tagId << "\n"
+       << prefix << "Resource Path: " << tag->getResourcePath() << "\n"
+       << prefix << "Group ID: " << tag->groupIDStr() << "\n";
+    return ss.str();
+}
 
 void HookLogMod::init() {
 
@@ -102,6 +117,7 @@ void HookLogMod::init() {
                       << "  hitBoneIndex=" << hitBoneIndex << "\n"
                       << "  param_6=" << (void*)(uintptr_t)param_6 << "\n"
                       << "  event.damageTypeTagHandle=" << (void*)(uintptr_t)event->damageTypeTagHandle << "\n"
+                      << tagInfoStr(event->damageTypeTagHandle, "    ")
                       << "  event.sourceType=" << event->sourceType << "\n"
                       << "  event.flags=" << event->flags << "\n"
                       << "  event.interactorHandle=" << (void*)(uintptr_t)event->interactorHandle << "\n"

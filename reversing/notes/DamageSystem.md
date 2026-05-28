@@ -134,3 +134,31 @@ Priority order:
 7. **Confirm `damageEntity02` is the outermost entry** — log call stack at entry to `damageEntity02`; check whether any caller is itself a damage-related function. (Recursive self-calls are already accounted for.)
 
 8. **Verify `getEntityShields` is normalized** — read its return value alongside a known shield percentage from the HUD.
+
+
+## Sample Damage call(s)
+
+```
+[HookLog] DamageEntity
+  entityHandle=00000000E6040003
+  param_3=0
+  param_4=0
+  hitBoneIndex=-1
+  param_6=0
+  event.damageTypeTagHandle=00000000EAA0092C
+    Tag ID: 00000000EAA0092C
+    Resource Path: weapons\plasma pistol\bolt
+    Group ID: [     >      > jpt!]
+  event.sourceType=17
+  event.flags=8
+  event.interactorHandle=00000000FFFFFFFF
+  event.attackerHandle=00000000E62C03B0
+  event.sourceTypeIndex=3
+  event.hitPosition=(-68.0493, 35.7068, 0.78093)
+  event.hitDirection=(-0.783214, 0.61014, -0.119601)
+  event.baseDamage=0.246527
+  event.damageMultiplier=1
+  event.resultHealth=0
+  event.materialType=65535
+
+```
