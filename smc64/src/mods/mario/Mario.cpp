@@ -186,6 +186,14 @@ namespace HaloCE::Mod::Mario {
         });
     }
 
+    Vec3 marioWorldVelocity() {
+        return Coordinates::marioToHalo(Vec3{
+            marioState.velocity[0],
+            marioState.velocity[1],
+            marioState.velocity[2]
+        });
+    }
+
 
     void update() {
         #ifdef ENABLE_MARIO
@@ -232,6 +240,7 @@ namespace HaloCE::Mod::Mario {
                 marioToCheif();
             } else {
                 player->pos = marioWorldPos;
+                player->vel = marioWorldVelocity();
             }
             Mario::updateInput(marioInputs, marioState, Engine::getPlayerCameraPointer());
         } else {
@@ -255,6 +264,9 @@ namespace HaloCE::Mod::Mario {
             || (marioState.action == ACT_SLEEPING)
             || (marioState.action == ACT_WAKING_UP);
         if (inForbiddenState) sm64_set_mario_action(marioId, ACT_IDLE);
+
+        // For now, always heal Mario. Cheif is responsible for recieving damage.
+        sm64_mario_heal(marioId, 0xFF);
 
         #endif
     }

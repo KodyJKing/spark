@@ -36,7 +36,7 @@ namespace HaloCE::Mod::Mario {
         }
 
         // Smoothly interpolate the game speed to avoid abrupt changes.
-        float smoothingFactor = 0.2f; // Adjust this for faster/slower smoothing
+        float smoothingFactor = 0.4f; // Adjust this for faster/slower smoothing
         smoothedGameSpeed += (gamespeed - smoothedGameSpeed) * smoothingFactor;
 
         setGameSpeed(smoothedGameSpeed);

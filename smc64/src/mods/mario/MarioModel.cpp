@@ -6,16 +6,6 @@
 #include <string>
 #include "decomp/sm64.h"
 #include "Coordinates.hpp"
-
-namespace {
-    void updateEntityRegion(uint32_t entityHandle, void* unknown) {
-        typedef uint64_t (*updateEntityRegion_t)( uint32_t entityHandle, void* unknown );
-        auto halo1Dll = Engine::dllBase();
-        auto pUpdateEntityRegion = (updateEntityRegion_t) (halo1Dll + 0xB368B0U);
-        pUpdateEntityRegion(entityHandle, unknown);
-    }
-}
-
 namespace HaloCE::Mod::Mario::MarioModel {
     const char* marioTagPath = "smc64\\mario\\mario";
 
@@ -107,6 +97,17 @@ namespace HaloCE::Mod::Mario::MarioModel {
         // InverseKinematics::applyMarioIK(ikRequest);
     }
 
+    void updateMarioPosition(Engine::Entity* marioEntity, Vec3 newPos) {
+        if (!marioEntity) return;
+
+        marioEntity->pos = newPos;
+        
+        // Filthy hack to work around the fact that we're bypassing Halo's entity movement bookkeeping.
+        // I suspect this is updating things like cluster and wake/sleep state.
+        Engine::Scripting::submit("(objects_attach (player0) \"\" mario_model \"\")");
+        Engine::Scripting::submit("(objects_detach (player0) mario_model)");
+    }
+
     void updatePose( uint32_t entityHandle, Engine::Entity* marioEntity) {
         if (!marioEntity) return;
 
@@ -114,10 +115,9 @@ namespace HaloCE::Mod::Mario::MarioModel {
         auto worldBones = marioEntity->worldBones.get(marioEntity, 0);
         if (!worldBones) return;
 
-        marioEntity->pos = marioPose[0].pos;
+        updateMarioPosition(marioEntity, marioPose[0].pos);
         Vec3 marioVelocity = *(Vec3*)&marioState.velocity[0];
         marioEntity->vel = Coordinates::marioToHalo(marioVelocity);
-        updateEntityRegion(entityHandle, nullptr);
 
         IKToWeapon();
 
@@ -133,7 +133,6 @@ namespace HaloCE::Mod::Mario::MarioModel {
     }
 
     void updateWeaponPose( uint32_t weaponHandle ) {
-        // This is a test, just place all weapon bones at mario's root bone position.
         auto rec = Engine::getEntityRecord( weaponHandle );
         if (!rec) return;
         auto weaponEntity = rec->entity();
@@ -166,18 +165,6 @@ namespace HaloCE::Mod::Mario::MarioModel {
             auto& bone = weaponBones[i];
             bone = Engine::multiplyWorldTransforms(relativeTransform, bone);
         }
-
-        // auto boneCount = entity->worldBones.count();
-        // for (int i = 0; i < boneCount; i++) {
-        //     // worldBones[i].w = 0.75f;
-        //     if (marioArmsBusy()) {
-        //         worldBones[i].x = leftHandBone.x;
-        //         worldBones[i].y = leftHandBone.y;
-        //         worldBones[i].z = leftHandBone.z;
-        //     }
-        //     worldBones[i].pos = leftHandBone.pos + leftHandBone.x * 0.05f + worldBones[i].z * 0.025f;
-        // }
-
     }
 
     uint32_t marioHandle  = 0xFFFFFFFF;
@@ -190,19 +177,6 @@ namespace HaloCE::Mod::Mario::MarioModel {
         }
         if (entityHandle == playerWeaponHandle()) {
             updateWeaponPose(entityHandle);
-        }
-
-        // When the Mario entity is far from home, it may not recieve a pose update tick. 
-        // In lieu of a cleaner solution, I'm having the player update tick also update Mario.
-        auto playerHandle = Engine::getPlayerHandle();
-        if (entityHandle == playerHandle) {
-            if (marioHandle != 0xFFFFFFFF) {
-                auto marioRec = Engine::getEntityRecord( marioHandle );
-                if (!marioRec) return;
-                auto marioEntity = marioRec->entity();
-                if (!marioEntity) return;
-                updatePose(marioHandle, marioEntity);
-            }
         }
     }
 
