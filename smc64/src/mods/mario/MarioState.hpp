@@ -1,6 +1,7 @@
 #pragma once
 
 #include "libsm64.h"
+#include "math/Vectors.hpp"
 #include <cstdint>
 #include <cstddef>
 
@@ -12,11 +13,12 @@ namespace HaloCE::Mod::Mario {
     extern uint8_t* rom;
     extern size_t romSize;
 
-    extern SM64Surface* staticSurfaces;
-    extern size_t staticSurfacesCount;
-
     extern int32_t marioId;
     extern SM64MarioInputs marioInputs;
     extern SM64MarioState marioState;
     extern SM64MarioGeometryBuffers marioGeometry;
+
+    // Chunk that marioState.position is expressed relative to.
+    // True world mario pos = Coordinates::marioChunkOrigin(marioChunk) + marioState.position.
+    extern Vec3i marioChunk;
 }

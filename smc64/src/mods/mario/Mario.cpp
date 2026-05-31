@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include <cstdio>
 #include <cstdint>
+#include <cmath>
 #include <iostream>
 
 #include <Windows.h>
@@ -15,6 +16,7 @@
 #include "engine/halo1.hpp"
 #include "MarioInput.hpp"
 #include "BSPConversion.hpp"
+#include "MarioBSPChunk.hpp"
 #include "math/Vectors.hpp"
 #include "Coordinates.hpp"
 #include "DynamicGeometry.hpp"
@@ -58,35 +60,50 @@ namespace HaloCE::Mod::Mario {
         printf("%s\n", msg);
     }
 
+    void createSpawnPlatform(const Vec3& localPos) {
+        // Create a temporary square floor in mario-local space to support spawn.
+        // This is replaced with real BSP geometry immediately after by MarioBSPChunk::init.
+        int32_t fx = (int32_t)std::lround(localPos.x);
+        int32_t fz = (int32_t)std::lround(localPos.z);
+        int32_t fy = (int32_t)std::lround(localPos.y) - 200; // ~0.5m below spawn
+        int32_t half = 2000; // ~5m half-extent
+        SM64Surface floor[2] = {};
+        for (auto& s : floor) { s.type = SURFACE_DEFAULT; s.force = 0; s.terrain = TERRAIN_GRASS; }
+        // CCW winding (viewed from above) for upward normal
+        floor[0].vertices[0][0] = fx - half; floor[0].vertices[0][1] = fy; floor[0].vertices[0][2] = fz - half;
+        floor[0].vertices[1][0] = fx - half; floor[0].vertices[1][1] = fy; floor[0].vertices[1][2] = fz + half;
+        floor[0].vertices[2][0] = fx + half; floor[0].vertices[2][1] = fy; floor[0].vertices[2][2] = fz + half;
+        floor[1].vertices[0][0] = fx - half; floor[1].vertices[0][1] = fy; floor[1].vertices[0][2] = fz - half;
+        floor[1].vertices[1][0] = fx + half; floor[1].vertices[1][1] = fy; floor[1].vertices[1][2] = fz + half;
+        floor[1].vertices[2][0] = fx + half; floor[1].vertices[2][1] = fy; floor[1].vertices[2][2] = fz - half;
+        sm64_static_surfaces_load(floor, 2);
+    }
+
     void initMario() {
-        // Create a Mario instance at the origin.
+        // Create a Mario instance at Cheif's position (split into chunk + local).
         if (marioId < 0) {
-            auto id = sm64_mario_create(99999.0f, 99999.0f, 99999.0f);
             auto playerPos = Engine::getPlayerPosition();
-            if (playerPos.has_value()) {
-                auto pos = playerPos.value();
-                // Convert Halo CE coordinates to Super Mario 64 coordinates
-                auto marioPos = Coordinates::haloToMario(pos);
-                sm64_set_mario_position(id, marioPos.x, marioPos.y, marioPos.z);
+            if (!playerPos.has_value()) {
+                printf("initMario: no player position available, skipping Mario spawn.\n");
+                return;
             }
+            Vec3 marioWorldPos = Coordinates::haloToMario(playerPos.value() + Vec3{0, 0, 1});
+            marioChunk = Coordinates::marioChunkForPosition(marioWorldPos);
+            Vec3 local = Coordinates::marioWorldToLocal(marioWorldPos, marioChunk);
+            std::cout << "Local position: (" << local.x << ", " << local.y << ", " << local.z << ")\n";
 
-            // Todo: Switch back to this path after implementing map-chunking
-            // int32_t id = -1;
-            // auto playerPos = Engine::getPlayerPosition();
-            // if (playerPos.has_value()) {
-            //     auto pos = playerPos.value();
-            //     // Convert Halo CE coordinates to Super Mario 64 coordinates
-            //     auto marioPos = Coordinates::haloToMario(pos);
-            //     id = sm64_mario_create(marioPos.x, marioPos.y, marioPos.z);
-            // }
-
-            marioId = id;
+            // Create temporary spawn platform, then create Mario.
+            createSpawnPlatform(local);
+            marioId = sm64_mario_create(local.x, local.y, local.z);
         }
         if (marioId < 0) {
             printf("Failed to create Mario instance.\n");
+            Beep(750, 100);
+            Beep(750, 100);
             return;
         }
-        printf("Created Mario instance with ID: %d\n", marioId);
+        printf("Created Mario instance with ID: %d in chunk (%d, %d, %d)\n",
+               marioId, marioChunk.x, marioChunk.y, marioChunk.z);
 
         // Initialize Mario state and geometry buffers.
         marioInputs = {};
@@ -103,24 +120,6 @@ namespace HaloCE::Mod::Mario {
         printf(" - Color buffer: %p\n", (void*)marioGeometry.color);
         printf(" - Normal buffer: %p\n", (void*)marioGeometry.normal);
         printf(" - UV buffer: %p\n", (void*)marioGeometry.uv);
-    }
-
-    void initTestLevel() {
-        // Load Halo CE static geometry and convert it to Super Mario 64 format
-        auto surfaceVector = HaloCE::Mod::BSPConversion::haloGeometryToMario();
-
-        staticSurfacesCount = surfaceVector.size();
-        if (staticSurfacesCount == 0) {
-            printf("No static surfaces found in Halo CE geometry.\n");
-            return;
-        }
-
-        staticSurfaces = (SM64Surface*)malloc(sizeof(SM64Surface) * staticSurfacesCount);
-        // memccpy(staticSurfaces, surfaceVector.data(), sizeof(SM64Surface), staticSurfacesCount);
-        memcpy(staticSurfaces, surfaceVector.data(), sizeof(SM64Surface) * staticSurfacesCount);
-
-        sm64_static_surfaces_load(staticSurfaces, staticSurfacesCount);
-        printf("Loaded %zu static surfaces from Halo CE geometry.\n", staticSurfacesCount);
     }
 
     // Public:
@@ -149,8 +148,8 @@ namespace HaloCE::Mod::Mario {
         sm64_register_debug_print_function(debugPrint);
 
         MarioAudio::init(rom);
-        initTestLevel();
         initMario();
+        MarioBSPChunk::init(marioChunk);
 
         ThirdPersonFix::registerHandlers(modId);
         MarioPickingFix::registerHandlers(modId);
@@ -162,6 +161,7 @@ namespace HaloCE::Mod::Mario {
 
     void free() {
         #ifdef ENABLE_MARIO
+        MarioBSPChunk::free();
         sm64_global_terminate();
         MarioAudio::free();
 
@@ -181,21 +181,28 @@ namespace HaloCE::Mod::Mario {
         auto playerPos = Engine::getPlayerPosition();
         if (playerPos.has_value()) {
             auto pos = playerPos.value();
-            // Convert Halo CE coordinates to Super Mario 64 coordinates
-            auto marioPos = Coordinates::haloToMario(pos);
-            sm64_set_mario_position(marioId, marioPos.x, marioPos.y, marioPos.z);
+            Vec3 marioWorldPos = Coordinates::haloToMario(pos);
+            Vec3i targetChunk  = Coordinates::marioChunkForPosition(marioWorldPos);
+            if (targetChunk.x != marioChunk.x ||
+                targetChunk.y != marioChunk.y ||
+                targetChunk.z != marioChunk.z) {
+                MarioBSPChunk::reloadFor(targetChunk);
+            }
+            Vec3 local = Coordinates::marioWorldToLocal(marioWorldPos, marioChunk);
+            sm64_set_mario_position(marioId, local.x, local.y, local.z);
             sm64_mario_heal(marioId, 0xFF);
         }
     }
 
     void dumpMarioGeometry();
 
+    Vec3 marioWorldPositionMario() {
+        Vec3 local = { marioState.position[0], marioState.position[1], marioState.position[2] };
+        return Coordinates::marioLocalToWorld(local, marioChunk);
+    }
+
     Vec3 marioWorldPosition() {
-        return Coordinates::marioToHalo(Vec3{
-            marioState.position[0],
-            marioState.position[1],
-            marioState.position[2]
-        });
+        return Coordinates::marioToHalo(marioWorldPositionMario());
     }
 
     Vec3 marioWorldVelocity() {
@@ -267,6 +274,7 @@ namespace HaloCE::Mod::Mario {
             std::lock_guard<std::mutex> sm64Lock(MarioAudio::sm64Mutex());
             sm64_mario_tick(marioId, &marioInputs, &marioState, &marioGeometry);
         }
+        MarioBSPChunk::maintain();
         sm64_set_mario_water_level(marioId, -999999.99f);
         MarioAudio::update();
 

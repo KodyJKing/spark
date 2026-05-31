@@ -3,6 +3,8 @@
 #include "engine/halo1.hpp"
 #include "./Coordinates.hpp"
 #include "BSPConversion.hpp"
+#include "MarioBSPChunk.hpp"
+#include "Mario.hpp"
 
 #include <unordered_map>
 #include <filesystem>
@@ -73,11 +75,12 @@ namespace HaloCE::Mod::Mario::DynamicGeometry {
 
         // We have everything we need now, create the surface object.
         
-        // Set position and orientation
+        // Set position and orientation (relative to the currently loaded chunk).
         Vec3 marioSpacePos = Coordinates::haloToMario(bone->pos);
-        surfaceObject.transform.position[0] = marioSpacePos.x;
-        surfaceObject.transform.position[1] = marioSpacePos.y;
-        surfaceObject.transform.position[2] = marioSpacePos.z;
+        Vec3 chunkOrigin   = Coordinates::marioChunkOrigin(MarioBSPChunk::getLoadedChunk());
+        surfaceObject.transform.position[0] = marioSpacePos.x - chunkOrigin.x;
+        surfaceObject.transform.position[1] = marioSpacePos.y - chunkOrigin.y;
+        surfaceObject.transform.position[2] = marioSpacePos.z - chunkOrigin.z;
         //
         Vec3 eulerRotation = orientationToEulerAngles(bone->x, bone->z) * (180.0f / 3.14159265f);
         // Note: libsm64 uses the order: pitch, yaw, roll
@@ -103,10 +106,9 @@ namespace HaloCE::Mod::Mario::DynamicGeometry {
     }
     
     void update(SM64MarioState& marioState) {
-        
-        Vec3 marioPos = Vec3{ marioState.position[0], marioState.position[1], marioState.position[2] };
-        Vec3 marioWorldPos = Coordinates::marioToHalo(marioPos);
-        
+
+        Vec3 marioWorldPos = Mario::marioWorldPosition();
+
         Engine::foreachEntityRecord([&](Engine::EntityRecord* entityRecord) {
             if (!entityRecord) return;
             auto entity = entityRecord->entity();
@@ -123,6 +125,15 @@ namespace HaloCE::Mod::Mario::DynamicGeometry {
                 deallocateDynamicGeometryForEntity(entity);
             }
         });
+    }
+
+    void onLoadedChunkChanged(Vec3i /*oldChunk*/, Vec3i /*newChunk*/) {
+        // Destroy every existing surface object; allocateDynamicGeometryForEntity
+        // will recreate them on the next update() pass using the new loaded chunk's origin.
+        for (auto& kv : objectMap) {
+            sm64_surface_object_delete(kv.second.surfaceObjectId);
+        }
+        objectMap.clear();
     }
     
     void free() {

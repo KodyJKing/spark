@@ -10,6 +10,7 @@
 #include "MarioModel.hpp"
 #include "MarioSkeleton.hpp"
 #include "MarioMelee.hpp"
+#include "MarioBSPChunk.hpp"
 #include "Coordinates.hpp"
 
 namespace HaloCE::Mod::Mario {
@@ -19,9 +20,9 @@ namespace HaloCE::Mod::Mario {
     void draw_SM64SurfaceCollisionData(SM64SurfaceCollisionData* surfaceData, ImU32 color) {
         namespace ESP = Spark::Overlay::ESP;
         Camera& camera = ESP::camera;
-        Vec3 v1 = Coordinates::marioToHalo(surfaceData->vertex1);
-        Vec3 v2 = Coordinates::marioToHalo(surfaceData->vertex2);
-        Vec3 v3 = Coordinates::marioToHalo(surfaceData->vertex3);
+        Vec3 v1 = Coordinates::marioLocalToHaloWorld(surfaceData->vertex1, marioChunk);
+        Vec3 v2 = Coordinates::marioLocalToHaloWorld(surfaceData->vertex2, marioChunk);
+        Vec3 v3 = Coordinates::marioLocalToHaloWorld(surfaceData->vertex3, marioChunk);
         ESP::drawLine(v1, v2, color);
         ESP::drawLine(v2, v3, color);
         ESP::drawLine(v3, v1, color);
@@ -47,6 +48,16 @@ namespace HaloCE::Mod::Mario {
         ImGui::Text("Mario ID: %d", marioId);
         ImGui::Text("Position: (%.2f, %.2f, %.2f)", marioState.position[0], marioState.position[1], marioState.position[2]);
         ImGui::Text("Velocity: (%.2f, %.2f, %.2f)", marioState.velocity[0], marioState.velocity[1], marioState.velocity[2]);
+        {
+            Vec3i chunk  = marioChunk;
+            Vec3i loaded = MarioBSPChunk::getLoadedChunk();
+            Vec3  world  = marioWorldPosition();
+            ImGui::Text("Chunk: (%d, %d, %d)  Loaded: (%d, %d, %d)",
+                chunk.x, chunk.y, chunk.z, loaded.x, loaded.y, loaded.z);
+            ImGui::Text("World pos (halo): (%.2f, %.2f, %.2f)", world.x, world.y, world.z);
+            ImGui::SliderFloat("chunkExtent",  &Coordinates::chunkExtent,  1024.0f, 32768.0f, "%.0f");
+            ImGui::SliderFloat("reloadMargin", &MarioBSPChunk::reloadMargin, 0.0f,  16384.0f, "%.0f");
+        }
         ImGui::Text("Health: %d", marioState.health);
         ImGui::Text("Action: 0x%X", marioState.action);
         ImGui::Text("Flags: 0x%X", marioState.flags);
@@ -77,8 +88,8 @@ namespace HaloCE::Mod::Mario {
                 Vec3 p1 = pos[j];
                 Vec3 p2 = pos[(j + 1) % 3];
 
-                Vec3 haloP1 = Coordinates::marioToHalo(p1);
-                Vec3 haloP2 = Coordinates::marioToHalo(p2);
+                Vec3 haloP1 = Coordinates::marioLocalToHaloWorld(p1, marioChunk);
+                Vec3 haloP2 = Coordinates::marioLocalToHaloWorld(p2, marioChunk);
 
                 ImU32 colorIm = IM_COL32(
                     static_cast<uint8_t>(color[j].x * 255),
@@ -91,9 +102,9 @@ namespace HaloCE::Mod::Mario {
             }
 
             if (highlightThis) {
-                Vec3 haloP1 = Coordinates::marioToHalo(pos[0]);
-                Vec3 haloP2 = Coordinates::marioToHalo(pos[1]);
-                Vec3 haloP3 = Coordinates::marioToHalo(pos[2]);
+                Vec3 haloP1 = Coordinates::marioLocalToHaloWorld(pos[0], marioChunk);
+                Vec3 haloP2 = Coordinates::marioLocalToHaloWorld(pos[1], marioChunk);
+                Vec3 haloP3 = Coordinates::marioLocalToHaloWorld(pos[2], marioChunk);
                 Spark::Overlay::ESP::drawPoint(haloP1, IM_COL32(255, 0, 0, 255));
                 Spark::Overlay::ESP::drawPoint(haloP2, IM_COL32(0, 255, 0, 255));
                 Spark::Overlay::ESP::drawPoint(haloP3, IM_COL32(0, 0, 255, 255));

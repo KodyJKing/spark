@@ -108,11 +108,103 @@ namespace HaloCE::Mod::BSPConversion {
         return result;
     }
 
-    // Convert Halo CE static geometry to Super Mario 64 format
-    std::vector<SM64Surface> haloGeometryToMario() {
+    // Convert Halo CE static world geometry into mario-space surfaces for the chunk
+    // neighborhood centered on `loadedChunk` (radius=1 -> 3x3x3 chunks).
+    std::vector<SM64Surface> haloGeometryToMarioForChunk(Vec3i loadedChunk, int radius) {
+        std::vector<SM64Surface> result;
+
         auto bsp = (Engine::CollisionBSP*) Engine::getBSPPointer();
-        if (bsp == nullptr) return std::vector<SM64Surface>{};
-        return convertBSP(bsp, SURFACE_WALL_MISC);
+        if (bsp == nullptr) return result;
+
+        uint32_t bspVertexCount  = bsp->vertices.count;
+        Engine::BSPVertex* bspVertices = bsp->vertices.get<Engine::BSPVertex>(0);
+        if (bspVertices == nullptr || bspVertexCount == 0) return result;
+
+        uint32_t bspEdgeCount = bsp->edges.count;
+        Engine::BSPEdge* bspEdges = bsp->edges.get<Engine::BSPEdge>(0);
+        if (bspEdges == nullptr || bspEdgeCount == 0) return result;
+
+        uint32_t bspSurfaceCount = bsp->surfaces.count;
+        Engine::BSPSurface* bspSurfaces = bsp->surfaces.get<Engine::BSPSurface>(0);
+        if (bspSurfaces == nullptr || bspSurfaceCount == 0) return result;
+
+        uint32_t planeCount = bsp->planes.count;
+        Engine::BSPPlane* planes = bsp->planes.get<Engine::BSPPlane>(0);
+        if (planes == nullptr || planeCount == 0) return result;
+
+        // Neighborhood AABB in mario world space.
+        Vec3 chunkOriginMario = Coordinates::marioChunkOrigin(loadedChunk);
+        float halfExtent      = Coordinates::chunkHalfExtent();
+        float reach           = (float) radius * Coordinates::chunkExtent + halfExtent;
+        Vec3 aabbMin = { chunkOriginMario.x - reach, chunkOriginMario.y - reach, chunkOriginMario.z - reach };
+        Vec3 aabbMax = { chunkOriginMario.x + reach, chunkOriginMario.y + reach, chunkOriginMario.z + reach };
+
+        for (uint32_t i = 0; i < bspEdgeCount; i++) {
+            auto edge = &bspEdges[i];
+
+            uint32_t surfaces[2] = { edge->leftSurface, edge->rightSurface };
+            for (uint32_t j = 0; j < 2; j++) {
+                if (surfaces[j] >= bspSurfaceCount) continue;
+                auto surface = &bspSurfaces[surfaces[j]];
+                if (surface->firstEdgeIndex >= bspEdgeCount) continue;
+
+                auto firstEdge = &bspEdges[surface->firstEdgeIndex];
+                if (firstEdge->startVertex >= bspVertexCount) continue;
+                auto firstVertex = &bspVertices[firstEdge->startVertex];
+
+                if (edge->startVertex == firstEdge->startVertex ||
+                    edge->endVertex   == firstEdge->startVertex) {
+                    continue;
+                }
+
+                auto p0 = &bspVertices[edge->startVertex];
+                auto p1 = &bspVertices[edge->endVertex];
+                auto p2 = firstVertex;
+
+                // Convert to mario world space first so we can filter against the chunk AABB.
+                Vec3 m0 = Coordinates::haloToMario(p0->pos);
+                Vec3 m1 = Coordinates::haloToMario(p1->pos);
+                Vec3 m2 = Coordinates::haloToMario(p2->pos);
+
+                auto outside = [&](const Vec3& m) {
+                    return m.x < aabbMin.x || m.x > aabbMax.x ||
+                           m.y < aabbMin.y || m.y > aabbMax.y ||
+                           m.z < aabbMin.z || m.z > aabbMax.z;
+                };
+                if (outside(m0) && outside(m1) && outside(m2)) continue;
+
+                auto v01 = p1->pos - p0->pos;
+                auto v02 = p2->pos - p0->pos;
+                auto cross = v01.cross(v02);
+                if (cross.lengthSquared() < 0.0001f) continue;
+
+                if (surface->planeIndex >= bsp->planes.count) continue;
+                Engine::BSPPlane* plane = &planes[surface->planeIndex];
+
+                Vec3* mPtrs[3] = { &m0, &m2, &m1 };
+                if (cross.dot(plane->normal) < 0) {
+                    std::swap(mPtrs[1], mPtrs[2]);
+                }
+
+                SM64Surface sm64Surface;
+                sm64Surface.type    = SURFACE_WALL_MISC;
+                sm64Surface.force   = 0;
+                sm64Surface.terrain = 0x0000;
+
+                for (int k = 0; k < 3; k++) {
+                    Vec3 local = { mPtrs[k]->x - chunkOriginMario.x,
+                                   mPtrs[k]->y - chunkOriginMario.y,
+                                   mPtrs[k]->z - chunkOriginMario.z };
+                    sm64Surface.vertices[k][0] = (int32_t) local.x;
+                    sm64Surface.vertices[k][1] = (int32_t) local.y;
+                    sm64Surface.vertices[k][2] = (int32_t) local.z;
+                }
+
+                result.push_back(sm64Surface);
+            }
+        }
+
+        return result;
     }
 
 }
