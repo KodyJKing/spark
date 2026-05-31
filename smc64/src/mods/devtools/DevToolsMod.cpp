@@ -3,10 +3,13 @@
 #include "mods/devtools/ESPWindow.hpp"
 #include "mods/devtools/ESPWorld.hpp"
 #include "mods/devtools/DevWindow.hpp"
+#include "mods/devtools/ScriptConsole.hpp"
 #include "spark/RenderBuses.hpp"
 #include "spark/hook/Hooks.hpp"
 #include "mods/devtools/VectorProfiler.hpp"
 #include "engine/halo1.hpp"
+#include <cstdio>
+#include <string>
 
 void DevToolsMod::init() {
     using Bus = Spark::EventBus<void>;
@@ -50,6 +53,19 @@ void DevToolsMod::init() {
                 return;
         }
         next(event, entityHandle, param_3, param_4, hitBoneIndex, param_6);
+    }, nullptr);
+
+    Spark::ConsoleReportError::addHandler(modId_, +[](void*, auto next, const char* source, const char* category, const char* message, const char* location) {
+        // Format consistently with the engine's own sink (see _consoleReportError decompile).
+        std::string formatted;
+        if (source && location && message) {
+            formatted.assign("[").append(source).append("] ");
+        }
+        if (category) { formatted.append(category).append(": "); }
+        if (message)  { formatted.append(message); }
+        std::printf("[HaloScript error] %s\n", formatted.c_str());
+        Mod::DevTools::pushConsoleError(formatted.c_str());
+        next(source, category, message, location);
     }, nullptr);
 }
 

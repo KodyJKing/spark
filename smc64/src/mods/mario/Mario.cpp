@@ -8,6 +8,7 @@
 #include <cstdio>
 #include <cstdint>
 #include <cmath>
+#include <string>
 #include <iostream>
 
 #include <Windows.h>
@@ -233,9 +234,11 @@ namespace HaloCE::Mod::Mario {
 
         MarioCamera::onUpdate(marioWorldPosition());
 
-        // F6 to dump Mario geometry buffers
         if (GetAsyncKeyState(VK_F6) & 1) {
-            dumpMarioGeometry();
+            // dumpMarioGeometry();
+            std::string command = "(sound_impulse_start sound\\sfx\\impulse\\melee\\rlauncher_impact none 1)";
+            Engine::Scripting::submit(command.c_str());
+            // Beep(750, 300);
         }
 
         if (GetAsyncKeyState(VK_F3) & 1) enableMario = !enableMario;

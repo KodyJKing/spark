@@ -2,6 +2,7 @@
 #include "imgui.h"
 #include "engine/scripting/Scripting.hpp"
 #include "engine/scripting/TerminalOutput.hpp"
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -15,6 +16,11 @@ namespace Mod::DevTools {
     static char  s_inputBuf[512] = "game_speed_value 0.5";
     static std::vector<HistoryEntry> s_history;
     static bool  s_scrollToBottom = false;
+
+    // Errors may arrive from the game thread via the ConsoleReportError hook;
+    // drain in pushEngineOutput so s_history stays UI-thread-only.
+    static std::mutex              s_pendingErrorsMutex;
+    static std::vector<std::string> s_pendingErrors;
 
     // Command history for up/down navigation (submitted commands only, not engine output)
     static std::vector<std::string> s_cmdHistory;
@@ -49,6 +55,18 @@ namespace Mod::DevTools {
     }
 
     static void pushEngineOutput() {
+        {
+            std::lock_guard<std::mutex> lock(s_pendingErrorsMutex);
+            for (auto& text : s_pendingErrors) {
+                HistoryEntry h;
+                h.text = std::move(text);
+                h.color[0] = 1.0f; h.color[1] = 0.35f; h.color[2] = 0.35f; h.color[3] = 1.0f;
+                s_history.push_back(std::move(h));
+            }
+            if (!s_pendingErrors.empty()) s_scrollToBottom = true;
+            s_pendingErrors.clear();
+        }
+
         auto entries = Engine::TerminalOutput::poll();
         if (entries.empty()) return;
         for (auto& e : entries) {
@@ -114,6 +132,12 @@ namespace Mod::DevTools {
             submitInput();
             ImGui::SetKeyboardFocusHere(-1);
         }
+    }
+
+    void pushConsoleError(const char* text) {
+        if (!text) return;
+        std::lock_guard<std::mutex> lock(s_pendingErrorsMutex);
+        s_pendingErrors.emplace_back(text);
     }
 
 } // namespace Mod::DevTools
