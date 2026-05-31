@@ -12,7 +12,7 @@
 
 #pragma comment(lib, "xaudio2.lib")
 
-// #define ENABLE_MARIO_AUDIO 1
+#define ENABLE_MARIO_AUDIO 1
 
 namespace HaloCE::Mod::Mario::MarioAudio {
 

@@ -34,6 +34,7 @@
 #include "MarioMelee.hpp"
 #include "MarioWeaponOffset.hpp"
 #include "MarioAimingIK.hpp"
+#include "MarioWeaponKick.hpp"
 
 namespace HaloCE::Mod::Mario {
 
@@ -157,6 +158,7 @@ namespace HaloCE::Mod::Mario {
         FallDamageFix::registerHandlers(modId);
         MarioCamera::registerHandlers(modId);
         MarioWeaponOffset::registerHandlers(modId);
+        MarioWeaponKick::registerHandlers(modId);
         #endif
     }
 
@@ -277,6 +279,7 @@ namespace HaloCE::Mod::Mario {
         }
         MarioBSPChunk::maintain();
         sm64_set_mario_water_level(marioId, -999999.99f);
+        sm64_set_mario_gas_level(marioId, -999999.99f);
         MarioAudio::update();
 
         updateMarioPose(marioGeometry);
