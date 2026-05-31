@@ -136,6 +136,13 @@ namespace Mod::DevTools {
                 ESP::drawLine(p0->pos, p1->pos, color);
                 ESP::drawLine(p1->pos, p2->pos, color);
                 ESP::drawLine(p2->pos, p0->pos, color);
+
+                // Render text for surface material
+                Vec3 textPos = (p0->pos + p1->pos + p2->pos) / 3.0f;
+                auto material = surface->material;
+                char materialText[255] = {0};
+                sprintf( materialText, "%X", material );
+                ESP::drawText( textPos, materialText, color );
             }
         }
     }

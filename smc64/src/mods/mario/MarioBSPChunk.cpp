@@ -23,6 +23,8 @@ namespace HaloCE::Mod::Mario::MarioBSPChunk {
     static SM64Surface* staticSurfaces    = nullptr;
     static size_t       staticSurfacesCount = 0;
 
+    static uint64_t lastBSPSignature = 0;
+
     Vec3i getLoadedChunk() { return marioChunk; }
 
     static void uploadFor(Vec3i chunk) {
@@ -47,6 +49,8 @@ namespace HaloCE::Mod::Mario::MarioBSPChunk {
         sm64_static_surfaces_load(staticSurfaces, (uint32_t) staticSurfacesCount);
         printf("MarioBSPChunk: loaded %zu surfaces for chunk (%d, %d, %d)\n",
                staticSurfacesCount, chunk.x, chunk.y, chunk.z);
+
+        lastBSPSignature = Engine::getBSPSignature();
     }
 
     void init(Vec3i initialChunk) {
@@ -61,7 +65,7 @@ namespace HaloCE::Mod::Mario::MarioBSPChunk {
         HaloCE::Mod::Mario::DynamicGeometry::onLoadedChunkChanged(oldChunk, newChunk);
     }
 
-    void maintain() {
+    void checkMovement() {
         if (marioId < 0) return;
 
         float ext       = Coordinates::chunkExtent;
@@ -83,6 +87,18 @@ namespace HaloCE::Mod::Mario::MarioBSPChunk {
         p[2] -= (float) delta.z * ext;
         sm64_set_mario_position(marioId, p[0], p[1], p[2]);
         reloadFor(newChunk);
+    }
+
+    void checkSignature() {
+        uint64_t currentBSPSignature = Engine::getBSPSignature();
+        if (currentBSPSignature != lastBSPSignature) {
+            uploadFor(marioChunk);
+        }
+    }
+
+    void maintain() {
+        checkMovement();
+        checkSignature();
     }
 
     void free() {

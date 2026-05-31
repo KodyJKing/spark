@@ -71,4 +71,11 @@ namespace Engine {
         return collisionBSP->surfaces.count;
     }
 
+    uint64_t getBSPSignature() {
+        CollisionBSP* collisionBSP = (CollisionBSP*) getBSPPointer();
+        if ( !collisionBSP || !Memory::isAllocated( (uintptr_t) collisionBSP ) )
+            return 0;
+        return Engine::bspSignature(collisionBSP);
+    }
+
 }

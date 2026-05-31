@@ -16,4 +16,6 @@ namespace Engine {
 
     BSPSurface* getBSPSurfaceArray();
     uint32_t getBSPSurfaceCount();
+    
+    uint64_t getBSPSignature();
 }

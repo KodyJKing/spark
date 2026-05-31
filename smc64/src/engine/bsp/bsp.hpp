@@ -38,4 +38,19 @@ namespace Engine {
         BlockPointer bsp3DNodes, planes, leaves, bsp2DRefs, bsp2DNodes, surfaces, edges, vertices;
     };
     #pragma pack(pop)
+
+    static uint64_t bspSignature(CollisionBSP* bsp) {
+        if (!bsp) return 0;
+        // Hash the count and offset for all BlockPointers on the bsp.
+        uint64_t hash = 0;
+        const BlockPointer* pointers[] = {
+            &bsp->bsp3DNodes, &bsp->planes, &bsp->leaves, &bsp->bsp2DRefs,
+            &bsp->bsp2DNodes, &bsp->surfaces, &bsp->edges, &bsp->vertices
+        };
+        for (const auto* ptr : pointers) {
+            hash ^= std::hash<uint64_t>()(ptr->count);
+            hash ^= std::hash<uint64_t>()(ptr->offset);
+        }
+        return hash;
+    }
 }

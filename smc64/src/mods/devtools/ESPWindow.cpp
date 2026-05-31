@@ -222,6 +222,9 @@ namespace Mod::DevTools {
                 snprintf(bspEdgesStr, 255, "%p", bspEdges);
                 ImGuiUtils::renderCopyableText("BSP Edge Array", bspEdgesStr);
 
+                uint64_t bspSignature = Engine::getBSPSignature();
+                ImGui::Text("BSP Signature: %p", (void*)bspSignature);
+
                 ImGui::EndTabItem();
             }
 #endif
