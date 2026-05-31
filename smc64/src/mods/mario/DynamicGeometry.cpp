@@ -8,6 +8,7 @@
 
 #include <unordered_map>
 #include <filesystem>
+#include <iostream>
 
 #include "decomp/surface_terrains.h"
 namespace HaloCE::Mod::Mario::DynamicGeometry {
@@ -20,27 +21,9 @@ namespace HaloCE::Mod::Mario::DynamicGeometry {
         std::vector<SM64Surface> surfaces;
     };
 
-    std::unordered_map<Engine::Entity*, ObjectEntry> objectMap;
+    std::unordered_map<Engine::Entity*, std::vector<ObjectEntry>> objectMap;
 
-    // void dumpVertices(Engine::Entity* entity, std::filesystem::path outputPath) {
-    //     auto entityTag = entity->tag();
-    //     if (entityTag == nullptr) return;
-    //     auto collisionTag = getCollisionGeometryTag(entityTag);
-    //     if (collisionTag == nullptr) return;
-    //     auto collisionData = (Engine::CollisionTagData*) collisionTag->getData();
-    //     if (collisionData == nullptr) return;
-
-    //     auto nodeCount = collisionData->collisionNodes.count;
-    //     if (nodeCount != 1) return;
-    //     auto node = collisionData->collisionNodes.get<Engine::CollisionNode>(0);
-    //     if (node == nullptr) return;
-    //     auto bsp = node->collisionBsps.get<Engine::CollisionBSP>(0);
-    //     if (bsp == nullptr) return;
-
-    //     HaloCE::Mod::BSPConversion::dumpVertices(bsp, outputPath);
-    // }
-
-    std::vector<SM64Surface> convertCollisionBSPToSM64Surfaces(Engine::Entity* entity) {
+    std::vector<SM64Surface> convertCollisionBSPToSM64Surfaces(Engine::Entity* entity, size_t boneIndex) {
         auto entityTag = entity->tag();
         if (entityTag == nullptr) return {};
         auto collisionTag = getCollisionGeometryTag(entityTag);
@@ -49,60 +32,102 @@ namespace HaloCE::Mod::Mario::DynamicGeometry {
         if (collisionData == nullptr) return {};
 
         auto nodeCount = collisionData->collisionNodes.count;
-        if (nodeCount != 1) return {};
-        auto node = collisionData->collisionNodes.get<Engine::CollisionNode>(0);
+        if (nodeCount <= boneIndex) return {};
+        auto node = collisionData->collisionNodes.get<Engine::CollisionNode>(boneIndex);
         if (node == nullptr) return {};
-        auto bsp = node->collisionBsps.get<Engine::CollisionBSP>(0);
-        if (bsp == nullptr) return {};
 
-        return HaloCE::Mod::BSPConversion::convertBSP(bsp, SURFACE_NOT_SLIPPERY);
-        // return HaloCE::Mod::BSPConversion::convertBSP(bsp, SURFACE_WALL_MISC);
+        std::vector<SM64Surface> surfaces;
+        
+        auto bspCount = node->collisionBsps.count;
+        for (size_t bspIndex = 0; bspIndex < bspCount; ++bspIndex) {
+            auto bsp = node->collisionBsps.get<Engine::CollisionBSP>(bspIndex);
+            if (bsp == nullptr) continue;
+
+            auto bspSurfaces = HaloCE::Mod::BSPConversion::convertBSP(bsp, SURFACE_NOT_SLIPPERY);
+            surfaces.insert(surfaces.end(), bspSurfaces.begin(), bspSurfaces.end());
+        }
+        
+        return surfaces;
+    }
+
+    void getTransform(Engine::Entity* entity, size_t boneIndex, SM64ObjectTransform& transform) {
+        if (entity->worldBones.count() == 0) return;
+        Engine::WorldTransform* bone = entity->worldBones.get(entity, boneIndex);
+
+        Vec3 marioSpacePos = Coordinates::haloToMario(bone->pos);
+        Vec3 chunkOrigin = Coordinates::marioChunkOrigin(MarioBSPChunk::getLoadedChunk());
+        Vec3 localPos = marioSpacePos - chunkOrigin;
+        transform.position[0] = localPos.x;
+        transform.position[1] = localPos.y;
+        transform.position[2] = localPos.z;
+
+        Vec3 eulerRotation = orientationToEulerAngles(bone->x, bone->z) * (180.0f / 3.14159265f);
+        transform.eulerRotation[0] = eulerRotation.y;
+        transform.eulerRotation[1] = eulerRotation.x;
+        transform.eulerRotation[2] = eulerRotation.z;
     }
 
     void allocateDynamicGeometryForEntity(Engine::Entity* entity) {
-        // Check if already allocated
-        if (objectMap.find(entity) != objectMap.end()) return;
+        // // Get the tag name
+        // auto entityTag = entity->tag();
+        // if (entityTag) {
+        //     std::cout << "Creating dynamic geometry for entity: " << entityTag->getResourcePath() << std::endl;
+        //     auto boneCount = entity->worldBones.count();
+        //     std::cout << "Bone count: " << boneCount << std::endl;
+        // }
+
+        objectMap[entity] = {};
         
-        SM64SurfaceObject surfaceObject = {};
-
-        if (entity->worldBones.count() == 0) return;
-        Engine::WorldTransform* bone = entity->worldBones.get(entity, 0);
-
-        auto surfaces = convertCollisionBSPToSM64Surfaces(entity);
-        if (surfaces.empty()) return;
-        surfaceObject.surfaceCount = static_cast<uint32_t>(surfaces.size());
-        surfaceObject.surfaces = surfaces.data();
-
-        // We have everything we need now, create the surface object.
-        
-        // Set position and orientation (relative to the currently loaded chunk).
-        Vec3 marioSpacePos = Coordinates::haloToMario(bone->pos);
-        Vec3 chunkOrigin   = Coordinates::marioChunkOrigin(MarioBSPChunk::getLoadedChunk());
-        surfaceObject.transform.position[0] = marioSpacePos.x - chunkOrigin.x;
-        surfaceObject.transform.position[1] = marioSpacePos.y - chunkOrigin.y;
-        surfaceObject.transform.position[2] = marioSpacePos.z - chunkOrigin.z;
-        //
-        Vec3 eulerRotation = orientationToEulerAngles(bone->x, bone->z) * (180.0f / 3.14159265f);
-        // Note: libsm64 uses the order: pitch, yaw, roll
-        surfaceObject.transform.eulerRotation[0] = eulerRotation.y;
-        surfaceObject.transform.eulerRotation[1] = eulerRotation.x;
-        surfaceObject.transform.eulerRotation[2] = eulerRotation.z;
-
-        uint32_t surfaceObjectId = sm64_surface_object_create(&surfaceObject);
-        
-        ObjectEntry entry;
-        entry.surfaceObjectId = surfaceObjectId;
-        entry.surfaces = std::move(surfaces);
-        objectMap[entity] = std::move(entry);
+        auto boneCount = entity->worldBones.count();
+        for (size_t boneIndex = 0; boneIndex < boneCount; ++boneIndex) {
+            Engine::WorldTransform* bone = entity->worldBones.get(entity, boneIndex);
+            
+            SM64SurfaceObject surfaceObject = {};
+            auto surfaces = convertCollisionBSPToSM64Surfaces(entity, boneIndex);
+            if (surfaces.empty()) return;
+            surfaceObject.surfaceCount = static_cast<uint32_t>(surfaces.size());
+            surfaceObject.surfaces = surfaces.data();
+    
+            getTransform(entity, boneIndex, surfaceObject.transform);
+    
+            uint32_t surfaceObjectId = sm64_surface_object_create(&surfaceObject);
+            
+            ObjectEntry entry;
+            entry.surfaceObjectId = surfaceObjectId;
+            entry.surfaces = std::move(surfaces);
+            objectMap[entity].push_back(std::move(entry));
+        }
     }
 
     void deallocateDynamicGeometryForEntity(Engine::Entity* entity) {
         // Placeholder for deallocation logic
         auto it = objectMap.find(entity);
         if (it != objectMap.end()) {
-            sm64_surface_object_delete(it->second.surfaceObjectId);
+            for (auto& entry : it->second) {
+                sm64_surface_object_delete(entry.surfaceObjectId);
+            }
             objectMap.erase(it);
         }
+    }
+
+    void updateObjectTransform(Engine::Entity* entity) {
+        auto boneCount = entity->worldBones.count();
+        for (size_t boneIndex = 0; boneIndex < boneCount; ++boneIndex) {
+            SM64ObjectTransform transform;
+            getTransform(entity, boneIndex, transform);
+            if (boneIndex < objectMap[entity].size()) {
+                sm64_surface_object_move(objectMap[entity][boneIndex].surfaceObjectId, &transform);
+            }
+        }
+    }
+
+    bool shouldCreateGeometryFor(Engine::Entity* entity) {
+        if (!entity) return false;
+        auto category = entity->entityCategory;
+        if (category == Engine::EntityCategory_Scenery) return true;
+        if (category == Engine::EntityCategory_Vehicle) return true;
+        if (category == Engine::EntityCategory_Machine) return true;
+        return false;
     }
     
     void update(SM64MarioState& marioState) {
@@ -114,31 +139,37 @@ namespace HaloCE::Mod::Mario::DynamicGeometry {
             auto entity = entityRecord->entity();
             if (!entity) return;
 
-            auto category = entity->entityCategory;
-            if (category != Engine::EntityCategory_Scenery) return;
+            if (!shouldCreateGeometryFor(entity)) return;
             
             Vec3 entityPos = entity->pos;
             float distance = (entityPos - marioWorldPos).lengthSquared();
             if (distance < allocateRange * allocateRange) {
-                allocateDynamicGeometryForEntity(entity);
+                if (objectMap.find(entity) != objectMap.end()) {
+                    updateObjectTransform(entity);
+                } else {
+                    allocateDynamicGeometryForEntity(entity);
+                }
             } else if (distance > deallocateRange * deallocateRange) {
                 deallocateDynamicGeometryForEntity(entity);
             }
         });
     }
 
-    void onLoadedChunkChanged(Vec3i /*oldChunk*/, Vec3i /*newChunk*/) {
-        // Destroy every existing surface object; allocateDynamicGeometryForEntity
-        // will recreate them on the next update() pass using the new loaded chunk's origin.
+    void clearAll() {
         for (auto& kv : objectMap) {
-            sm64_surface_object_delete(kv.second.surfaceObjectId);
+            for (auto& entry : kv.second) {
+                sm64_surface_object_delete(entry.surfaceObjectId);
+            }
         }
         objectMap.clear();
     }
+
+    void onLoadedChunkChanged(Vec3i /*oldChunk*/, Vec3i /*newChunk*/) {
+        clearAll();
+    }
     
     void free() {
-        // Clear all allocated dynamic geometry
-        objectMap.clear();
+        clearAll();
     }
 
 }

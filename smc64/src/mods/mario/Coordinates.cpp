@@ -3,6 +3,11 @@
 
 namespace HaloCE::Mod::Coordinates {
 
+    struct MarioCoords {
+        Vec3 local;
+        Vec3i chunk;
+    };
+
     const float scaleFactor = 400.0f;
     const float invScaleFactor = 1.0f / scaleFactor;
 
