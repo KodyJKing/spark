@@ -34,7 +34,7 @@ namespace HaloCE::Mod::Mario {
         ESP::drawPoint(center, color);
     }
 
-    void marioDebugWindow(SM64WallCollisionData& wallData) {
+    void marioDebugWindow(SM64WallCollisionData& wallData, SM64SurfaceCollisionData* floorData) {
         ImGui::Begin("Mario Debug Info", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
 
         ImGui::Text("Mario Model Handle: %X", MarioModel::marioHandle);
@@ -62,9 +62,16 @@ namespace HaloCE::Mod::Mario {
         ImGui::Text("Action: 0x%X", marioState.action);
         ImGui::Text("Flags: 0x%X", marioState.flags);
         ImGui::Text("Num walls: %d", wallData.numWalls);
-
-        ImGui::SliderInt("##Highlight Triangle Index", &highlightTriangleIndex, -1, marioGeometry.numTrianglesUsed - 1);
-
+        if (floorData) {
+            auto* v1 = floorData->vertex1;
+            auto* v2 = floorData->vertex2;
+            auto* v3 = floorData->vertex3;
+            ImGui::Text("Floor v1: (%d, %d, %d)", v1[0], v1[1], v1[2]);
+            ImGui::Text("Floor v2: (%d, %d, %d)", v2[0], v2[1], v2[2]);
+            ImGui::Text("Floor v3: (%d, %d, %d)", v3[0], v3[1], v3[2]);
+        } else {
+            ImGui::Text("Floor: none");
+        }
         ImGui::End();
     }
 
@@ -148,7 +155,7 @@ namespace HaloCE::Mod::Mario {
         drawMarioBones(marioGeometry);
         MarioMelee::debugRender();
 
-        marioDebugWindow(wallData);
+        marioDebugWindow(wallData, floorData);
 
 #endif // ENABLE_MARIO
     }

@@ -11,6 +11,8 @@
 #include <string>
 #include <unordered_map>
 
+// #define MARIO_WEAPON_OFFSET_UI 1
+
 namespace HaloCE::Mod::Mario::MarioWeaponOffset {
 
     std::unordered_map<std::string, Offset> offsetMap = {
@@ -28,6 +30,7 @@ namespace HaloCE::Mod::Mario::MarioWeaponOffset {
     static float sStep = 0.001f;
 
     void registerHandlers(Spark::ModId modId) {
+        #ifdef MARIO_WEAPON_OFFSET_UI
         using Bus = Spark::EventBus<void>;
 
         Spark::onRenderDebugUI.addHandler(modId, +[](void*, Bus::Cursor next) {
@@ -107,6 +110,7 @@ namespace HaloCE::Mod::Mario::MarioWeaponOffset {
 
             next();
         }, nullptr);
+        #endif
     }
 
     void getWeaponOffset(uint32_t weaponHandle, Offset& outOffset) {

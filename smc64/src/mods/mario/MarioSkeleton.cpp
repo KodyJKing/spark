@@ -6,6 +6,7 @@
 #include "imgui.h"
 #include "spark/overlay/ESP.hpp"
 #include "Coordinates.hpp"
+#include "MarioState.hpp"
 
 namespace HaloCE::Mod::Mario {
 
@@ -63,11 +64,12 @@ namespace HaloCE::Mod::Mario {
     };
 
     Vec3 getVertex(int32_t index, SM64MarioGeometryBuffers& marioGeometry) {
-        return Coordinates::marioToHalo(Vec3{
+        // Geometry positions are in mario-local (chunk-relative) space; translate to true halo world.
+        return Coordinates::marioLocalToHaloWorld(Vec3{
             marioGeometry.position[index * 3],
             marioGeometry.position[index * 3 + 1],
             marioGeometry.position[index * 3 + 2]
-        });
+        }, marioChunk);
     }
 
     Vec3 getBonePosition(const Indices& indices, SM64MarioGeometryBuffers& marioGeometry) {
@@ -110,11 +112,11 @@ namespace HaloCE::Mod::Mario {
         Camera &camera = ESP::camera;
 
         auto getVertexPos = [&](int32_t index) -> Vec3 {
-            return Coordinates::marioToHalo(Vec3{
+            return Coordinates::marioLocalToHaloWorld(Vec3{
                 marioGeometry.position[index * 3],
                 marioGeometry.position[index * 3 + 1],
                 marioGeometry.position[index * 3 + 2]
-            });
+            }, marioChunk);
         };
 
         auto getBonePos = [&](const Indices& indices) -> Vec3 {
@@ -144,18 +146,38 @@ namespace HaloCE::Mod::Mario {
         }
     }
 
-    // Dump bone bases as csv of the form "px,py,pz,fx,fy,fz,ux,uy,uz"
+    // Dump bone bases as csv of the form "px,py,pz,fx,fy,fz,ux,uy,uz".
+    // Operates purely in mario-local space (independent of the global marioChunk) since
+    // the caller uses its own libsm64 instance. marioPos must be in the same local space
+    // as marioGeometry.position[] (i.e. raw marioState.position from that instance).
     void dumpSkeleton(SM64MarioGeometryBuffers& marioGeometry, Vec3 marioPos, FILE* file) {
+        auto vertLocal = [&](int32_t i) -> Vec3 {
+            return Vec3{
+                marioGeometry.position[i * 3 + 0],
+                marioGeometry.position[i * 3 + 1],
+                marioGeometry.position[i * 3 + 2]
+            };
+        };
+        auto boneLocal = [&](const Indices& idx) -> Vec3 {
+            int count = 1;
+            Vec3 sum = vertLocal(idx.i1);
+            if (idx.i2 >= 0) { count++; sum += vertLocal(idx.i2); }
+            if (idx.i3 >= 0) { count++; sum += vertLocal(idx.i3); }
+            return sum / (float)count;
+        };
         for (const MarioBone &bone : marioBones) {
-            Engine::WorldTransform basis = getBoneBasis(bone, marioGeometry);
-            basis.pos = Coordinates::haloToMario(basis.pos) - marioPos;
-            basis.x = Coordinates::haloToMario(basis.x).normalize();
-            basis.y = Coordinates::haloToMario(basis.y).normalize();
-            basis.z = Coordinates::haloToMario(basis.z).normalize();
+            Vec3 pos = boneLocal(bone.base);
+            Vec3 fwd = boneLocal(bone.fwd);
+            Vec3 up  = boneLocal(bone.up);
+            Vec3 nFwd   = (fwd - pos).normalize();
+            Vec3 nUp    = (up  - pos).normalize();
+            Vec3 nRight = nFwd.cross(nUp).normalize();
+            nUp = nRight.cross(nFwd).normalize();
+            Vec3 rel = pos - marioPos;
             fprintf(file, "%.6f,%.6f,%.6f, %.6f,%.6f,%.6f, %.6f,%.6f,%.6f\n",
-                basis.pos.x, basis.pos.y, basis.pos.z,
-                basis.x.x, basis.x.y, basis.x.z,
-                basis.z.x, basis.z.y, basis.z.z
+                rel.x, rel.y, rel.z,
+                nFwd.x, nFwd.y, nFwd.z,
+                nUp.x,  nUp.y,  nUp.z
             );
         }
     }
