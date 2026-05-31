@@ -119,6 +119,7 @@ namespace HaloCE::Mod::Mario::MarioModel {
         Vec3 marioVelocity = *(Vec3*)&marioState.velocity[0];
         marioEntity->vel = Coordinates::marioToHalo(marioVelocity);
 
+        // Todo: Move this step to the end of MarioSkeleton::updateMarioPose
         IKToWeapon();
 
         auto boneCount = marioEntity->worldBones.count();

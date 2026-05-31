@@ -12,6 +12,8 @@
 
 #pragma comment(lib, "xaudio2.lib")
 
+#define ENABLE_MARIO_AUDIO 1
+
 namespace HaloCE::Mod::Mario::MarioAudio {
 
 // SM64 audio output format
@@ -134,6 +136,7 @@ void setGameSpeed(float speed) {
 }
 
 void init(const uint8_t* rom) {
+    #ifdef ENABLE_MARIO_AUDIO
     sm64_audio_init(rom);
 
     HRESULT hr = XAudio2Create(&s_xaudio, 0, XAUDIO2_DEFAULT_PROCESSOR);
@@ -174,18 +177,22 @@ void init(const uint8_t* rom) {
     s_initialized = true;
     s_thread = std::thread(audioThreadFunc);
     printf("[MarioAudio] Initialized\n");
+    #endif
 }
 
 void update() {
+    #ifdef ENABLE_MARIO_AUDIO
     if (!s_initialized) return;
     {
         std::lock_guard<std::mutex> lock(s_tickMutex);
         s_tickPending = true;
     }
     s_tickCv.notify_one();
+    #endif
 }
 
 void free() {
+    #ifdef ENABLE_MARIO_AUDIO
     s_initialized = false;
 
     // Signal the audio thread to exit and wait for it to finish its current tick.
@@ -214,6 +221,7 @@ void free() {
         s_xaudio->Release();
         s_xaudio = nullptr;
     }
+    #endif
 }
 
 } // namespace HaloCE::Mod::Mario::MarioAudio

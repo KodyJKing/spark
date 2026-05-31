@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include <cstdio>
 #include <cstdint>
+#include <iostream>
 
 #include <Windows.h>
 
@@ -68,6 +69,17 @@ namespace HaloCE::Mod::Mario {
                 auto marioPos = Coordinates::haloToMario(pos);
                 sm64_set_mario_position(id, marioPos.x, marioPos.y, marioPos.z);
             }
+
+            // Todo: Switch back to this path after implementing map-chunking
+            // int32_t id = -1;
+            // auto playerPos = Engine::getPlayerPosition();
+            // if (playerPos.has_value()) {
+            //     auto pos = playerPos.value();
+            //     // Convert Halo CE coordinates to Super Mario 64 coordinates
+            //     auto marioPos = Coordinates::haloToMario(pos);
+            //     id = sm64_mario_create(marioPos.x, marioPos.y, marioPos.z);
+            // }
+
             marioId = id;
         }
         if (marioId < 0) {
@@ -134,7 +146,7 @@ namespace HaloCE::Mod::Mario {
         sm64_global_terminate();
         sm64_global_init(rom, texture);
 
-        // sm64_register_debug_print_function(debugPrint);
+        sm64_register_debug_print_function(debugPrint);
 
         MarioAudio::init(rom);
         initTestLevel();
@@ -202,6 +214,8 @@ namespace HaloCE::Mod::Mario {
         if (!playerRec) return;
         auto player = playerRec->entity();
         if (!player) return;
+
+        // std::cout << "Mario update tick" << std::endl;
 
         updateGameSpeed(*player);
         updateShieldRegen(*player);
