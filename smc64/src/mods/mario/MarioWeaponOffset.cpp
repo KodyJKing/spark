@@ -22,6 +22,7 @@ namespace HaloCE::Mod::Mario::MarioWeaponOffset {
         { "weapons\\assault rifle\\assault rifle", { 0.0480f, 0.0160f, -0.0210f } },
         { "weapons\\needler\\needler", { 0.0620f, -0.0020f, -0.0090f } },
         { "weapons\\rocket launcher\\rocket launcher", { -0.0570f, -0.0020f, 0.0180f } },
+        { "weapons\\shotgun\\shotgun", { 0.1230f, 0.0090f, 0.0380f } },
     };
 
     Vec3 offset = { 0.05f, 0.0f, 0.0f };

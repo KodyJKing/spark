@@ -33,6 +33,7 @@
 #include "MarioModel.hpp"
 #include "MarioMelee.hpp"
 #include "MarioWeaponOffset.hpp"
+#include "MarioAimingIK.hpp"
 
 namespace HaloCE::Mod::Mario {
 
@@ -279,6 +280,7 @@ namespace HaloCE::Mod::Mario {
         MarioAudio::update();
 
         updateMarioPose(marioGeometry);
+        MarioAimingIK::apply();
         MarioMelee::tick();
 
         bool inForbiddenState = false

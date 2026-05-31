@@ -1,8 +1,8 @@
 #include "Mario.hpp"
 #include "MarioModel.hpp"
-#include "MarioSkeleton.hpp" 
-#include "MarioInverseKinematics.hpp"
+#include "MarioSkeleton.hpp"
 #include "MarioWeaponOffset.hpp"
+#include "MarioAimingIK.hpp"
 #include <string>
 #include "decomp/sm64.h"
 #include "Coordinates.hpp"
@@ -28,75 +28,6 @@ namespace HaloCE::Mod::Mario::MarioModel {
         return playerEntity->childHandle;
     }
 
-    bool marioRightArmBusy() {
-        if (marioState.action == ACT_IDLE) return false;
-        return true;
-    }
-
-    Vec3 preferredArmDirection() {
-        auto chest = getMarioBoneByName("chest");
-        return (chest.z + chest.y * 0.7f).normalize() * -1.0f;
-    }
-
-    bool marioArmsBusy() {
-        auto camera = Engine::getPlayerCameraPointer();
-        if (camera) {
-            auto marioForward = preferredArmDirection();
-            float alignment = marioForward.dot(camera->fwd);
-            if (alignment < 0) return true;
-        }
-
-        // If punching, don't IK to weapon.
-        if (marioState.action == ACT_PUNCHING) return true;
-
-        return false; // ???
-        if (marioState.action == ACT_IDLE) return false;
-        if (marioState.action == ACT_WALKING) return false;
-        if (marioState.action == ACT_RIDING_SHELL_GROUND) return false;
-
-        return true;
-    }
-
-    void IKToWeapon() {
-        // If Mario is not idle, skip this.
-        if (marioArmsBusy()) return;
-
-        auto weaponHandle = playerWeaponHandle();
-        if (weaponHandle == 0xFFFFFFFF) return;
-        auto rec = Engine::getEntityRecord( weaponHandle );
-        if (!rec) return;
-        auto weapon = rec->entity();
-        if (!weapon) return;
-        auto weaponRootBone = weapon->worldBones.get(weapon, 0);
-        if (!weaponRootBone) return;
-        
-        auto camera = Engine::getPlayerCameraPointer();
-        if (!camera) return;
-
-        auto chest = getMarioBoneByName("chest");
-        auto rightArm = getMarioBoneByName("right_arm");
-
-        auto fwd = camera->fwd;
-        auto right = weaponRootBone->y;
-
-        auto base = rightArm.pos;
-        Vec3 coneDir = preferredArmDirection();
-        auto dir = (fwd - right * 0.5f).normalize().projectToCone(coneDir, 0.6f);
-        auto target = base + dir;
-
-        InverseKinematics::MarioIKRequest ikRequest;
-        ikRequest.limb = InverseKinematics::MarioIKRequest::Limb::LeftArm;
-        ikRequest.targetTransform = *weaponRootBone;
-        ikRequest.targetTransform.pos = target;
-        ikRequest.enforceRotation = true;
-        InverseKinematics::applyMarioIK(ikRequest);
-
-        // if (marioRightArmBusy()) return;
-        // ikRequest.limb = InverseKinematics::MarioIKRequest::Limb::RightArm;
-        // ikRequest.targetTransform.pos = target + right * 0.05f;
-        // InverseKinematics::applyMarioIK(ikRequest);
-    }
-
     void updateMarioPosition(Engine::Entity* marioEntity, Vec3 newPos) {
         if (!marioEntity) return;
 
@@ -118,9 +49,6 @@ namespace HaloCE::Mod::Mario::MarioModel {
         updateMarioPosition(marioEntity, marioPose[0].pos);
         Vec3 marioVelocity = *(Vec3*)&marioState.velocity[0];
         marioEntity->vel = Coordinates::marioToHalo(marioVelocity);
-
-        // Todo: Move this step to the end of MarioSkeleton::updateMarioPose
-        IKToWeapon();
 
         auto boneCount = marioEntity->worldBones.count();
         for (int i = 0; i < boneCount; i++) {
@@ -150,7 +78,7 @@ namespace HaloCE::Mod::Mario::MarioModel {
         MarioWeaponOffset::Offset off;
         MarioWeaponOffset::getWeaponOffset(weaponHandle, off);
         weaponRootBone->pos = leftHandBone.transformPoint(off);
-        if (marioArmsBusy()) {
+        if (MarioAimingIK::marioArmsBusy()) {
             weaponRootBone->x = leftHandBone.x;
             weaponRootBone->y = leftHandBone.y;
             weaponRootBone->z = leftHandBone.z;
