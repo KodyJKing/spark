@@ -34,6 +34,7 @@ namespace HaloCE::Mod::Mario::MarioMelee {
     static constexpr float kDebugRange              = 10.0f;  // world units
     
     static const char * kDamageTagPath = "weapons\\frag grenade\\explosion";
+    static const char * kBipedImpactSoundTagPath = "sound\\sfx\\impulse\\melee\\melee_impact_fleshy";
 
     // ── State ──────────────────────────────────────────────────────────────────
     // Index 0 = left fist, 1 = right fist, 2 = left foot, 3 = right foot
@@ -48,6 +49,10 @@ namespace HaloCE::Mod::Mario::MarioMelee {
 
     static Engine::Tag* getDamageTag() {
         return Engine::findTag(kDamageTagPath, "jpt!");
+    }
+
+    static Engine::Tag* getBipedImpactSoundTag() {
+        return Engine::findTag(kBipedImpactSoundTagPath, "snd!");
     }
 
     static Vec3 fistPosition(size_t fistIndex) {
@@ -109,6 +114,11 @@ namespace HaloCE::Mod::Mario::MarioMelee {
         ev.baseDamage          = kMeleeDamage;
         ev.damageMultiplier    = 1.0f;
         Spark::DamageEntity::original(&ev, targetHandle, 0, 0, -1, 0);
+
+        auto* soundTag = getBipedImpactSoundTag();
+        if (soundTag) {
+            Spark::SoundImpulseStart::original(soundTag->tagID, 0xFFFFFFFF, 1);
+        }
     }
 
     // ── Debug draw helpers ─────────────────────────────────────────────────────
@@ -151,8 +161,9 @@ namespace HaloCE::Mod::Mario::MarioMelee {
     void tick() {
         if (!enableMario || !possessMario) return;
 
-        // Prefetch damage tag
+        // Prefetch tags to avoid hitches during gameplay.
         getDamageTag();
+        getBipedImpactSoundTag();
         
         for (int i = 0; i < 4; i++) if (sCooldown[i] > 0) --sCooldown[i];
 

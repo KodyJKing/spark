@@ -16,3 +16,4 @@ HOOK( UpdateFlareTransform, void,     0xBE7D70U, uint32_t /*flareHandle*/       
 HOOK( SpawnProjectile,      uint32_t, 0xB35FD4U, Engine::ProjectileSpawnArgs*, uint32_t /*flags*/       )
 HOOK( DamageEntity,         void,     0xB9EA28U, Engine::DamageEvent* /*event*/, uint32_t /*entityHandle*/, uint16_t, uint16_t, int16_t /*hitBoneIndex*/, uint64_t )
 HOOK( ConsoleReportError,   void,     0xB20CDCU, const char* /*source*/, const char* /*category*/, const char* /*message*/, const char* /*location*/ )
+HOOK( SoundImpulseStart,    void,     0xB32F00U, uint32_t /*soundTagHandle*/, uint32_t /*sourceEntityHandle*/, float /*scale*/ )

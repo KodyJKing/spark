@@ -131,6 +131,16 @@ void HookLogMod::init() {
                       << "  event.materialType=" << event->materialType << "\n";
         next(event, entityHandle, param_3, param_4, hitBoneIndex, param_6);
     }, nullptr);
+
+    Spark::SoundImpulseStart::addHandler(modId_, +[](void*, auto next, uint32_t soundTagHandle, uint32_t sourceEntityHandle, float scale) {
+        if (Mod::HookLog::toggles.SoundImpulseStart && Mod::HookLog::shouldLog(Mod::HookLog::lastLogTimes.SoundImpulseStart))
+            std::cout << "[HookLog] SoundImpulseStart\n"
+                      << "  soundTagHandle=" << (void*)(uintptr_t)soundTagHandle << "\n"
+                      << tagInfoStr(soundTagHandle, "    ")
+                      << "  sourceEntityHandle=" << (void*)(uintptr_t)sourceEntityHandle << "\n"
+                      << "  scale=" << scale << "\n";
+        next(soundTagHandle, sourceEntityHandle, scale);
+    }, nullptr);
 }
 
 void HookLogMod::free() {

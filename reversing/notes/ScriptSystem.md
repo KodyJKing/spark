@@ -190,6 +190,64 @@ Called conditionally from `hs_print_builtin` (gated by dev/verbosity flags) and 
 
 ---
 
+## HaloScript Function Table
+
+Parallel to `_blamScriptOrConsoleStrings` (which holds variable/cvar names), HS **functions** (builtins) live in a separate table whose entries are small descriptors. The descriptor layout observed for `sound_impulse_start`:
+
+| Offset | Type | Notes |
+|---|---|---|
+| `+0x00` | `char**` | name pointer (e.g. -> `"sound_impulse_start"`) |
+| `+0x08` | `?`      | second slot — unknown role, possibly arg-type table or return-type descriptor |
+| `+0x10` | `fn ptr` | builtin dispatcher (HS-side wrapper, see below) |
+
+The dispatcher pointer is **not** the native implementation — it is a thin HS-VM trampoline (see "HS Builtin Dispatcher Pattern" below) that evaluates the script-side arguments and then forwards them to the real C++ function.
+
+> The descriptor table is also referenced via `PTR_DAT_7fff507c60f0` from inside the dispatchers — `PTR_DAT_7fff507c60f0[builtin_index]` looks up the descriptor for the active builtin, and fields `+0x30` / `+0x32` carry the arg-type info passed to `FUN_7fff4f9fc870` (likely `hs_eval_args`).
+
+### HS Builtin Dispatcher Pattern
+
+All HS builtins reached through the function table share this shape (see `hs_print_builtin` and `_hs_sound_impulse_start_builtin`):
+
+```c
+void _hs_<name>_builtin(short builtin_index, uint32_t hs_thread_idx, char is_error) {
+    auto* evaluated = FUN_7fff4f9fc870(
+        hs_thread_idx,
+        *(uint16_t*)(PTR_DAT_7fff507c60f0[builtin_index] + 0x30),  // arg type/count info
+         (char*)   (PTR_DAT_7fff507c60f0[builtin_index] + 0x32),   // arg type list
+        is_error);
+    if (evaluated) {
+        native_impl(evaluated[0], evaluated[1], evaluated[2], ...);
+        hs_thread_advance_pc(hs_thread_idx, 0);
+    }
+}
+```
+
+The `evaluated` buffer holds the already-resolved, typed argument values (tag handles, object handles, ints, floats, ...). Hooking the **native impl** rather than the dispatcher gives clean, typed arguments without having to walk the HS VM state.
+
+### Example: `sound_impulse_start`
+
+The HS expression `(sound_impulse_start <sound-tag> <object> <scale>)` resolves to:
+
+| Layer | Symbol | Address |
+|---|---|---|
+| Name string | `s_sound_impulse_start` | `7fff507bddb0` |
+| Table entry | (descriptor) | `7fff507bf998` |
+| Dispatcher | `_hs_sound_impulse_start_builtin` | `7fff4fa4e340` (offset `0xB1E340`) |
+| Native impl | `soundImpulseStart` | `7fff4fa62f00` (offset `0xB32F00`) |
+
+Native signature (confirmed):
+```c
+void soundImpulseStart(uint32_t soundTagHandle,
+                       uint32_t sourceEntityHandle,  // 0xFFFFFFFF = sourceless
+                       float    scale);              // clamped [0, DAT_7fff50730ef8]
+```
+
+Hooked in `smc64` as `Spark::SoundImpulseStart` (HookTable.hpp). The hook fires for every `(sound_impulse_start ...)` invocation regardless of whether the tag was successfully resolved upstream.
+
+> **Note on "not a loaded tag" errors:** The tag lookup is performed by the HS argument evaluator (`FUN_7fff4f9fc870`) *before* the native impl is called. When a tag path is not in the cache, the dispatcher returns early and `soundImpulseStart` is never invoked. To diagnose missing tags, hook the upstream evaluator or watch `_consoleReportError`, not `soundImpulseStart`.
+
+---
+
 ## Open Questions / Next Steps
 
 - [ ] Write CE AA script to call `_consoleSubmit` from a hotkey with an arbitrary string
@@ -197,6 +255,8 @@ Called conditionally from `hs_print_builtin` (gated by dev/verbosity flags) and 
 - [ ] Clarify whether `_blamScriptOrConsoleStrings` covers only engine globals or also console commands
 - [ ] Check at runtime whether `DAT__dev_mode_flag` / `DAT__log_verbosity_level` are always set in shipped MCC — determines if `FUN_7fff49b61800` is a reliable hook target or if `hs_print_builtin` itself must be hooked
 - [ ] Explore `FUN_7fff49afc640` — likely `hs_eval_expression(thread_idx, type, flags, out_value)` 
+- [ ] Explore `FUN_7fff4f9fc870` — likely `hs_eval_args(thread_idx, arg_count, arg_types, is_error)` returning the resolved typed arg buffer used by all dispatchers
+- [ ] Locate the HS function-table base — currently only individual descriptor entries are known (e.g. `7fff507bf998`). Walking the table would let us enumerate every builtin name + native impl in one pass.
 - [ ] Explore `FUN_7fff49afbdc0` — error/type-mismatch reporter called from `hs_print_builtin` error path
 - [ ] Map out `hs_type_to_string_table` entries — identify which type IDs correspond to int/real/string/boolean/unit etc.
 - [ ] Resolve `DAT_MapBase` / `DAT_RelocatedMapBase` symbols
