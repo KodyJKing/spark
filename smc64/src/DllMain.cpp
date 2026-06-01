@@ -8,12 +8,14 @@
 #include "spark/SparkHost.hpp"
 #include "MinHook.h"
 #include "spark/overlay/Overlay.hpp"
+#include "spark/CrashHandler.hpp"
 
 // MainThread
 DWORD WINAPI MainThread(LPVOID _hModule) {
     HMODULE hModule = (HMODULE) _hModule;
     Console::alloc();
     Console::toggleConsole();
+    Spark::CrashHandler::install();
 
     std::cout << "Load method: " << (Utils::isInjected() ? "Injection" : "Imported") << std::endl;
     if (!Utils::isInjected()) { // Give the game some time to load.
@@ -53,6 +55,7 @@ DWORD WINAPI MainThread(LPVOID _hModule) {
     waitForSafeUnload();
     Sleep(200); // Extra time for hooks to exit.
 
+    Spark::CrashHandler::uninstall();
     Console::free();
 
     FreeLibraryAndExitThread(hModule, 0);

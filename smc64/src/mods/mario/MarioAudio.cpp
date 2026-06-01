@@ -138,7 +138,9 @@ void setGameSpeed(float speed) {
     if (!s_state) return;
     // Clamp to the range declared in CreateSourceVoice [1/4, 4].
     float ratio = speed < 0.25f ? 0.25f : (speed > 4.0f ? 4.0f : speed);
-    s_state->source->SetFrequencyRatio(ratio);
+    if (s_state && s_state->source) {
+        s_state->source->SetFrequencyRatio(ratio);
+    }
 }
 
 void init(const uint8_t* rom) {

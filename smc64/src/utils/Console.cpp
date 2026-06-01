@@ -38,4 +38,9 @@ namespace Console {
             SetWindowPos(console, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
         }
     }
+
+    void showConsole(bool show) {
+        HWND console = GetConsoleWindow();
+        ShowWindow(console, show ? SW_SHOW : SW_HIDE);
+    }
 }
