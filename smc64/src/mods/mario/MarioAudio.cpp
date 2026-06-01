@@ -43,6 +43,9 @@ struct AudioState {
     IXAudio2MasteringVoice* master = nullptr;
     IXAudio2SourceVoice*    source = nullptr;
 
+    // Protects source pointer across setGameSpeed (game thread) and free() teardown.
+    std::mutex              voiceMutex;
+
     // Audio thread wakeup.
     std::mutex              tickMutex;
     std::condition_variable tickCv;
@@ -138,9 +141,9 @@ void setGameSpeed(float speed) {
     if (!s_state) return;
     // Clamp to the range declared in CreateSourceVoice [1/4, 4].
     float ratio = speed < 0.25f ? 0.25f : (speed > 4.0f ? 4.0f : speed);
-    if (s_state && s_state->source) {
+    std::lock_guard<std::mutex> lock(s_state->voiceMutex);
+    if (s_state && s_state->source)
         s_state->source->SetFrequencyRatio(ratio);
-    }
 }
 
 void init(const uint8_t* rom) {
@@ -216,10 +219,18 @@ void free() {
         st.thread.join();
     }
 
-    if (st.source) {
-        st.source->Stop();
-        st.source->FlushSourceBuffers();
-        st.source->DestroyVoice();
+    // Null out source under voiceMutex before destroying, so setGameSpeed
+    // (called from the game thread) can never call into a freed voice.
+    IXAudio2SourceVoice* srcToDestroy = nullptr;
+    {
+        std::lock_guard<std::mutex> lock(st.voiceMutex);
+        srcToDestroy = st.source;
+        st.source = nullptr;
+    }
+    if (srcToDestroy) {
+        srcToDestroy->Stop();
+        srcToDestroy->FlushSourceBuffers();
+        srcToDestroy->DestroyVoice();
     }
     if (st.master) {
         st.master->DestroyVoice();

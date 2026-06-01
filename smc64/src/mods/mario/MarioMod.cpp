@@ -7,6 +7,10 @@
 void MarioMod::init() {
     using Bus = Spark::EventBus<void>;
 
+    // Initialize Mario state first — sm64_global_init, geometry buffers, etc.
+    // must all be complete before any hook can fire update().
+    HaloCE::Mod::Mario::init(modId_);
+
     Spark::UpdateAllEntities::addHandler(modId_, +[](void*, auto next) {
         HaloCE::Mod::Mario::update();
         next();
@@ -31,7 +35,6 @@ void MarioMod::init() {
         next();
     }, nullptr);
 
-    HaloCE::Mod::Mario::init(modId_);
 }
 
 void MarioMod::free() {

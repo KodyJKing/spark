@@ -10,6 +10,7 @@
 #include <cmath>
 #include <string>
 #include <iostream>
+#include <mutex>
 
 #include <Windows.h>
 
@@ -38,6 +39,9 @@
 #include "MarioWeaponKick.hpp"
 
 namespace HaloCE::Mod::Mario {
+
+// Guards the geometry buffers and full update() body against concurrent free().
+static std::mutex s_updateMutex;
 
     uint8_t* readRomFile(const char *path, size_t *fileLength) {
         FILE *f = fopen(path, "rb");
@@ -173,6 +177,11 @@ namespace HaloCE::Mod::Mario {
         DynamicGeometry::free();
         MarioBSPChunk::free();
 
+        // Hold s_updateMutex while freeing state that update() reads.
+        // This ensures any in-flight update() call completes before we pull
+        // the buffers out from under it.
+        std::lock_guard<std::mutex> updateLock(s_updateMutex);
+
         if (marioId >= 0) {
             sm64_mario_delete(marioId);
             marioId = -1;
@@ -236,6 +245,7 @@ namespace HaloCE::Mod::Mario {
 
     void update() {
         #ifdef ENABLE_MARIO
+        std::lock_guard<std::mutex> updateLock(s_updateMutex);
 
         auto playerRec = Engine::getPlayerRecord();
         if (!playerRec) return;
@@ -250,12 +260,9 @@ namespace HaloCE::Mod::Mario {
 
         MarioCamera::onUpdate(marioWorldPosition());
 
-        if (GetAsyncKeyState(VK_F6) & 1) {
-            // dumpMarioGeometry();
-            std::string command = "(sound_impulse_start sound\\sfx\\impulse\\melee\\rlauncher_impact none 1)";
-            Engine::Scripting::submit(command.c_str());
-            // Beep(750, 300);
-        }
+        // if (GetAsyncKeyState(VK_F6) & 1) {
+        //     dumpMarioGeometry();
+        // }
 
         if (GetAsyncKeyState(VK_F3) & 1) enableMario = !enableMario;
         if (GetAsyncKeyState(VK_F4) & 1) {
