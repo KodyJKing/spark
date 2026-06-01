@@ -148,7 +148,7 @@ namespace HaloCE::Mod::Mario {
         sm64_global_terminate();
         sm64_global_init(rom, texture);
 
-        sm64_register_debug_print_function(debugPrint);
+        // sm64_register_debug_print_function(debugPrint);
 
         MarioAudio::init(rom);
         initMario();
@@ -165,9 +165,25 @@ namespace HaloCE::Mod::Mario {
 
     void free() {
         #ifdef ENABLE_MARIO
-        MarioBSPChunk::free();
-        sm64_global_terminate();
+        // Join the audio thread first — it holds s_sm64Mutex during sm64_audio_tick.
+        // sm64_mario_delete and sm64_global_terminate don't acquire that mutex, so
+        // calling them while the audio thread is running causes a race/crash on reinit.
         MarioAudio::free();
+
+        DynamicGeometry::free();
+        MarioBSPChunk::free();
+
+        if (marioId >= 0) {
+            sm64_mario_delete(marioId);
+            marioId = -1;
+        }
+
+        if (marioGeometry.position) { ::free(marioGeometry.position); marioGeometry.position = nullptr; }
+        if (marioGeometry.color)    { ::free(marioGeometry.color);    marioGeometry.color    = nullptr; }
+        if (marioGeometry.normal)   { ::free(marioGeometry.normal);   marioGeometry.normal   = nullptr; }
+        if (marioGeometry.uv)       { ::free(marioGeometry.uv);       marioGeometry.uv       = nullptr; }
+
+        sm64_global_terminate();
 
         if (texture) {
             ::free(texture);

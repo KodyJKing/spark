@@ -35,6 +35,7 @@ struct Hook {
 
     static void uninstall() {
         if (!base) return;
+        MH_DisableHook((void*)(base + Offset));
         MH_RemoveHook((void*)(base + Offset));
         bus.clear();
         original = nullptr;
