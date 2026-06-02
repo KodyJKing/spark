@@ -11,7 +11,17 @@ namespace HaloCE::Mod::Mario {
     static constexpr float SIDE_FLIP_REGEN   = 0.2f;
     static constexpr float WALL_KICK_REGEN   = 0.3f;
     static constexpr float TRIPLE_JUMP_REGEN = 0.5f;
-
+    
+    void regenerateShield(Engine::Entity& player, float amount, bool allowOvershield) {
+        bool hadOversheild = player.shield > 1.0f;
+        player.shield += amount;
+        if (!hadOversheild) {
+            player.shield = min(player.shield, 1.0f);
+        } else if (allowOvershield) {
+            player.shield = min(player.shield, 3.0f);
+        }
+    }
+    
     void updateShieldRegen(Engine::Entity& player) {
         uint32_t action = marioState.action;
         bool risingEdge = (action != prevAction);
@@ -27,13 +37,7 @@ namespace HaloCE::Mod::Mario {
             default: return;
         }
 
-        bool hadOversheild = player.shield > 1.0f;
-        player.shield += regen;
-        if (!hadOversheild) {
-            player.shield = min(player.shield, 1.0f);
-        } else {
-            player.shield = min(player.shield, 3.0f);
-        }
+        regenerateShield(player, regen, true);
     }
 
 }

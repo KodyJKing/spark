@@ -40,8 +40,11 @@
 
 namespace HaloCE::Mod::Mario {
 
-// Guards the geometry buffers and full update() body against concurrent free().
-static std::mutex s_updateMutex;
+    // Guards the geometry buffers and full update() body against concurrent free().
+    static std::mutex s_updateMutex;
+
+    // Keep teleport protection from freaking out when it is intended.
+    static bool expectTeleport;
 
     uint8_t* readRomFile(const char *path, size_t *fileLength) {
         FILE *f = fopen(path, "rb");
@@ -220,6 +223,7 @@ static std::mutex s_updateMutex;
             Vec3 local = Coordinates::marioWorldToLocal(marioWorldPos, marioChunk);
             sm64_set_mario_position(marioId, local.x, local.y, local.z);
             sm64_mario_heal(marioId, 0xFF);
+            expectTeleport = true;
         }
     }
 
@@ -242,8 +246,9 @@ static std::mutex s_updateMutex;
         });
     }
 
-
     void update() {
+        expectTeleport = false;
+
         #ifdef ENABLE_MARIO
         std::lock_guard<std::mutex> updateLock(s_updateMutex);
 
@@ -281,7 +286,8 @@ static std::mutex s_updateMutex;
 
         DynamicGeometry::update(marioState);
 
-        if (possessMario) {
+        if (marioInControl()) {
+            std::cout << "Mario in control this tick" << std::endl;
             Vec3 marioWorldPos = marioWorldPosition();
             Vec3 difference = player->pos - marioWorldPos;
             float distance = difference.length();
@@ -294,14 +300,38 @@ static std::mutex s_updateMutex;
             }
             Mario::updateInput(marioInputs, marioState, Engine::getPlayerCameraPointer());
         } else {
+            std::cout << "Chief in control this tick" << std::endl;
             MarioCamera::onDisable();
+            // Clear input state.
+            marioInputs = {}; 
+            marioToCheif();
         }
         
         faceLookDirection(Engine::getPlayerCameraPointer()->fwd);
 
         {
             std::lock_guard<std::mutex> sm64Lock(MarioAudio::sm64Mutex());
+            Vec3 oldPos = getMarioPosition();
             sm64_mario_tick(marioId, &marioInputs, &marioState, &marioGeometry);
+            Vec3 newPos = getMarioPosition();
+
+            // Teleport protection
+            const float maxMovement = 400.0f;
+            Vec3 movement = newPos - oldPos;
+            if (movement.length() > maxMovement) {
+                
+                if (!expectTeleport) {
+                    setMarioPosition(oldPos);
+                    sm64_set_mario_action(marioId, ACT_IDLE);
+                    // Let the developer know we saved their ass.
+                    Beep(1000, 100);
+                    Beep(1000, 100);
+                    std::cout << "Mario tried to teleport distance: " << movement.length() << std::endl;
+                } else {
+                    std::cout << "Expected teleport distance: " << movement.length() << std::endl;
+                }
+
+            }
         }
         MarioBSPChunk::maintain();
         sm64_set_mario_water_level(marioId, -999999.99f);

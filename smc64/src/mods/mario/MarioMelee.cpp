@@ -3,6 +3,7 @@
 #include "MarioState.hpp"
 #include "MarioSkeleton.hpp"
 #include "MarioModel.hpp"
+#include "MarioShieldRegen.hpp"
 #include "engine/halo1.hpp"
 #include "engine/entity/entity_list.hpp"
 #include "spark/hook/Hooks.hpp"
@@ -32,6 +33,7 @@ namespace HaloCE::Mod::Mario::MarioMelee {
     static constexpr float kMeleeDamage             = 0.01f;
     static constexpr int   kCooldownTicks           = 15;     // ~0.5 s at 30 fps, per fist
     static constexpr float kDebugRange              = 10.0f;  // world units
+    static constexpr float kMeleeShieldRegen        = 0.2f;   // shield regen per melee hit
     
     static const char * kDamageTagPath = "weapons\\frag grenade\\explosion";
     static const char * kBipedImpactSoundTagPath = "sound\\sfx\\impulse\\melee\\melee_impact_fleshy";
@@ -103,6 +105,9 @@ namespace HaloCE::Mod::Mario::MarioMelee {
         auto* tag = getDamageTag();
         if (!tag) return;
 
+        auto targetEntity = Engine::getEntityPointer(targetHandle);
+        bool targetWasAlive = targetEntity && targetEntity->health > 0; 
+
         Engine::DamageEvent ev{};
         ev.damageTypeTagHandle = tag->tagID;
         ev.flags               = 0x1;           // single-entity target
@@ -118,6 +123,13 @@ namespace HaloCE::Mod::Mario::MarioMelee {
         auto* soundTag = getBipedImpactSoundTag();
         if (soundTag) {
             Spark::SoundImpulseStart::original(soundTag->tagID, 0xFFFFFFFF, 1);
+        }
+
+        if (targetWasAlive) {
+            auto player = Engine::getPlayerEntity();
+            if (player) {
+                regenerateShield(*player, kMeleeShieldRegen, false);
+            }
         }
     }
 

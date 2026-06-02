@@ -14,6 +14,15 @@
     - Audit all raw memory accesses. Replace with safe wrappers in non-performance critical code.
     - Find out why updateAllEntities is not running in the underground section of Attack on the Control Room.
     x Fix Mario(.weapon) being available for pickup.
+    - Investigate intro cinematic bugs and crashes:
+        - Crash: Segfault (eg Silent Cartographer)
+        - Bug: Mario in control during intro ride. (eg Silent Cartographer)
+    - Investitate Mario randomly teleporting when walking on sloped surfaces (especially dynamic objects).
+        - Try to root cause.
+        - Implement better teleport guards:
+            - Track last safe position.
+            - Rollback on long distance teleport.
+            - Rollback if no update tick is recieved for N ticks (OOB indicator).
 
 - Gameplay:
     - Movement:
