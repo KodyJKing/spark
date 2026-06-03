@@ -43,9 +43,6 @@ namespace HaloCE::Mod::Mario {
     // Guards the geometry buffers and full update() body against concurrent free().
     static std::mutex s_updateMutex;
 
-    // Keep teleport protection from freaking out when it is intended.
-    static bool expectTeleport;
-
     uint8_t* readRomFile(const char *path, size_t *fileLength) {
         FILE *f = fopen(path, "rb");
         if (!f) {
@@ -103,7 +100,7 @@ namespace HaloCE::Mod::Mario {
                 printf("initMario: no player position available, skipping Mario spawn.\n");
                 return;
             }
-            Vec3 marioWorldPos = Coordinates::haloToMario(playerPos.value() + Vec3{0, 0, 1});
+            Vec3 marioWorldPos = Coordinates::haloToMario(playerPos.value());
             marioChunk = Coordinates::marioChunkForPosition(marioWorldPos);
             Vec3 local = Coordinates::marioWorldToLocal(marioWorldPos, marioChunk);
             std::cout << "Local position: (" << local.x << ", " << local.y << ", " << local.z << ")\n";
@@ -138,6 +135,8 @@ namespace HaloCE::Mod::Mario {
         printf(" - UV buffer: %p\n", (void*)marioGeometry.uv);
 
         // Now we can load the level for Mario.
+        sm64_set_mario_gas_level(marioId, -999999.99f);
+        sm64_set_mario_water_level(marioId, -999999.99f);
         MarioBSPChunk::init(marioChunk);
     }
 
@@ -235,7 +234,6 @@ namespace HaloCE::Mod::Mario {
             Vec3 local = Coordinates::marioWorldToLocal(marioWorldPos, marioChunk);
             sm64_set_mario_position(marioId, local.x, local.y, local.z);
             sm64_mario_heal(marioId, 0xFF);
-            expectTeleport = true;
         }
     }
 
@@ -274,14 +272,10 @@ namespace HaloCE::Mod::Mario {
             return;
         }
 
-        expectTeleport = false;
-
         auto playerRec = Engine::getPlayerRecord();
         if (!playerRec) return;
         auto player = playerRec->entity();
         if (!player) return;
-
-        // std::cout << "Mario update tick" << std::endl;
 
         updateGameSpeed(*player);
         updateShieldRegen(*player);
@@ -313,15 +307,8 @@ namespace HaloCE::Mod::Mario {
         if (marioInControl()) {
             // std::cout << "Mario in control this tick" << std::endl;
             Vec3 marioWorldPos = marioWorldPosition();
-            Vec3 difference = player->pos - marioWorldPos;
-            float distance = difference.length();
-            // If Cheif teleported, move Mario to Cheif
-            if (distance > 5.0f) {
-                marioToCheif();
-            } else {
-                player->pos = marioWorldPos;
-                player->vel = marioWorldVelocity();
-            }
+            player->pos = marioWorldPos;
+            player->vel = marioWorldVelocity();
             Mario::updateInput(marioInputs, marioState, Engine::getPlayerCameraPointer());
         } else {
             // std::cout << "Chief in control this tick" << std::endl;
@@ -335,31 +322,10 @@ namespace HaloCE::Mod::Mario {
 
         if (marioInControl()) {
             std::lock_guard<std::mutex> sm64Lock(MarioAudio::sm64Mutex());
-            Vec3 oldPos = getMarioPosition();
             sm64_mario_tick(marioId, &marioInputs, &marioState, &marioGeometry);
-            Vec3 newPos = getMarioPosition();
-
-            // Teleport protection
-            const float maxMovement = 400.0f;
-            Vec3 movement = newPos - oldPos;
-            if (movement.length() > maxMovement) {
-                
-                if (!expectTeleport) {
-                    setMarioPosition(oldPos);
-                    sm64_set_mario_action(marioId, ACT_IDLE);
-                    // Let the developer know we saved their ass.
-                    Beep(1000, 100);
-                    Beep(1000, 100);
-                    std::cout << "Mario tried to teleport distance: " << movement.length() << std::endl;
-                } else {
-                    std::cout << "Expected teleport distance: " << movement.length() << std::endl;
-                }
-
-            }
         }
+
         MarioBSPChunk::maintain();
-        sm64_set_mario_water_level(marioId, -999999.99f);
-        sm64_set_mario_gas_level(marioId, -999999.99f);
         MarioAudio::update();
 
         updateMarioPose(marioGeometry);

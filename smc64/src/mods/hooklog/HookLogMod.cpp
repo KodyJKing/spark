@@ -28,6 +28,12 @@ void HookLogMod::init() {
         next();
     }, nullptr);
 
+    Spark::LoadCheckpoint::addHandler(modId_, +[](void*, auto next) {
+        if (Mod::HookLog::toggles.LoadCheckpoint && Mod::HookLog::shouldLog(Mod::HookLog::lastLogTimes.LoadCheckpoint))
+            std::cout << "[HookLog] LoadCheckpoint\n";
+        next();
+    }, nullptr);
+
     Spark::UpdateCamera::addHandler(modId_, +[](void*, auto next, float dt) {
         if (Mod::HookLog::toggles.UpdateCamera && Mod::HookLog::shouldLog(Mod::HookLog::lastLogTimes.UpdateCamera))
             std::cout << "[HookLog] UpdateCamera\n"

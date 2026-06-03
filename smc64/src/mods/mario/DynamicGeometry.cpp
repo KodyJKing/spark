@@ -12,7 +12,7 @@
 
 #include "decomp/surface_terrains.h"
 
-#define DEBUG_DYNAMIC_GEOMETRY 1
+// #define DEBUG_DYNAMIC_GEOMETRY 1
 
 #ifdef DEBUG_DYNAMIC_GEOMETRY
     #include <iostream>

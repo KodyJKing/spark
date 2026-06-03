@@ -4,6 +4,7 @@
 #define HOOK(Name, Ret, Offset, ...)
 #endif
 
+HOOK( LoadCheckpoint,       void,     0xBE8A64U                                                         )
 HOOK( UpdateCamera,         void,     0xB14380U, float /*dt*/                                           )
 HOOK( UpdatePlayerControls, void,     0xA9A8A4U, float*, float*                                         )
 HOOK( RenderFPVModel,       void,     0xB275B8U                                                         )
@@ -13,6 +14,7 @@ HOOK( UpdateWorldBones,     void,     0xB3A614U, uint32_t /*entityHandle*/      
 HOOK( RenderEntity,         void,     0xB48CD0U, Engine::RenderEntityRequest*                           )
 HOOK( TryPickInteractable,  void,     0xAD559CU, uint16_t, int16_t, uint32_t /*entityHandle*/, int16_t  )
 HOOK( UpdateFlareTransform, void,     0xBE7D70U, uint32_t /*flareHandle*/                               )
+// This is a misnoner. It spawns many types of objects. Todo: Rename this everywhere.
 HOOK( SpawnProjectile,      uint32_t, 0xB35FD4U, Engine::ProjectileSpawnArgs*, uint32_t /*flags*/       )
 HOOK( DamageEntity,         void,     0xB9EA28U, Engine::DamageEvent* /*event*/, uint32_t /*entityHandle*/, uint16_t, uint16_t, int16_t /*hitBoneIndex*/, uint64_t )
 HOOK( ConsoleReportError,   void,     0xB20CDCU, const char* /*source*/, const char* /*category*/, const char* /*message*/, const char* /*location*/ )

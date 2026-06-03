@@ -11,6 +11,11 @@ void MarioMod::init() {
     // must all be complete before any hook can fire update().
     HaloCE::Mod::Mario::init(modId_);
 
+    Spark::LoadCheckpoint::addHandler(modId_, +[](void*, auto next) {
+        HaloCE::Mod::Mario::deinitMario();
+        next();
+    }, nullptr);
+
     Spark::UpdateAllEntities::addHandler(modId_, +[](void*, auto next) {
         HaloCE::Mod::Mario::update();
         next();

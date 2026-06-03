@@ -54,6 +54,12 @@ namespace Mod::DevTools {
             if (!path) path = nullPath;
             if (paused || view.tagPath)
                 ImGui::Text("Tag Path: %s", path);
+
+            // Category
+            auto category = entity->entityCategory;
+            VIEW_TOGGLE(tagCategory);
+            if (paused || view.tagCategory)
+                ImGui::Text("Category: %d", category);   
         }
 
         if (!paused || ImGui::CollapsingHeader("Entity")) {

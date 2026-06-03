@@ -31,6 +31,7 @@ namespace Mod::DevTools {
         bool tagID     = false;
         bool tagCC     = false;
         bool tagPath   = true;
+        bool tagCategory = false;
         bool animation = false;
         bool bones     = false;
         bool worldBones  = true;

@@ -8,11 +8,13 @@
 #include "spark/mod/ModId.hpp"
 
 namespace HaloCE::Mod::Mario {
+    
     void init(Spark::ModId modId);
     void free();
     void update();
     void debugRender();
-
+    void deinitMario();
+    
     // Helper: create a temporary spawn platform below Mario's spawn point.
     void createSpawnPlatform(const Vec3& localPos);
 

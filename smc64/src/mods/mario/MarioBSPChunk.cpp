@@ -12,7 +12,7 @@
 #include <cmath>
 #include <cstring>
 
-#define DEBUG_BSP_CHUNK 1
+// #define DEBUG_BSP_CHUNK 1
 
 #ifdef DEBUG_BSP_CHUNK
     #include <iostream>
