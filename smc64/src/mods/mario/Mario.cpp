@@ -136,6 +136,9 @@ namespace HaloCE::Mod::Mario {
         printf(" - Color buffer: %p\n", (void*)marioGeometry.color);
         printf(" - Normal buffer: %p\n", (void*)marioGeometry.normal);
         printf(" - UV buffer: %p\n", (void*)marioGeometry.uv);
+
+        // Now we can load the level for Mario.
+        MarioBSPChunk::init(marioChunk);
     }
 
     void deinitMario() {
@@ -143,6 +146,8 @@ namespace HaloCE::Mod::Mario {
             sm64_mario_delete(marioId);
             marioId = -1;
         }
+        marioInputs = {};
+        marioState = {};
         if (marioGeometry.position) { ::free(marioGeometry.position); marioGeometry.position = nullptr; }
         if (marioGeometry.color)    { ::free(marioGeometry.color);    marioGeometry.color    = nullptr; }
         if (marioGeometry.normal)   { ::free(marioGeometry.normal);   marioGeometry.normal   = nullptr; }
@@ -175,8 +180,6 @@ namespace HaloCE::Mod::Mario {
         // sm64_register_debug_print_function(debugPrint);
 
         MarioAudio::init(rom);
-        // initMario();
-        MarioBSPChunk::init(marioChunk);
 
         ThirdPersonFix::registerHandlers(modId);
         MarioPickingFix::registerHandlers(modId);
@@ -308,7 +311,7 @@ namespace HaloCE::Mod::Mario {
         DynamicGeometry::update(marioState);
 
         if (marioInControl()) {
-            std::cout << "Mario in control this tick" << std::endl;
+            // std::cout << "Mario in control this tick" << std::endl;
             Vec3 marioWorldPos = marioWorldPosition();
             Vec3 difference = player->pos - marioWorldPos;
             float distance = difference.length();
@@ -321,7 +324,7 @@ namespace HaloCE::Mod::Mario {
             }
             Mario::updateInput(marioInputs, marioState, Engine::getPlayerCameraPointer());
         } else {
-            std::cout << "Chief in control this tick" << std::endl;
+            // std::cout << "Chief in control this tick" << std::endl;
             MarioCamera::onDisable();
             // Clear input state.
             marioInputs = {}; 

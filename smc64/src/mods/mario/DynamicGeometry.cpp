@@ -8,20 +8,31 @@
 
 #include <unordered_map>
 #include <filesystem>
-#include <iostream>
+#include <mutex>
 
 #include "decomp/surface_terrains.h"
+
+#define DEBUG_DYNAMIC_GEOMETRY 1
+
+#ifdef DEBUG_DYNAMIC_GEOMETRY
+    #include <iostream>
+    #define LOG(x) std::cout << "[DynamicGeometry] " << x << std::endl;
+#else
+    #define LOG(x) ;
+#endif
 namespace HaloCE::Mod::Mario::DynamicGeometry {
+
+    static std::mutex s_updateMutex;
 
     float allocateRange = 10.0f;
     float deallocateRange = 20.0f;
 
-    struct ObjectEntry {
+    struct BoneEntry {
         uint32_t surfaceObjectId;
         std::vector<SM64Surface> surfaces;
     };
 
-    std::unordered_map<Engine::Entity*, std::vector<ObjectEntry>> objectMap;
+    std::unordered_map<Engine::Entity*, std::vector<BoneEntry>> objectMap;
 
     std::vector<SM64Surface> convertCollisionBSPToSM64Surfaces(Engine::Entity* entity, size_t boneIndex) {
         auto entityTag = entity->tag();
@@ -68,13 +79,12 @@ namespace HaloCE::Mod::Mario::DynamicGeometry {
     }
 
     void allocateDynamicGeometryForEntity(Engine::Entity* entity) {
-        // // Get the tag name
-        // auto entityTag = entity->tag();
-        // if (entityTag) {
-        //     std::cout << "Creating dynamic geometry for entity: " << entityTag->getResourcePath() << std::endl;
-        //     auto boneCount = entity->worldBones.count();
-        //     std::cout << "Bone count: " << boneCount << std::endl;
-        // }
+        auto entityTag = entity->tag();
+        if (entityTag) {
+            LOG("Creating dynamic geometry for entity: " << entity << " [" << entityTag->getResourcePath() << "]");
+            auto boneCount = entity->worldBones.count();
+            LOG("Entity has " << boneCount << " bones");
+        }
 
         objectMap[entity] = {};
         
@@ -92,17 +102,20 @@ namespace HaloCE::Mod::Mario::DynamicGeometry {
     
             uint32_t surfaceObjectId = sm64_surface_object_create(&surfaceObject);
             
-            ObjectEntry entry;
+            BoneEntry entry;
             entry.surfaceObjectId = surfaceObjectId;
             entry.surfaces = std::move(surfaces);
             objectMap[entity].push_back(std::move(entry));
         }
     }
 
+    
     void deallocateDynamicGeometryForEntity(Engine::Entity* entity) {
-        // Placeholder for deallocation logic
         auto it = objectMap.find(entity);
         if (it != objectMap.end()) {
+            auto entityTag = entity->tag();
+            LOG("Deallocating dynamic geometry for entity: " << entity << " [" << (entityTag ? entityTag->getResourcePath() : "null") << "]");
+
             for (auto& entry : it->second) {
                 sm64_surface_object_delete(entry.surfaceObjectId);
             }
@@ -129,10 +142,34 @@ namespace HaloCE::Mod::Mario::DynamicGeometry {
         if (category == Engine::EntityCategory_Machine) return true;
         return false;
     }
+
+    Vec3 getEntityPosition(Engine::Entity* entity) {
+        if (entity->worldBones.count() == 0) return entity->pos;
+        Engine::WorldTransform* bone = entity->worldBones.get(entity, 0);
+        return bone ? bone->pos : entity->pos;
+    }
+
+    void cleanStale() {
+        std::vector<Engine::Entity*> toDeallocate;
+
+        for (auto& kv : objectMap) {
+            Engine::Entity* entity = kv.first;
+            if (entity->tagID == NULL_HANDLE) {
+                toDeallocate.push_back(entity);
+            }
+        }
+
+        for (Engine::Entity* entity : toDeallocate) {
+            deallocateDynamicGeometryForEntity(entity);
+        }
+    }
     
     void update(SM64MarioState& marioState) {
+        std::lock_guard<std::mutex> updateLock(s_updateMutex);
 
         Vec3 marioWorldPos = Mario::marioWorldPosition();
+
+        cleanStale();
 
         Engine::foreachEntityRecord([&](Engine::EntityRecord* entityRecord) {
             if (!entityRecord) return;
@@ -141,7 +178,7 @@ namespace HaloCE::Mod::Mario::DynamicGeometry {
 
             if (!shouldCreateGeometryFor(entity)) return;
             
-            Vec3 entityPos = entity->pos;
+            Vec3 entityPos = getEntityPosition(entity);
             float distance = (entityPos - marioWorldPos).lengthSquared();
             if (distance < allocateRange * allocateRange) {
                 if (objectMap.find(entity) != objectMap.end()) {
@@ -156,8 +193,18 @@ namespace HaloCE::Mod::Mario::DynamicGeometry {
     }
 
     void clearAll() {
+        std::lock_guard<std::mutex> updateLock(s_updateMutex);
+        
+        LOG("Clearing all dynamic geometry objects (" << objectMap.size() << " entities)");
         for (auto& kv : objectMap) {
+            auto tag = kv.first->tag();
+            if (tag) {
+                LOG(" - Entity: " << tag->getResourcePath() << " with " << kv.second.size() << " surface objects");
+            } else {
+                LOG(" - Entity: (unknown) with " << kv.second.size() << " surface objects");
+            }
             for (auto& entry : kv.second) {
+                LOG("   - Deleting surface object ID: " << entry.surfaceObjectId << " with " << entry.surfaces.size() << " surfaces");
                 sm64_surface_object_delete(entry.surfaceObjectId);
             }
         }

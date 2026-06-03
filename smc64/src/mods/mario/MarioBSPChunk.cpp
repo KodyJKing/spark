@@ -12,6 +12,15 @@
 #include <cmath>
 #include <cstring>
 
+#define DEBUG_BSP_CHUNK 1
+
+#ifdef DEBUG_BSP_CHUNK
+    #include <iostream>
+    #define LOG(x) std::cout << "[MarioBSPChunk] " << x << std::endl;
+#else
+    #define LOG(x) ;
+#endif
+
 namespace HaloCE::Mod::Mario::MarioBSPChunk {
 
     // Mario's chunk is the frame all of sm64's coords (static surfaces, dynamic objects,
@@ -38,7 +47,7 @@ namespace HaloCE::Mod::Mario::MarioBSPChunk {
 
         staticSurfacesCount = surfaces.size();
         if (staticSurfacesCount == 0) {
-            printf("MarioBSPChunk: no static surfaces for chunk (%d, %d, %d)\n", chunk.x, chunk.y, chunk.z);
+            LOG("No static surfaces for chunk (" << chunk.x << ", " << chunk.y << ", " << chunk.z << ")");
             sm64_static_surfaces_load(nullptr, 0);
             return;
         }
@@ -47,8 +56,7 @@ namespace HaloCE::Mod::Mario::MarioBSPChunk {
         memcpy(staticSurfaces, surfaces.data(), sizeof(SM64Surface) * staticSurfacesCount);
 
         sm64_static_surfaces_load(staticSurfaces, (uint32_t) staticSurfacesCount);
-        printf("MarioBSPChunk: loaded %zu surfaces for chunk (%d, %d, %d)\n",
-               staticSurfacesCount, chunk.x, chunk.y, chunk.z);
+        LOG("Loaded " << staticSurfacesCount << " surfaces for chunk (" << chunk.x << ", " << chunk.y << ", " << chunk.z << ")");
 
         lastBSPSignature = Engine::getBSPSignature();
     }
@@ -86,12 +94,17 @@ namespace HaloCE::Mod::Mario::MarioBSPChunk {
         p[1] -= (float) delta.y * ext;
         p[2] -= (float) delta.z * ext;
         sm64_set_mario_position(marioId, p[0], p[1], p[2]);
+
+        LOG("Mario moved to chunk (" << newChunk.x << ", " << newChunk.y << ", " << newChunk.z
+            << ") with local position (" << p[0] << ", " << p[1] << ", " << p[2] << ")");
         reloadFor(newChunk);
     }
 
     void checkSignature() {
         uint64_t currentBSPSignature = Engine::getBSPSignature();
         if (currentBSPSignature != lastBSPSignature) {
+            LOG("BSP signature changed, reloading Mario's static surfaces for chunk ("
+                << marioChunk.x << ", " << marioChunk.y << ", " << marioChunk.z << ")");
             uploadFor(marioChunk);
         }
     }

@@ -24,27 +24,13 @@ namespace Engine {
     }
 
     Tag* findTag( const char* path, uint32_t fourCC) {
-
-        // This causes crashes after loading a second map.
-        // Todo: Implement cache invalidation.
-        static std::unordered_map<std::string, Tag*> cache; 
-        std::string cacheKey = std::string(path) + "|" + std::to_string(fourCC);
-        auto it = cache.find(cacheKey);
-        if (it != cache.end()) {
-            if (tagExists(it->second)) {
-                return it->second;
-            } else {
-                cache.erase(it);
-            }
-        }
-
         if ( !validTagPath( path ) ) return nullptr;
         Tag* tagArray = *(Tag**) ( dllBase() + 0x1C34FB0U );
         for ( uint32_t i = 0; i < 0x10000; i++ ) {
             auto tag = &tagArray[i];
-            if ( !tagExists( tag ) ) break;
+            // if ( !tagExists( tag ) ) break;
             if ( strcmp( tag->getResourcePath(), path ) == 0 && tag->groupID == fourCC ) {
-                cache[cacheKey] = tag;
+                if ( !tagExists( tag ) ) break; // Keep an eye on this. Might need to go back to checking outside the loop.
                 return tag;
             }
         }
