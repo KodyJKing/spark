@@ -114,6 +114,130 @@ namespace Mod::DevTools {
 #undef VIEW_TOGGLE
     }
 
+    void entitiesTab(bool paused) {
+        ImGui::Text("%p", highlightEntity);
+
+        ImGui::SameLine();
+        bool copyHotkeyDown = ImGui::GetIO().KeyShift && ImGui::IsKeyPressed(ImGuiKey_C, false);
+        if (copyHotkeyDown) ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(0, 255, 0, 255));
+        if (ImGui::Button("copy") || copyHotkeyDown) {
+            char text[255] = {0};
+            snprintf(text, 255, "%p", highlightEntity);
+            ImGui::SetClipboardText(text);
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Copy pointer to clipboard (Shift+C)");
+        if (copyHotkeyDown) ImGui::PopStyleColor();
+
+        ImGui::SameLine();
+        if (ImGui::Button("browse"))
+            CE::Messages::openHexView((uintptr_t)highlightEntity);
+
+        ImGui::SameLine();
+        ImGui::Checkbox("anchor", &espSettings.anchorHighlight);
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Keep current entity highlighted (Shift+V)");
+        bool anchorHotkeyDown = ImGui::GetIO().KeyShift && ImGui::IsKeyPressed(ImGuiKey_V, false);
+        if (anchorHotkeyDown) espSettings.anchorHighlight = !espSettings.anchorHighlight;
+
+        if (paused && ImGui::CollapsingHeader("Filter")) {
+            int maxDistInt = (int)espSettings.maxDistance;
+            ImGui::SliderInt("Max Distance", &maxDistInt, 1, 200, "%d");
+            espSettings.maxDistance = (float)maxDistInt;
+            filterSettings();
+        }
+
+        highlightedEntityDetails();
+    }
+
+    void cameraTab(bool paused) {
+        if (paused) ImGui::SliderFloat("Fov Adjust", &espSettings.fovScale, 0.0f, 2.0f);
+        Camera& camera = Spark::Overlay::ESP::camera;
+        ImGui::Text("Pos: %.2f %.2f %.2f", camera.pos.x, camera.pos.y, camera.pos.z);
+        ImGui::Text("Fwd: %.2f %.2f %.2f", camera.fwd.x, camera.fwd.y, camera.fwd.z);
+        ImGui::Text("Fov: %.2f", camera.fov);
+    }
+
+#define PLAYER_CONTROLLER_TAB
+#ifdef PLAYER_CONTROLLER_TAB
+    void playerTab() {
+        auto playerHandle = Engine::getPlayerHandle();
+        ImGui::Text("Player Controller Handle: %X", playerHandle);
+
+        auto playerEntity = Engine::getPlayerEntity();
+        ImGui::Text("Player Entity: %p", playerEntity);
+
+        if (playerEntity) {
+            // Vehicle handle:
+            uint32_t vehicleHandle = playerEntity->vehicleHandle;
+            ImGui::Text("Vehicle Handle: %X", vehicleHandle);
+
+            // Parent handle:
+            uint32_t parentHandle = playerEntity->parentHandle;
+            ImGui::Text("Parent Handle: %X", parentHandle);
+
+            // Child handle:
+            uint32_t childHandle = playerEntity->childHandle;
+            ImGui::Text("Child Handle: %X", childHandle);
+        }
+
+        // Player input:
+        bool inputDisabled = Engine::isPlayerInputDisabled();
+        ImGui::Text("Player Input Disabled: %s", inputDisabled ? "Yes" : "No");
+
+        auto playerController = Engine::getPlayerControllerPointer();
+        ImGui::Text("Player Controller: %p", playerController);
+
+        uint32_t actions = playerController->actions;
+        for (int i = 0; i < 32; i++) {
+            if (i > 0 && i % 8 != 0) ImGui::SameLine();
+            char text[255] = {0};
+            snprintf(text, 255, "##flag%d", i);
+            ImGui::CheckboxFlags(text, &actions, 1 << i);
+        }
+
+        ImVec4 green = ImVec4(0.0f, 1.0f, 0.0f, 1.0f);
+        ImVec4 white = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+#define SHOW_ACTION_1(name) ImGui::TextColored((actions & Engine::PlayerActionFlags::name) ? green : white, #name);
+#define SHOW_ACTION_2(name) ImGui::SameLine(); SHOW_ACTION_1(name);
+        SHOW_ACTION_1(crouch); SHOW_ACTION_2(jump);  SHOW_ACTION_2(flash); SHOW_ACTION_2(melee);
+        SHOW_ACTION_1(reload); SHOW_ACTION_2(shoot); SHOW_ACTION_2(grenade1); SHOW_ACTION_2(grenade2);
+#undef SHOW_ACTION_2
+#undef SHOW_ACTION_1
+        ImGui::Text("WalkX %.2f", playerController->walkX);
+        ImGui::Text("WalkY %.2f", playerController->walkY);
+    }
+#endif
+
+#define BSP_TAB
+#ifdef BSP_TAB
+    void bspTab() {
+        ImGui::Checkbox("Render BSP", &view.renderBsp);
+
+        uintptr_t bspPointer = Engine::getBSPPointer();
+        char bspPointerStr[255] = {0};
+        snprintf(bspPointerStr, 255, "%p", (void*)bspPointer);
+        ImGuiUtils::renderCopyableText("BSP Pointer", bspPointerStr);
+
+        uint32_t bspVertexCount = Engine::getBSPVertexCount();
+        ImGui::Text("BSP Vertices: %d", bspVertexCount);
+
+        Engine::BSPVertex* bspVertices = Engine::getBSPVertexArray();
+        char bspVerticesStr[255] = {0};
+        snprintf(bspVerticesStr, 255, "%p", bspVertices);
+        ImGuiUtils::renderCopyableText("BSP Vertex Array", bspVerticesStr);
+
+        uint32_t bspEdgeCount = Engine::getBSPEdgeCount();
+        ImGui::Text("BSP Edges: %d", bspEdgeCount);
+
+        Engine::BSPEdge* bspEdges = Engine::getBSPEdgeArray();
+        char bspEdgesStr[255] = {0};
+        snprintf(bspEdgesStr, 255, "%p", bspEdges);
+        ImGuiUtils::renderCopyableText("BSP Edge Array", bspEdgesStr);
+
+        uint64_t bspSignature = Engine::getBSPSignature();
+        ImGui::Text("BSP Signature: %p", (void*)bspSignature);
+    }
+#endif
+
     void espWindow() {
         bool paused = HaloMCC::isPauseMenuOpen();
         ImGuiWindowFlags flags = ImGuiWindowFlags_AlwaysAutoResize;
@@ -125,106 +249,22 @@ namespace Mod::DevTools {
 
         if (ImGui::BeginTabBar("ESP Tabs")) {
             if (ImGui::BeginTabItem("Entities")) {
-                ImGui::Text("%p", highlightEntity);
-
-                ImGui::SameLine();
-                bool copyHotkeyDown = ImGui::GetIO().KeyShift && ImGui::IsKeyPressed(ImGuiKey_C, false);
-                if (copyHotkeyDown) ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(0, 255, 0, 255));
-                if (ImGui::Button("copy") || copyHotkeyDown) {
-                    char text[255] = {0};
-                    snprintf(text, 255, "%p", highlightEntity);
-                    ImGui::SetClipboardText(text);
-                }
-                if (ImGui::IsItemHovered()) ImGui::SetTooltip("Copy pointer to clipboard (Shift+C)");
-                if (copyHotkeyDown) ImGui::PopStyleColor();
-
-                ImGui::SameLine();
-                if (ImGui::Button("browse"))
-                    CE::Messages::openHexView((uintptr_t)highlightEntity);
-
-                ImGui::SameLine();
-                ImGui::Checkbox("anchor", &espSettings.anchorHighlight);
-                if (ImGui::IsItemHovered()) ImGui::SetTooltip("Keep current entity highlighted (Shift+V)");
-                bool anchorHotkeyDown = ImGui::GetIO().KeyShift && ImGui::IsKeyPressed(ImGuiKey_V, false);
-                if (anchorHotkeyDown) espSettings.anchorHighlight = !espSettings.anchorHighlight;
-
-                if (paused && ImGui::CollapsingHeader("Filter")) {
-                    int maxDistInt = (int)espSettings.maxDistance;
-                    ImGui::SliderInt("Max Distance", &maxDistInt, 1, 200, "%d");
-                    espSettings.maxDistance = (float)maxDistInt;
-                    filterSettings();
-                }
-
-                highlightedEntityDetails();
+                entitiesTab(paused);
                 ImGui::EndTabItem();
             }
-
             if (ImGui::BeginTabItem("Camera")) {
-                if (paused) ImGui::SliderFloat("Fov Adjust", &espSettings.fovScale, 0.0f, 2.0f);
-                Camera& camera = Spark::Overlay::ESP::camera;
-                ImGui::Text("Pos: %.2f %.2f %.2f", camera.pos.x, camera.pos.y, camera.pos.z);
-                ImGui::Text("Fwd: %.2f %.2f %.2f", camera.fwd.x, camera.fwd.y, camera.fwd.z);
-                ImGui::Text("Fov: %.2f", camera.fov);
+                cameraTab(paused);
                 ImGui::EndTabItem();
             }
-
-#define PLAYER_CONTROLLER_TAB
 #ifdef PLAYER_CONTROLLER_TAB
-            if (ImGui::BeginTabItem("PlayerController")) {
-                auto playerController = Engine::getPlayerControllerPointer();
-                ImGui::Text("%p", playerController);
-
-                uint32_t actions = playerController->actions;
-                for (int i = 0; i < 32; i++) {
-                    if (i > 0 && i % 8 != 0) ImGui::SameLine();
-                    char text[255] = {0};
-                    snprintf(text, 255, "##flag%d", i);
-                    ImGui::CheckboxFlags(text, &actions, 1 << i);
-                }
-
-                ImVec4 green = ImVec4(0.0f, 1.0f, 0.0f, 1.0f);
-                ImVec4 white = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
-#define SHOW_ACTION_1(name) ImGui::TextColored((actions & Engine::PlayerActionFlags::name) ? green : white, #name);
-#define SHOW_ACTION_2(name) ImGui::SameLine(); SHOW_ACTION_1(name);
-                SHOW_ACTION_1(crouch); SHOW_ACTION_2(jump);  SHOW_ACTION_2(flash); SHOW_ACTION_2(melee);
-                SHOW_ACTION_1(reload); SHOW_ACTION_2(shoot); SHOW_ACTION_2(grenade1); SHOW_ACTION_2(grenade2);
-#undef SHOW_ACTION_2
-#undef SHOW_ACTION_1
-                ImGui::Text("WalkX %.2f", playerController->walkX);
-                ImGui::Text("WalkY %.2f", playerController->walkY);
+            if (ImGui::BeginTabItem("Player")) {
+                playerTab();
                 ImGui::EndTabItem();
             }
 #endif
-
-#define BSP_TAB
 #ifdef BSP_TAB
             if (ImGui::BeginTabItem("BSP")) {
-                ImGui::Checkbox("Render BSP", &view.renderBsp);
-
-                uintptr_t bspPointer = Engine::getBSPPointer();
-                char bspPointerStr[255] = {0};
-                snprintf(bspPointerStr, 255, "%p", (void*)bspPointer);
-                ImGuiUtils::renderCopyableText("BSP Pointer", bspPointerStr);
-
-                uint32_t bspVertexCount = Engine::getBSPVertexCount();
-                ImGui::Text("BSP Vertices: %d", bspVertexCount);
-
-                Engine::BSPVertex* bspVertices = Engine::getBSPVertexArray();
-                char bspVerticesStr[255] = {0};
-                snprintf(bspVerticesStr, 255, "%p", bspVertices);
-                ImGuiUtils::renderCopyableText("BSP Vertex Array", bspVerticesStr);
-
-                uint32_t bspEdgeCount = Engine::getBSPEdgeCount();
-                ImGui::Text("BSP Edges: %d", bspEdgeCount);
-
-                Engine::BSPEdge* bspEdges = Engine::getBSPEdgeArray();
-                char bspEdgesStr[255] = {0};
-                snprintf(bspEdgesStr, 255, "%p", bspEdges);
-                ImGuiUtils::renderCopyableText("BSP Edge Array", bspEdgesStr);
-
-                uint64_t bspSignature = Engine::getBSPSignature();
-                ImGui::Text("BSP Signature: %p", (void*)bspSignature);
-
+                bspTab();
                 ImGui::EndTabItem();
             }
 #endif

@@ -8,6 +8,17 @@ namespace Engine {
 
     CameraController* getPlayerCameraControllerPointer() { return (CameraController*) ( dllBase() + 0x2D9B970U ); }
 
+    bool isPlayerInputDisabled() {
+        // Found by looking at what player_enable_input HSC handler writes to.
+        uintptr_t unknownStructurePtrPtr = dllBase() + 0x1C403B8U;
+        if ( !Memory::isAllocated( unknownStructurePtrPtr ) ) return true;
+        uintptr_t unknownStructurePtr = * (uintptr_t*) unknownStructurePtrPtr;
+        if ( !Memory::isAllocated( unknownStructurePtr ) ) return true;
+        uint8_t* flagsPtr = (uint8_t*) (unknownStructurePtr + 0x7E);
+        // Second bit is set when player input is disabled (e.g. during cutscenes)
+        return (*flagsPtr & 0x2) != 0;
+    }
+
     void enterThirdPerson() {
         auto camController = getPlayerCameraControllerPointer();
         if (camController) {

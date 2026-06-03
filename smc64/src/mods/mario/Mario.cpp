@@ -92,6 +92,12 @@ namespace HaloCE::Mod::Mario {
     void initMario() {
         // Create a Mario instance at Cheif's position (split into chunk + local).
         if (marioId < 0) {
+
+            if (Engine::isPlayerInputDisabled()) {
+                printf("initMario: player input is disabled, skipping Mario spawn.\n");
+                return;
+            }
+            
             auto playerPos = Engine::getPlayerPosition();
             if (!playerPos.has_value()) {
                 printf("initMario: no player position available, skipping Mario spawn.\n");
@@ -132,6 +138,17 @@ namespace HaloCE::Mod::Mario {
         printf(" - UV buffer: %p\n", (void*)marioGeometry.uv);
     }
 
+    void deinitMario() {
+        if (marioId >= 0) {
+            sm64_mario_delete(marioId);
+            marioId = -1;
+        }
+        if (marioGeometry.position) { ::free(marioGeometry.position); marioGeometry.position = nullptr; }
+        if (marioGeometry.color)    { ::free(marioGeometry.color);    marioGeometry.color    = nullptr; }
+        if (marioGeometry.normal)   { ::free(marioGeometry.normal);   marioGeometry.normal   = nullptr; }
+        if (marioGeometry.uv)       { ::free(marioGeometry.uv);       marioGeometry.uv       = nullptr; }
+    }
+
     // Public:
     
     void init(Spark::ModId modId) {
@@ -158,7 +175,7 @@ namespace HaloCE::Mod::Mario {
         // sm64_register_debug_print_function(debugPrint);
 
         MarioAudio::init(rom);
-        initMario();
+        // initMario();
         MarioBSPChunk::init(marioChunk);
 
         ThirdPersonFix::registerHandlers(modId);
@@ -185,15 +202,7 @@ namespace HaloCE::Mod::Mario {
         // the buffers out from under it.
         std::lock_guard<std::mutex> updateLock(s_updateMutex);
 
-        if (marioId >= 0) {
-            sm64_mario_delete(marioId);
-            marioId = -1;
-        }
-
-        if (marioGeometry.position) { ::free(marioGeometry.position); marioGeometry.position = nullptr; }
-        if (marioGeometry.color)    { ::free(marioGeometry.color);    marioGeometry.color    = nullptr; }
-        if (marioGeometry.normal)   { ::free(marioGeometry.normal);   marioGeometry.normal   = nullptr; }
-        if (marioGeometry.uv)       { ::free(marioGeometry.uv);       marioGeometry.uv       = nullptr; }
+        deinitMario();
 
         sm64_global_terminate();
 
@@ -247,10 +256,22 @@ namespace HaloCE::Mod::Mario {
     }
 
     void update() {
-        expectTeleport = false;
-
         #ifdef ENABLE_MARIO
         std::lock_guard<std::mutex> updateLock(s_updateMutex);
+
+        if (Engine::isPlayerInputDisabled()) {
+            // Don't do anything with Mario if player input is disabled.
+            MarioCamera::onDisable();
+            deinitMario();
+            return;
+        }
+
+        if (enableMario && marioId < 0) {
+            initMario();
+            return;
+        }
+
+        expectTeleport = false;
 
         auto playerRec = Engine::getPlayerRecord();
         if (!playerRec) return;
@@ -309,7 +330,7 @@ namespace HaloCE::Mod::Mario {
         
         faceLookDirection(Engine::getPlayerCameraPointer()->fwd);
 
-        {
+        if (marioInControl()) {
             std::lock_guard<std::mutex> sm64Lock(MarioAudio::sm64Mutex());
             Vec3 oldPos = getMarioPosition();
             sm64_mario_tick(marioId, &marioInputs, &marioState, &marioGeometry);

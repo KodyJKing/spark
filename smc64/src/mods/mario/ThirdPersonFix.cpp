@@ -16,6 +16,11 @@ namespace HaloCE::Mod::ThirdPersonFix {
         }, nullptr);
 
         Spark::SpawnProjectile::addHandler(modId, +[](void* /*ctx*/, auto next, Engine::ProjectileSpawnArgs* options, uint32_t flags) -> uint32_t {
+            auto playerHandle = Engine::getPlayerHandle();
+            if (playerHandle == NULL_HANDLE) {
+                return next(options, flags);
+            }
+            
             if (options->ownerEntityHandle != Engine::getPlayerHandle()) {
                 return next(options, flags);
             }

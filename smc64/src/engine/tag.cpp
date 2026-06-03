@@ -24,7 +24,10 @@ namespace Engine {
     }
 
     Tag* findTag( const char* path, uint32_t fourCC) {
-        static std::unordered_map<std::string, Tag*> cache;
+
+        // This causes crashes after loading a second map.
+        // Todo: Implement cache invalidation.
+        static std::unordered_map<std::string, Tag*> cache; 
         std::string cacheKey = std::string(path) + "|" + std::to_string(fourCC);
         auto it = cache.find(cacheKey);
         if (it != cache.end()) {

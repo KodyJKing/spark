@@ -78,6 +78,8 @@ namespace HaloCE::Mod::Mario {
     void debugRender() {
 #ifdef ENABLE_MARIO
 
+        if (marioId < 0) return;
+
         ImDrawList* drawList = ImGui::GetWindowDrawList();
         ImVec2 windowPos = ImGui::GetWindowPos();
         ImVec2 windowSize = ImGui::GetWindowSize();

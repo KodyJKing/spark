@@ -35,6 +35,7 @@ namespace Engine {
 
     Camera* getPlayerCameraPointer();
     CameraController *getPlayerCameraControllerPointer();
+    bool isPlayerInputDisabled();
     void enterThirdPerson();
     uint32_t getPlayerHandle();
     uint32_t getHeldWeaponHandle();
