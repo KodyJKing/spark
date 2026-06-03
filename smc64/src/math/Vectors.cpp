@@ -1,4 +1,5 @@
 #include "Vectors.hpp"
+#include "Math.hpp"
 
 ////////////////////////////////////////
 // Vec3
@@ -69,6 +70,21 @@ Vec3 Vec3::projectToCone(Vec3 coneDirection, float coneAngle) {
     Vec3 rejection = thisNorm - dirNorm * dot;
     Vec3 rejectionNorm = rejection.normalize();
     return dirNorm * cosAngle + rejectionNorm * sinf(coneAngle);
+}
+
+Vec3 Vec3::randomGaussian(float stddev) {
+    return Vec3{
+        Math::randomGaussian(0.0f, stddev),
+        Math::randomGaussian(0.0f, stddev),
+        Math::randomGaussian(0.0f, stddev)
+    };
+}
+
+Vec3 Vec3::randomUnitVector() {
+    float z = Math::lerp(-1.0f, 1.0f, static_cast<float>(rand()) / RAND_MAX);
+    float theta = Math::lerp(0.0f, 2.0f * 3.14159265f, static_cast<float>(rand()) / RAND_MAX);
+    float r = sqrtf(1 - z * z);
+    return Vec3{ r * cosf(theta), r * sinf(theta), z };
 }
 
 ////////////////////////////////////////

@@ -1,3 +1,6 @@
+#include <random>
+#include "Math.hpp"
+
 namespace Math {
     float lerp( float start, float end, float t ) {
         return start + (end - start) * t;
@@ -14,5 +17,11 @@ namespace Math {
     float smoothstep( float edge0, float edge1, float x ) {
         x = clamp( (x - edge0) / (edge1 - edge0), 0.0f, 1.0f );
         return x * x * (3 - 2 * x);
+    }
+
+    float randomGaussian( float mean, float stddev ) {
+        static std::mt19937 rng( std::random_device{}() );
+        std::normal_distribution<float> dist( mean, stddev );
+        return dist( rng );
     }
 }

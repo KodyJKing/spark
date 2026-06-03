@@ -1,7 +1,14 @@
 #include "engine/halo1.hpp"
 #include "spark/hook/Hooks.hpp"
 #include "MarioSkeleton.hpp"
+
+#include <unordered_map>
 namespace HaloCE::Mod::ThirdPersonFix {
+
+    std::unordered_map<std::string, float> spreadValues = {
+        {"weapons\\shotgun\\pellet", 3.0f},
+        {"weapons\\assault rifle\\bullet", 0.6f},
+    };
 
     void registerHandlers(Spark::ModId modId) {
         // Suppress flares on player-held weapons (they render in the wrong place in third-person view)
@@ -52,10 +59,19 @@ namespace HaloCE::Mod::ThirdPersonFix {
                     projectile->pos = spawnPosition;
 
                     Vec3 fwd = camera->fwd.normalize();
+
+                    auto projectileTag = projectile->tag();
+                    if (projectileTag) {
+                        auto resourcePath = projectileTag->getResourcePath();
+                        if (resourcePath && spreadValues.contains(resourcePath)) {
+                            float spread = spreadValues[resourcePath];
+                            Vec3 random = Vec3::randomGaussian(spread * 0.01f);
+                            fwd = (fwd + random).normalize();
+                        }
+                    }
+
                     float speed = projectile->vel.length();
                     projectile->vel = fwd * speed;
-
-                    // Todo: Reimplement spread.
                 }
             }
 
