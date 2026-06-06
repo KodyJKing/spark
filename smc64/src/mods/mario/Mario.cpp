@@ -221,9 +221,11 @@ namespace HaloCE::Mod::Mario {
     }
 
     void marioToCheif() {
-        auto playerPos = Engine::getPlayerPosition();
-        if (playerPos.has_value()) {
-            auto pos = playerPos.value();
+        auto player = Engine::getPlayerEntity();
+        if (player && player->worldBones.count() > 0) {
+            auto bones = player->worldBones.get(player, 0);
+            auto pos = bones[0].pos;
+            
             Vec3 marioWorldPos = Coordinates::haloToMario(pos);
             Vec3i targetChunk  = Coordinates::marioChunkForPosition(marioWorldPos);
             if (targetChunk.x != marioChunk.x ||
