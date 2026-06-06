@@ -26,4 +26,5 @@ namespace HaloCE::Mod::Mario {
     void setMarioPosition(const Vec3& position);
 
     bool marioInControl();
+    bool marioAirborne();
 }

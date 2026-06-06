@@ -30,7 +30,7 @@
 #include "MarioCamera.hpp"
 #include "ThirdPersonFix.hpp"
 #include "MarioPickingFix.hpp"
-#include "FallDamageFix.hpp"
+#include "MarioDamageHook.hpp"
 #include "MarioSkeleton.hpp"
 #include "MarioModel.hpp"
 #include "MarioMelee.hpp"
@@ -182,7 +182,7 @@ namespace HaloCE::Mod::Mario {
 
         ThirdPersonFix::registerHandlers(modId);
         MarioPickingFix::registerHandlers(modId);
-        FallDamageFix::registerHandlers(modId);
+        MarioDamageHook::registerHandlers(modId);
         MarioCamera::registerHandlers(modId);
         MarioWeaponOffset::registerHandlers(modId);
         MarioWeaponKick::registerHandlers(modId);

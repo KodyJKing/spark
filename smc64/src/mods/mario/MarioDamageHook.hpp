@@ -2,6 +2,6 @@
 
 #include "spark/mod/ModId.hpp"
 
-namespace HaloCE::Mod::Mario::FallDamageFix {
+namespace HaloCE::Mod::Mario::MarioDamageHook {
     void registerHandlers(Spark::ModId modId);
 }

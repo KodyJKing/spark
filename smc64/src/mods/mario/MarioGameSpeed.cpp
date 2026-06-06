@@ -3,7 +3,6 @@
 #include "MarioAudio.hpp"
 #include "MarioState.hpp"
 #include "engine/halo1.hpp"
-#include "decomp/sm64.h"
 
 #include <cstdio>
 #include <Windows.h>
@@ -24,7 +23,7 @@ namespace HaloCE::Mod::Mario {
 
 
     void updateGameSpeed(Engine::Entity& player) {
-        bool airborne = (marioState.action & ACT_FLAG_AIR) != 0;
+        bool airborne = marioAirborne();
         bool hasSheilds = player.shield > 0;
         bool canSlowdown = airborne && hasSheilds;
         bool slowDown = canSlowdown && (GetAsyncKeyState(VK_CONTROL) & 0x8000);

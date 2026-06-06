@@ -1,12 +1,14 @@
-#include "FallDamageFix.hpp"
+#include "MarioDamageHook.hpp"
 #include "MarioState.hpp"
 #include "spark/hook/Hooks.hpp"
 #include <string>
 #include "libsm64.h"
 #include "decomp/sm64.h"
+#include "decomp/audio_defines.h"
 #include "Coordinates.hpp"
+#include "MarioShieldRegen.hpp"
 
-namespace HaloCE::Mod::Mario::FallDamageFix {
+namespace HaloCE::Mod::Mario::MarioDamageHook {
 
     void registerHandlers(Spark::ModId modId) {
         Spark::DamageEntity::addHandler(modId, +[](void* /*ctx*/, auto next, Engine::DamageEvent* event, uint32_t entityHandle, uint16_t p2, uint16_t p3, int16_t hitBoneIndex, uint64_t p5) {
@@ -16,22 +18,32 @@ namespace HaloCE::Mod::Mario::FallDamageFix {
             }
 
             auto playerHandle = Engine::getPlayerHandle();
+            auto playerEntity = Engine::getPlayerEntity();
+            auto damageTypeTagId = event->damageTypeTagHandle;
+            auto damageTag = Engine::getTag(event->damageTypeTagHandle);
 
+            std::string path = damageTag ? damageTag->getResourcePath() : "";
+            bool isExplosion = path.find("explosion") != std::string::npos;
+
+            if (!playerEntity || !damageTag) {
+                next(event, entityHandle, p2, p3, hitBoneIndex, p5);
+                return;
+            }
+
+            // === Damage to the player ===
             if (entityHandle == playerHandle) {
-                auto damageTypeTagId = event->damageTypeTagHandle;
-                auto damageTag = Engine::getTag(damageTypeTagId);
                 
-                // Ignore fall damage to the player when Mario is active.
-                std::string path = damageTag ? damageTag->getResourcePath() : "";
+                // Ignore fall and vehicle collision damage to the player when Mario is active.
                 if (path.find("globals\\falling") != std::string::npos) return;
                 if (path.find("globals\\distance") != std::string::npos) return;
+                if (path.find("globals\\vehicle_collision") != std::string::npos) return;
 
                 // Explosions launch mario.
-                if (path.find("explosion") != std::string::npos) {
+                if (isExplosion) {
                     Vec3 impulse = event->hitDirection * event->baseDamage * 0.25;
                     Vec3 marioImpulse = Coordinates::haloToMario(impulse);
 
-                    bool isSelfDamage = (entityHandle == playerHandle);
+                    bool isSelfDamage = (event->attackerHandle == playerHandle);
                     bool wasLongJumping = marioState.action == ACT_LONG_JUMP; 
 
                     uint32_t action;
@@ -60,15 +72,32 @@ namespace HaloCE::Mod::Mario::FallDamageFix {
                 }
             }
 
-            // If the damage is dealt by the player and is melee, ignore it.
+            // === Damage from the player ===
             auto attackerHandle = event->attackerHandle;
             if (attackerHandle == playerHandle) {
+                // If the damage is dealt by the player and is melee, ignore it.
                 auto damageTypeTagId = event->damageTypeTagHandle;
                 auto damageTag = Engine::getTag(damageTypeTagId);
                 std::string path = damageTag ? damageTag->getResourcePath() : "";
                 if (path.find("melee") != std::string::npos) return;
+
+                // If the player kills an enemy mid-air, he regenerates shield.
+                if (marioAirborne() && !isExplosion) {
+                    auto entity = Engine::getEntityPointer(entityHandle);
+                    auto playerEntity = Engine::getPlayerEntity();
+                    if (entity && playerEntity) {
+                        bool wasAlive = entity->health > 0;
+                        next(event, entityHandle, p2, p3, hitBoneIndex, p5);
+                        bool dead = entity->health <= 0;
+                        if (wasAlive && dead) {
+                            regenerateShield(*playerEntity, 1.0f, false);
+
+                            sm64_play_sound_global(SOUND_GENERAL_COLLECT_1UP);
+                        }
+                        return;
+                    }
+                }
             }
-            
             
             next(event, entityHandle, p2, p3, hitBoneIndex, p5);
 

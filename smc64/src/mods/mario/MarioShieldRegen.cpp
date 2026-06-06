@@ -2,6 +2,8 @@
 
 #include "MarioState.hpp"
 #include "decomp/sm64.h"
+#include "decomp/audio_defines.h"
+#include "libsm64.h"
 
 namespace HaloCE::Mod::Mario {
 
@@ -13,12 +15,20 @@ namespace HaloCE::Mod::Mario {
     static constexpr float TRIPLE_JUMP_REGEN = 0.5f;
     
     void regenerateShield(Engine::Entity& player, float amount, bool allowOvershield) {
+        float oldShield = player.shield;
+        
         bool hadOversheild = player.shield > 1.0f;
         player.shield += amount;
         if (!hadOversheild) {
             player.shield = min(player.shield, 1.0f);
         } else if (allowOvershield) {
             player.shield = min(player.shield, 3.0f);
+        }
+
+        float actualRegen = player.shield - oldShield;
+
+        if (actualRegen > 0.1f) {
+            sm64_play_sound_global(SOUND_GENERAL_HEART_SPIN);
         }
     }
     

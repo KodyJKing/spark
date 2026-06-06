@@ -1,6 +1,7 @@
 #include "MarioState.hpp"
 #include "math/Vectors.hpp"
 #include "engine/halo1.hpp"
+#include "decomp/sm64.h"
 
 namespace HaloCE::Mod::Mario {
     bool enableMario = true;
@@ -38,5 +39,9 @@ namespace HaloCE::Mod::Mario {
         if (playerEntity->parentHandle != NULL_HANDLE) return false;
 
         return enableMario && possessMario;
+    }
+
+    bool marioAirborne() {
+        return (marioState.action & ACT_FLAG_AIR) != 0;
     }
 }
