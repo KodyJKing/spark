@@ -90,15 +90,19 @@ namespace HaloCE::Mod::BSPConversion {
 
                 Engine::BSPPlane* plane = &planes[surface->planeIndex];
                 Engine::BSPVertex* p[3] = { p0, p2, p1 };
-                if (cross.dot(plane->normal) < 0) {
+                Vec3 normal = plane->normal * (surface->isFlipped ? -1.0f : 1.0f);
+                if (cross.dot(normal) < 0) {
                     std::swap(p[1], p[2]);
                 }
 
+                Vec3 verts[3];
+                for (int k = 0; k < 3; k++)
+                    verts[k] = Coordinates::haloToMario(p[k]->pos);
+
                 for (int k = 0; k < 3; k++) {
-                    Vec3 marioPos = Coordinates::haloToMario(p[k]->pos);
-                    sm64Surface.vertices[k][0] = (int32_t) (marioPos.x);
-                    sm64Surface.vertices[k][1] = (int32_t) (marioPos.y);
-                    sm64Surface.vertices[k][2] = (int32_t) (marioPos.z);
+                    sm64Surface.vertices[k][0] = (int32_t) verts[k].x;
+                    sm64Surface.vertices[k][1] = (int32_t) verts[k].y;
+                    sm64Surface.vertices[k][2] = (int32_t) verts[k].z;
                 }
 
                 result.push_back(sm64Surface);
@@ -183,7 +187,8 @@ namespace HaloCE::Mod::BSPConversion {
                 Engine::BSPPlane* plane = &planes[surface->planeIndex];
 
                 Vec3* mPtrs[3] = { &m0, &m2, &m1 };
-                if (cross.dot(plane->normal) < 0) {
+                Vec3 normal = plane->normal * (surface->isFlipped ? -1.0f : 1.0f);
+                if (cross.dot(normal) < 0) {
                     std::swap(mPtrs[1], mPtrs[2]);
                 }
 

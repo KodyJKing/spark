@@ -108,6 +108,10 @@ namespace Mod::DevTools {
         Engine::BSPSurface* bspSurfaces = Engine::getBSPSurfaceArray();
         if (!bspSurfaces || bspSurfaceCount == 0) return;
 
+        uint32_t planeCount = Engine::getBSPPlaneCount();
+        auto planes = Engine::getBSPPlaneArray();
+        if (!planes || planeCount == 0) return;
+
         bool gamePaused = HaloMCC::isPauseMenuOpen();
         byte alpha = gamePaused ? 0x10 : 0x20;
         auto color = IM_COL32(0, 255, 0, alpha);
@@ -137,12 +141,30 @@ namespace Mod::DevTools {
                 ESP::drawLine(p1->pos, p2->pos, color);
                 ESP::drawLine(p2->pos, p0->pos, color);
 
+                auto planeIndex = surface->planeIndex;
+                
                 // Render text for surface material
                 Vec3 textPos = (p0->pos + p1->pos + p2->pos) / 3.0f;
                 auto material = surface->material;
                 char materialText[255] = {0};
                 sprintf( materialText, "%X", material );
                 ESP::drawText( textPos, materialText, color );
+
+                // // Render plane index
+                // char planeText[255] = {0};
+                // sprintf(planeText, "%X", planeIndex);
+                // Vec3 textPos = (p0->pos + p1->pos + p2->pos) / 3.0f;
+                // ESP::drawText(textPos, planeText, color);
+
+                // Render normal:
+                if (planeIndex < planeCount) {
+                    auto plane = &planes[planeIndex];
+                    Vec3 normal = plane->normal;
+                    Vec3 triCenter = ( p0->pos + p1->pos + p2->pos ) / 3.0f;
+                    Vec3 normalEnd = triCenter + plane->normal * 0.025f;
+                    ESP::drawLine( triCenter, normalEnd, IM_COL32( 255, 0, 0, 255 ) );
+                    ESP::drawPoint( triCenter, IM_COL32( 255, 0, 0, 255 ) );
+                }
             }
         }
     }

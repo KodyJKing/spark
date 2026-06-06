@@ -218,6 +218,9 @@ namespace Mod::DevTools {
     void bspTab() {
         ImGui::Checkbox("Render BSP", &view.renderBsp);
 
+        // Range slider
+        ImGui::SliderFloat("Max Vertex Distance", &espSettings.maxBSPVertexDistance, 1.0f, 10.0f);
+
         uintptr_t bspPointer = Engine::getBSPPointer();
         char bspPointerStr[255] = {0};
         snprintf(bspPointerStr, 255, "%p", (void*)bspPointer);

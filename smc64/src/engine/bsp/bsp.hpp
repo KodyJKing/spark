@@ -26,7 +26,9 @@ namespace Engine {
     };
 
     struct BSPSurface {
-        uint32_t planeIndex; // Index into the BSPPlane array
+        uint32_t planeIndex:31; // Index into the BSPPlane array
+        uint32_t isFlipped:1;
+        
         uint32_t firstEdgeIndex; // Index into the BSPEdge array
         uint8_t flags;
         uint8_t breakableSurface;

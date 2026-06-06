@@ -7,7 +7,7 @@ namespace Mod::DevTools {
         bool anchorHighlight = false;
         float fovScale = 0.627f;
         float maxDistance = 20.0f;
-        float maxBSPVertexDistance = 10.0f;
+        float maxBSPVertexDistance = 5.0f;
         struct Filter {
             bool biped      = false;
             bool vehicle    = false;
