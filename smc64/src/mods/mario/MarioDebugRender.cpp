@@ -12,6 +12,7 @@
 #include "MarioMelee.hpp"
 #include "MarioBSPChunk.hpp"
 #include "Coordinates.hpp"
+#include "DynamicGeometry.hpp"
 
 namespace HaloCE::Mod::Mario {
 
@@ -156,8 +157,10 @@ namespace HaloCE::Mod::Mario {
 
         drawMarioBones(marioGeometry);
         MarioMelee::debugRender();
+        DynamicGeometry::debugRender();
 
         marioDebugWindow(wallData, floorData);
+        
 
 #endif // ENABLE_MARIO
     }

@@ -95,8 +95,8 @@ namespace Mod::DevTools {
                 Vec3 normal = plane->normal;
                 Vec3 worldNormal = x * normal.x + y * normal.y + z * normal.z;
                 Vec3 toCamera = ( camera.pos - toWorld( firstVertex->pos ) );
-                if ( worldNormal.dot( toCamera ) < 0.0f )
-                    continue;
+                // if ( worldNormal.dot( toCamera ) < 0.0f )
+                //     continue;
 
                 auto p2 = firstVertex;
 
@@ -110,15 +110,22 @@ namespace Mod::DevTools {
                 // auto material = surface->material;
                 // char materialText[255] = {0};
                 // sprintf( materialText, "%X", material );
-                // ESP::drawText( textPos, materialText, color );
+                // ESP::drawText( toWorld(textPos), materialText, color );
 
-                // // Render normal:
-                // if ( plane ) {
-                //     Vec3 triCenter = ( p0->pos + p1->pos + p2->pos ) / 3.0f;
-                //     Vec3 normalEnd = triCenter + plane->normal * 0.025f;
-                //     ESP::drawLine( toWorld( triCenter ), toWorld( normalEnd ), IM_COL32( 255, 0, 0, 255 ) );
-                //     ESP::drawPoint( toWorld( triCenter ), IM_COL32( 255, 0, 0, 255 ) );
-                // }
+                // Render text for plane index.
+                Vec3 planeTextPos = toWorld((p0->pos + p1->pos + p2->pos) / 3.0f + normal * 0.01f);
+                char planeText[255] = {0};
+                sprintf( planeText, "%u", surface->planeIndex );
+                uint32_t textColor = surface->isFlipped ? IM_COL32(255, 0, 0, alpha) : color;
+                ESP::drawText( planeTextPos, planeText, color );
+
+                // Render normal:
+                if ( plane ) {
+                    Vec3 triCenter = ( p0->pos + p1->pos + p2->pos ) / 3.0f;
+                    Vec3 normalEnd = triCenter + plane->normal * 0.025f;
+                    ESP::drawLine( toWorld( triCenter ), toWorld( normalEnd ), IM_COL32( 255, 0, 0, 255 ) );
+                    ESP::drawPoint( toWorld( triCenter ), IM_COL32( 255, 0, 0, 255 ) );
+                }
 
             }
         }

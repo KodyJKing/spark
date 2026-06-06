@@ -23,6 +23,11 @@ namespace Mod::DevTools {
 
     static Vec3 displayPos(Engine::Entity* entity) {
         return entity->rootBonePos;
+        if (entity->worldBones.count() > 0) {
+            auto bone = entity->worldBones.get(entity, 0);
+            if (bone) return bone->pos;
+        }
+        return entity->rootBonePos;
     }
 
     void renderDebugWorld() {

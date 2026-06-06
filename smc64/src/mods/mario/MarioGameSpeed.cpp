@@ -6,6 +6,7 @@
 
 #include <cstdio>
 #include <Windows.h>
+#include <Xinput.h>
 
 namespace HaloCE::Mod::Mario {
 
@@ -21,12 +22,19 @@ namespace HaloCE::Mod::Mario {
         MarioAudio::setGameSpeed(speed);
     }
 
+    bool bulletTimeButtonDown() {
+        // X button or left control.
+        XINPUT_STATE state = {0};
+        XInputGetState(0, &state);
+        if (state.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_UP) return true;
+        return GetAsyncKeyState(VK_CONTROL) & 0x8000;
+    }
 
     void updateGameSpeed(Engine::Entity& player) {
         bool airborne = marioAirborne();
         bool hasSheilds = player.shield > 0;
         bool canSlowdown = airborne && hasSheilds;
-        bool slowDown = canSlowdown && (GetAsyncKeyState(VK_CONTROL) & 0x8000);
+        bool slowDown = canSlowdown && bulletTimeButtonDown();
         if (slowDown) {
             player.shield -= 0.05f;
             gamespeed = 0.25f;

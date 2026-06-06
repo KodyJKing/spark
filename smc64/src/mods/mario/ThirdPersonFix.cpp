@@ -28,7 +28,7 @@ namespace HaloCE::Mod::ThirdPersonFix {
                 return next(options, flags);
             }
             
-            if (options->ownerEntityHandle != Engine::getPlayerHandle()) {
+            if (options->ownerEntityHandle != playerHandle) {
                 return next(options, flags);
             }
 
