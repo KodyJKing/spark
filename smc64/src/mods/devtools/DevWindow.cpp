@@ -11,9 +11,16 @@
 
 namespace Mod::DevTools {
 
+    void teleportToCrosshair();
+
     void checkHotKeys() {
         if (ImGui::IsKeyPressed(ImGuiKey_F2, false))
             Mod::DevTools::freezeTime = !Mod::DevTools::freezeTime;
+
+        // Tilde to teleport to crosshair.
+        if (ImGui::IsKeyPressed(ImGuiKey_GraveAccent, false)) {
+            teleportToCrosshair();
+        }
     }
 
     void renderInterpretObjectFields() {

@@ -14,16 +14,12 @@ namespace HaloCE::Mod::Mario {
     static constexpr float WALL_KICK_REGEN   = 0.3f;
     static constexpr float TRIPLE_JUMP_REGEN = 0.5f;
     
-    void regenerateShield(Engine::Entity& player, float amount, bool allowOvershield) {
+    void regenerateShield(Engine::Entity& player, float amount, bool _allowOvershield) {
         float oldShield = player.shield;
         
-        bool hadOversheild = player.shield > 1.0f;
         player.shield += amount;
-        if (!hadOversheild) {
-            player.shield = min(player.shield, 1.0f);
-        } else if (allowOvershield) {
-            player.shield = min(player.shield, 3.0f);
-        }
+        player.shield = min(player.shield, 1.0f);
+        player.shield = max(oldShield, player.shield);
 
         float actualRegen = player.shield - oldShield;
 

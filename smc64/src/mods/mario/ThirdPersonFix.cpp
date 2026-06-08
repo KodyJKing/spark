@@ -1,6 +1,7 @@
 #include "engine/halo1.hpp"
 #include "spark/hook/Hooks.hpp"
 #include "MarioSkeleton.hpp"
+#include "MarioState.hpp"
 
 #include <unordered_map>
 namespace HaloCE::Mod::ThirdPersonFix {
@@ -24,13 +25,9 @@ namespace HaloCE::Mod::ThirdPersonFix {
 
         Spark::SpawnProjectile::addHandler(modId, +[](void* /*ctx*/, auto next, Engine::ProjectileSpawnArgs* options, uint32_t flags) -> uint32_t {
             auto playerHandle = Engine::getPlayerHandle();
-            if (playerHandle == NULL_HANDLE) {
-                return next(options, flags);
-            }
-            
-            if (options->ownerEntityHandle != playerHandle) {
-                return next(options, flags);
-            }
+            if (playerHandle == NULL_HANDLE) return next(options, flags);
+            if (options->ownerEntityHandle != playerHandle) return next(options, flags);
+            if (!Mario::marioInControl()) return next(options, flags);
 
             // Correct spawn position.
             Vec3 spawnPosition = options->spawnPosition;

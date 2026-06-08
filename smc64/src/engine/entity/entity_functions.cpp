@@ -45,7 +45,7 @@ namespace Engine {
         return isTransport( vehicle );
     }
 
-        uint16_t boneCount(void* anim) {
+    uint16_t boneCount(void* anim) {
         // Todo: Create a type for anim.
         return Memory::safeRead<uint16_t>( (uintptr_t) anim + 0x2c ).value_or( 0 );
     }
@@ -67,4 +67,15 @@ namespace Engine {
     //     // uintptr_t anim = animArray + animIndex * sizeOfAnimation;
     //     // return Engine::boneCount( (void*) anim );
     // }
+
+    bool entityValid( Entity* entity ) {
+        return entity && entity->tagID != NULL_HANDLE;
+    }
+
+    bool entityValid( uint32_t entityHandle ) {
+        auto entity = getEntityPointer( entityHandle );
+        if (!entity) return false;
+        return entityValid( entity );
+    }
+
 }

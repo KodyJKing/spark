@@ -2,6 +2,7 @@
 #include "spark/hook/Hooks.hpp"
 #include "memory/Memory.hpp"
 #include "halomcc/HaloMCC.hpp"
+#include "MarioState.hpp"
 #include <iostream>
 
 namespace HaloCE::Mod::Mario::MarioCamera {
@@ -69,7 +70,7 @@ namespace HaloCE::Mod::Mario::MarioCamera {
         // Override camera position with Mario's interpolated position.
         Spark::UpdateCamera::addHandler(modId, +[](void* /*ctx*/, auto next, float unknown) {
             next(unknown);
-            if (!active) return;
+            if (!active || !marioInControl()) return;
             auto camera = Engine::getPlayerCameraPointer();
             if (!camera || !Memory::isAllocated(camera)) return;
             camera->pos = getCameraPosition();

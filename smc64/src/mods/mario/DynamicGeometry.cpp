@@ -7,6 +7,7 @@
 #include "Mario.hpp"
 
 #include <unordered_map>
+#include <unordered_set>
 #include <filesystem>
 #include <mutex>
 
@@ -33,12 +34,24 @@ namespace HaloCE::Mod::Mario::DynamicGeometry {
         std::vector<SM64Surface> surfaces;
     };
 
-    struct EntityEntry {
+    struct EntityBoneKey {
         Engine::Entity* entity;
-        std::unordered_map<size_t /*boneIndex*/, BoneEntry> boneMap;
+        size_t boneIndex;
+        bool operator==(const EntityBoneKey& other) const {
+            return entity == other.entity && boneIndex == other.boneIndex;
+        }
     };
 
-    std::unordered_map<Engine::Entity*, EntityEntry> objectMap;
+    struct EntityBoneKeyHash {
+        size_t operator()(const EntityBoneKey& key) const {
+            size_t h = std::hash<Engine::Entity*>{}(key.entity);
+            h ^= std::hash<size_t>{}(key.boneIndex) + 0x9e3779b9 + (h << 6) + (h >> 2);
+            return h;
+        }
+    };
+
+    std::unordered_map<EntityBoneKey, BoneEntry, EntityBoneKeyHash> objectMap;
+    std::unordered_set<Engine::Entity*> entitiesWithGeometry;
 
     std::vector<SM64Surface> convertCollisionBSPToSM64Surfaces(Engine::Entity* entity, size_t boneIndex) {
         auto entityTag = entity->tag();
@@ -85,8 +98,6 @@ namespace HaloCE::Mod::Mario::DynamicGeometry {
     }
 
     void allocateDynamicGeometryForBone(Engine::Entity* entity, size_t boneIndex) {
-        Engine::WorldTransform* bone = entity->worldBones.get(entity, boneIndex);
-        
         SM64SurfaceObject surfaceObject = {};
         auto surfaces = convertCollisionBSPToSM64Surfaces(entity, boneIndex);
         if (surfaces.empty()) return;
@@ -100,53 +111,54 @@ namespace HaloCE::Mod::Mario::DynamicGeometry {
         BoneEntry entry;
         entry.surfaceObjectId = surfaceObjectId;
         entry.surfaces = std::move(surfaces);
-        objectMap[entity].boneMap[boneIndex] = std::move(entry);
+        objectMap[{entity, boneIndex}] = std::move(entry);
     }
 
     void allocateDynamicGeometryForEntity(Engine::Entity* entity) {
+        if (entitiesWithGeometry.contains(entity)) return;
+        entitiesWithGeometry.insert(entity);
+        
         auto entityTag = entity->tag();
         if (entityTag) {
             LOG("Creating dynamic geometry for entity: " << entity << " [" << entityTag->getResourcePath() << "]");
-            auto boneCount = entity->worldBones.count();
-            LOG("Entity has " << boneCount << " bones");
+            LOG("Entity has " << entity->worldBones.count() << " bones");
         }
 
-        objectMap[entity] = {};
-        
         auto boneCount = entity->worldBones.count();
         for (size_t boneIndex = 0; boneIndex < boneCount; ++boneIndex) {
             allocateDynamicGeometryForBone(entity, boneIndex);
         }
     }
 
-    
-    void deallocateDynamicGeometryForEntity(Engine::Entity* entity) {
-        auto it = objectMap.find(entity);
-        if (it != objectMap.end()) {
-            auto entityTag = entity->tag();
-            LOG("Deallocating dynamic geometry for entity: " << entity << " [" << (entityTag ? entityTag->getResourcePath() : "null") << "]");
 
-            for (auto& [boneIndex, entry] : it->second.boneMap) {
-                sm64_surface_object_delete(entry.surfaceObjectId);
+    void deallocateDynamicGeometryForEntity(Engine::Entity* entity) {
+        if (!entitiesWithGeometry.contains(entity)) return;
+        entitiesWithGeometry.erase(entity);
+        
+        auto entityTag = entity->tag();
+        LOG("Deallocating dynamic geometry for entity: " << entity << " [" << (entityTag ? entityTag->getResourcePath() : "null") << "]");
+
+        std::erase_if(objectMap, [entity](const auto& kv) {
+            if (kv.first.entity == entity) {
+                sm64_surface_object_delete(kv.second.surfaceObjectId);
+                return true;
             }
-            objectMap.erase(it);
-        }
+            return false;
+        });
     }
 
     void updateObjectTransform(Engine::Entity* entity) {
+        if (!entitiesWithGeometry.contains(entity)) return;
+        
         auto boneCount = entity->worldBones.count();
 
-        auto updateTransformForBone = [&](size_t boneIndex) {
-            if (boneIndex >= boneCount) return;
-            if (objectMap[entity].boneMap.find(boneIndex) == objectMap[entity].boneMap.end()) return;
+        for (size_t boneIndex = 0; boneIndex < boneCount; ++boneIndex) {
+            auto it = objectMap.find({entity, boneIndex});
+            if (it == objectMap.end()) continue;
 
             SM64ObjectTransform transform;
             getTransform(entity, boneIndex, transform);
-            sm64_surface_object_move(objectMap[entity].boneMap[boneIndex].surfaceObjectId, &transform);
-        };
-
-        for (size_t boneIndex = 0; boneIndex < boneCount; ++boneIndex) {
-            updateTransformForBone(boneIndex);
+            sm64_surface_object_move(it->second.surfaceObjectId, &transform);
         }
     }
 
@@ -166,18 +178,16 @@ namespace HaloCE::Mod::Mario::DynamicGeometry {
     }
 
     void cleanStale() {
-        std::vector<Engine::Entity*> toDeallocate;
-
-        for (auto& kv : objectMap) {
-            Engine::Entity* entity = kv.first;
-            if (entity->tagID == NULL_HANDLE) {
-                toDeallocate.push_back(entity);
+        std::erase_if(objectMap, [](const auto& kv) {
+            if (kv.first.entity->tagID == NULL_HANDLE) {
+                sm64_surface_object_delete(kv.second.surfaceObjectId);
+                return true;
             }
-        }
-
-        for (Engine::Entity* entity : toDeallocate) {
-            deallocateDynamicGeometryForEntity(entity);
-        }
+            return false;
+        });
+        std::erase_if(entitiesWithGeometry, [](Engine::Entity* entity) {
+            return entity->tagID == NULL_HANDLE;
+        });
     }
     
     void update(SM64MarioState& marioState) {
@@ -197,7 +207,9 @@ namespace HaloCE::Mod::Mario::DynamicGeometry {
             Vec3 entityPos = getEntityPosition(entity);
             float distance = (entityPos - marioWorldPos).lengthSquared();
             if (distance < allocateRange * allocateRange) {
-                if (objectMap.find(entity) != objectMap.end()) {
+                bool isRegistered = std::any_of(objectMap.begin(), objectMap.end(),
+                    [entity](const auto& kv) { return kv.first.entity == entity; });
+                if (isRegistered) {
                     updateObjectTransform(entity);
                 } else {
                     allocateDynamicGeometryForEntity(entity);
@@ -210,20 +222,12 @@ namespace HaloCE::Mod::Mario::DynamicGeometry {
 
     void clearAll() {
         std::lock_guard<std::mutex> updateLock(s_updateMutex);
-        
-        LOG("Clearing all dynamic geometry objects (" << objectMap.size() << " entities)");
-        for (auto& kv : objectMap) {
-            auto tag = kv.first->tag();
-            if (tag) {
-                LOG(" - Entity: " << tag->getResourcePath() << " with " << kv.second.boneMap.size() << " surface objects");
-            } else {
-                LOG(" - Entity: (unknown) with " << kv.second.boneMap.size() << " surface objects");
-            }
-            for (auto& [boneIndex, entry] : kv.second.boneMap) {
-                LOG("   - Deleting surface object ID: " << entry.surfaceObjectId << " with " << entry.surfaces.size() << " surfaces");
-                sm64_surface_object_delete(entry.surfaceObjectId);
-            }
+        LOG("Clearing all dynamic geometry objects (" << objectMap.size() << " entries)");
+        for (auto& [key, entry] : objectMap) {
+            LOG(" - Deleting surface object ID: " << entry.surfaceObjectId << " with " << entry.surfaces.size() << " surfaces");
+            sm64_surface_object_delete(entry.surfaceObjectId);
         }
+        entitiesWithGeometry.clear();
         objectMap.clear();
     }
 
@@ -241,24 +245,57 @@ namespace HaloCE::Mod::Mario::DynamicGeometry {
 
         std::lock_guard<std::mutex> updateLock(s_updateMutex);
 
-        for (auto& kv : objectMap) {
-            for (auto& [boneIndex, entry] : kv.second.boneMap) {
-                for (auto& surface : entry.surfaces) {
-                    Vec3 v0 = { (float) surface.vertices[0][0], (float) surface.vertices[0][1], (float) surface.vertices[0][2] };
-                    Vec3 v1 = { (float) surface.vertices[1][0], (float) surface.vertices[1][1], (float) surface.vertices[1][2] };
-                    Vec3 v2 = { (float) surface.vertices[2][0], (float) surface.vertices[2][1], (float) surface.vertices[2][2] };
+        // for (auto& [key, entry] : objectMap) {
+        //     for (auto& surface : entry.surfaces) {
+        //         Vec3 v0 = { (float) surface.vertices[0][0], (float) surface.vertices[0][1], (float) surface.vertices[0][2] };
+        //         Vec3 v1 = { (float) surface.vertices[1][0], (float) surface.vertices[1][1], (float) surface.vertices[1][2] };
+        //         Vec3 v2 = { (float) surface.vertices[2][0], (float) surface.vertices[2][1], (float) surface.vertices[2][2] };
 
-                    Vec3 haloV0 = Coordinates::marioLocalToHaloWorld(v0, marioChunk);
-                    Vec3 haloV1 = Coordinates::marioLocalToHaloWorld(v1, marioChunk);
-                    Vec3 haloV2 = Coordinates::marioLocalToHaloWorld(v2, marioChunk);
+        //         Vec3 haloV0 = Coordinates::marioLocalToHaloWorld(v0, marioChunk);
+        //         Vec3 haloV1 = Coordinates::marioLocalToHaloWorld(v1, marioChunk);
+        //         Vec3 haloV2 = Coordinates::marioLocalToHaloWorld(v2, marioChunk);
 
+        //         ESP::drawLine(haloV0, haloV1, 0x1F00FFFF);
+        //         ESP::drawLine(haloV1, haloV2, 0x1F00FFFF);
+        //         ESP::drawLine(haloV2, haloV0, 0x1F00FFFF);
+        //     }
+        // }
 
-                    ESP::drawLine(haloV0, haloV1, 0x1F00FFFF);
-                    ESP::drawLine(haloV1, haloV2, 0x1F00FFFF);
-                    ESP::drawLine(haloV2, haloV0, 0x1F00FFFF);
+        // Render a window with stats about the dynamic geometry system
+        ImGui::Begin("Dynamic Geometry Debug");
+        ImGui::Text("Active Surface Objects: %d", objectMap.size());
+        size_t totalSurfaces = 0;
+        for (const auto& [key, entry] : objectMap) {
+            totalSurfaces += entry.surfaces.size();
+        }
+        ImGui::Text("Total Surfaces: %d", totalSurfaces);
+
+        if (ImGui::CollapsingHeader("Entities")) {
+            if (ImGui::BeginTable("EntitiesTable", 4, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg)) {
+                ImGui::TableSetupColumn("Entity");
+                ImGui::TableSetupColumn("Bone");
+                ImGui::TableSetupColumn("Surface Object ID");
+                ImGui::TableSetupColumn("Surface Count");
+                ImGui::TableHeadersRow();
+                
+                for (const auto& [key, entry] : objectMap) {
+                    auto entityTag = key.entity->tag();
+                    const char* entityName = entityTag ? entityTag->getResourcePath() : "null";
+                    
+                    ImGui::TableNextRow();
+                    ImGui::TableSetColumnIndex(0);
+                    ImGui::Text("%s", entityName);
+                    ImGui::TableSetColumnIndex(1);
+                    ImGui::Text("%d", (int)key.boneIndex);
+                    ImGui::TableSetColumnIndex(2);
+                    ImGui::Text("%d", entry.surfaceObjectId);
+                    ImGui::TableSetColumnIndex(3);
+                    ImGui::Text("%zu", entry.surfaces.size());
                 }
+                ImGui::EndTable();
             }
         }
+        ImGui::End();
         #endif
     }
 

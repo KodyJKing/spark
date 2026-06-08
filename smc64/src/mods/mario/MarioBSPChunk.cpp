@@ -105,7 +105,7 @@ namespace HaloCE::Mod::Mario::MarioBSPChunk {
         if (currentBSPSignature != lastBSPSignature) {
             LOG("BSP signature changed, reloading Mario's static surfaces for chunk ("
                 << marioChunk.x << ", " << marioChunk.y << ", " << marioChunk.z << ")");
-            uploadFor(marioChunk);
+            reloadFor(marioChunk);
         }
     }
 

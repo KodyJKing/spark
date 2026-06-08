@@ -13,6 +13,7 @@
 #include "bsp/index.hpp"
 #include "tags/index.hpp"
 #include "types/index.hpp"
+#include "raycast.hpp"
 #include "scripting/Scripting.hpp"
 #include "scripting/TerminalOutput.hpp"
 

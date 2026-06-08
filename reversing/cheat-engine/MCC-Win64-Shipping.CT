@@ -8104,6 +8104,11 @@ halo1.dll+BE615D: F3 0F 59 3D 6B 99 D6 00  - mulss xmm7,[halo1.dll+194FAD0]
       <Comment>bt eax, (r9b) -- is killer on same team as victim?</Comment>
     </DisassemblerComment>
     <DisassemblerComment>
+      <Address>"halo1.dll"+BA511D</Address>
+      <Comment>called every frame
+</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
       <Address>"halo1.dll"+BAFCE0</Address>
       <Comment>START
 </Comment>

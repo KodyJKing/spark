@@ -12,31 +12,31 @@ namespace HaloCE::Mod::Mario::MarioDamageHook {
 
     void registerHandlers(Spark::ModId modId) {
         Spark::DamageEntity::addHandler(modId, +[](void* /*ctx*/, auto next, Engine::DamageEvent* event, uint32_t entityHandle, uint16_t p2, uint16_t p3, int16_t hitBoneIndex, uint64_t p5) {
-            if (!enableMario || !possessMario) {
-                next(event, entityHandle, p2, p3, hitBoneIndex, p5);
-                return;
-            }
+            if (!enableMario || !possessMario) return next(event, entityHandle, p2, p3, hitBoneIndex, p5);
 
             auto playerHandle = Engine::getPlayerHandle();
             auto playerEntity = Engine::getPlayerEntity();
             auto damageTypeTagId = event->damageTypeTagHandle;
             auto damageTag = Engine::getTag(event->damageTypeTagHandle);
+            
+            std::string damageTagPath = damageTag ? damageTag->getResourcePath() : "";
+            bool isExplosion = damageTagPath.find("explosion") != std::string::npos;
+            
+            if (!playerEntity || !damageTag) return next(event, entityHandle, p2, p3, hitBoneIndex, p5);
 
-            std::string path = damageTag ? damageTag->getResourcePath() : "";
-            bool isExplosion = path.find("explosion") != std::string::npos;
-
-            if (!playerEntity || !damageTag) {
-                next(event, entityHandle, p2, p3, hitBoneIndex, p5);
-                return;
-            }
+            auto victimEntity = Engine::getEntityPointer(entityHandle);
+            if (!victimEntity) return next(event, entityHandle, p2, p3, hitBoneIndex, p5);
+            auto victimTag = Engine::getTag(victimEntity->tagID);
+            if (!victimTag) return next(event, entityHandle, p2, p3, hitBoneIndex, p5);
+            std::string victimTagPath = victimTag->getResourcePath();
 
             // === Damage to the player ===
             if (entityHandle == playerHandle) {
                 
                 // Ignore fall and vehicle collision damage to the player when Mario is active.
-                if (path.find("globals\\falling") != std::string::npos) return;
-                if (path.find("globals\\distance") != std::string::npos) return;
-                if (path.find("globals\\vehicle_collision") != std::string::npos) return;
+                if (damageTagPath.find("globals\\falling") != std::string::npos) return;
+                if (damageTagPath.find("globals\\distance") != std::string::npos) return;
+                if (damageTagPath.find("globals\\vehicle_collision") != std::string::npos) return;
 
                 // Explosions launch mario.
                 if (isExplosion) {
@@ -80,9 +80,11 @@ namespace HaloCE::Mod::Mario::MarioDamageHook {
                 auto damageTag = Engine::getTag(damageTypeTagId);
                 std::string path = damageTag ? damageTag->getResourcePath() : "";
                 if (path.find("melee") != std::string::npos) return;
+                
+                bool victimIsFlood = victimTagPath.find("flood") != std::string::npos;
 
                 // If the player kills an enemy mid-air, he regenerates shield.
-                if (marioAirborne() && !isExplosion) {
+                if (marioAirborne() && !isExplosion && !victimIsFlood) {
                     auto entity = Engine::getEntityPointer(entityHandle);
                     auto playerEntity = Engine::getPlayerEntity();
                     if (entity && playerEntity) {
