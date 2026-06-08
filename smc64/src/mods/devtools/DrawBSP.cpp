@@ -95,8 +95,8 @@ namespace Mod::DevTools {
                 Vec3 normal = plane->normal;
                 Vec3 worldNormal = x * normal.x + y * normal.y + z * normal.z;
                 Vec3 toCamera = ( camera.pos - toWorld( firstVertex->pos ) );
-                // if ( worldNormal.dot( toCamera ) < 0.0f )
-                //     continue;
+                if ( worldNormal.dot( toCamera ) < 0.0f )
+                    continue;
 
                 auto p2 = firstVertex;
 
@@ -105,19 +105,19 @@ namespace Mod::DevTools {
                 ESP::drawLine(toWorld(p1->pos), toWorld(p2->pos), color);
                 ESP::drawLine(toWorld(p2->pos), toWorld(p0->pos), color);
 
-                // // Render text for surface material.
-                // Vec3 textPos = (p0->pos + p1->pos + p2->pos) / 3.0f;
-                // auto material = surface->material;
-                // char materialText[255] = {0};
-                // sprintf( materialText, "%X", material );
-                // ESP::drawText( toWorld(textPos), materialText, color );
+                // Render text for surface material.
+                Vec3 textPos = (p0->pos + p1->pos + p2->pos) / 3.0f;
+                auto material = surface->material;
+                char materialText[255] = {0};
+                sprintf( materialText, "%X", material );
+                ESP::drawText( toWorld(textPos), materialText, color );
 
-                // Render text for plane index.
-                Vec3 planeTextPos = toWorld((p0->pos + p1->pos + p2->pos) / 3.0f + normal * 0.01f);
-                char planeText[255] = {0};
-                sprintf( planeText, "%u", surface->planeIndex );
-                uint32_t textColor = surface->isFlipped ? IM_COL32(255, 0, 0, alpha) : color;
-                ESP::drawText( planeTextPos, planeText, color );
+                // // Render text for plane index.
+                // Vec3 planeTextPos = toWorld((p0->pos + p1->pos + p2->pos) / 3.0f + normal * 0.01f);
+                // char planeText[255] = {0};
+                // sprintf( planeText, "%u", surface->planeIndex );
+                // uint32_t textColor = surface->isFlipped ? IM_COL32(255, 0, 0, alpha) : color;
+                // ESP::drawText( planeTextPos, planeText, color );
 
                 // Render normal:
                 if ( plane ) {

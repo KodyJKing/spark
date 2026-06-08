@@ -26,8 +26,10 @@ namespace HaloCE::Mod::Mario::DynamicGeometry {
 
     static std::mutex s_updateMutex;
 
-    float allocateRange = 10.0f;
-    float deallocateRange = 20.0f;
+    // float allocateRange = 10.0f;
+    // float deallocateRange = 20.0f;
+    float allocateRange = 8.0f;
+    float deallocateRange = 10.0f;
 
     struct BoneEntry {
         uint32_t surfaceObjectId;

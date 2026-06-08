@@ -20,5 +20,11 @@ namespace Mod::DevTools {
             ESP::drawLine(pos, pos + bone.y * r, IM_COL32(0, 255, 0, 255)); // Left - Green
             ESP::drawLine(pos, pos + bone.z * r, IM_COL32(0, 0, 255, 255)); // Up - Blue
         }
+
+                // Draw white point at root bone position
+        if (boneCount > 0) {
+            auto rootBone = worldBones[0];
+            ESP::drawCircle(rootBone.pos, 0.005f, IM_COL32(255, 255, 255, 255), true);
+        }
     }
 }

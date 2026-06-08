@@ -6,6 +6,7 @@
 #include "mods/devtools/VectorProfiler.hpp"
 #include "mods/devtools/DrawEntityCollision.hpp"
 #include "mods/devtools/DrawBones.hpp"
+#include "mods/devtools/DrawEntity.hpp"
 #include <vector>
 
 namespace Mod::DevTools {
@@ -36,6 +37,7 @@ namespace Mod::DevTools {
         if (ImGui::IsKeyPressed(ImGuiKey_F5, false)) view.worldBones = !view.worldBones;
         if (ImGui::IsKeyPressed(ImGuiKey_F6, false)) view.collision  = !view.collision;
         if (highlightEntity != nullptr && Memory::isAllocated((uintptr_t)highlightEntity)) {
+            drawEntityFrame(highlightEntity);
             if (view.collision)  drawEntityCollision(highlightEntity);
             if (view.worldBones) drawBones(highlightEntity);
         }
