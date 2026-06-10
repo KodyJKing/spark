@@ -87,6 +87,8 @@ namespace Engine {
     static_assert( offsetof(Entity, pad_01B0) == 0x1B0 );
     static_assert( offsetof(Entity, pad_02FE) == 0x2FE );
     static_assert( offsetof(Entity, entityCategory) == 0x70 );
+    static_assert( offsetof(Entity, bones) == 0x1A8 );
+    static_assert( offsetof(Entity, worldBones) == 0x1AC );
 
     class EntityRecord {
         public:
