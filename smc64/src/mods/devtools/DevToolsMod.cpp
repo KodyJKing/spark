@@ -8,6 +8,7 @@
 #include "spark/hook/Hooks.hpp"
 #include "mods/devtools/VectorProfiler.hpp"
 #include "engine/halo1.hpp"
+#include "FreezeEntity.hpp"
 #include <cstdio>
 #include <string>
 
@@ -48,6 +49,7 @@ void DevToolsMod::init() {
     }, nullptr);
 
     Spark::DamageEntity::addHandler(modId_, +[](void*, auto next, Engine::DamageEvent* event, uint32_t entityHandle, uint16_t param_3, uint16_t param_4, int16_t hitBoneIndex, uint64_t param_6) {
+        if (Mod::DevTools::noDamageToAnyone) return;
         if (Mod::DevTools::invincibility) {
             if (entityHandle == Engine::getPlayerHandle()) 
                 return;
@@ -67,6 +69,8 @@ void DevToolsMod::init() {
         Mod::DevTools::pushConsoleError(formatted.c_str());
         next(source, category, message, location);
     }, nullptr);
+
+    Mod::DevTools::FreezeEntity::init(modId_);
 }
 
 void DevToolsMod::free() {

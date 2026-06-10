@@ -100,6 +100,7 @@ namespace Mod::DevTools {
         ImGui::Checkbox("Freeze Time", &Mod::DevTools::freezeTime);
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("Toggle freezing of in-game time. (F2)");
         ImGui::Checkbox("Invincibility", &Mod::DevTools::invincibility);
+        ImGui::Checkbox("Everyone Invincible", &Mod::DevTools::noDamageToAnyone);
 
         if (ImGui::CollapsingHeader("Tools")) {
             renderTranslateMapAddress();

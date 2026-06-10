@@ -1,4 +1,5 @@
 #include "mods/devtools/ESPWindow.hpp"
+#include "mods/devtools/FreezeEntity.hpp"
 #include "imgui.h"
 #include "spark/overlay/ESP.hpp"
 #include "engine/halo1.hpp"
@@ -144,6 +145,19 @@ namespace Mod::DevTools {
         bool anchorHotkeyDown = ImGui::GetIO().KeyShift && ImGui::IsKeyPressed(ImGuiKey_V, false);
         if (anchorHotkeyDown) espSettings.anchorHighlight = !espSettings.anchorHighlight;
 
+        if (highlightEntity && HaloMCC::isPauseMenuOpen()) {
+            bool& frozen = FreezeEntity::entityFrozen(highlightEntity);
+            ImGui::Checkbox("frozen", &frozen);
+    
+            ImGui::SameLine();
+            bool& categoryFrozen = FreezeEntity::categoryFrozen((Engine::EntityCategory) highlightEntity->entityCategory);
+            ImGui::Checkbox("category frozen", &categoryFrozen);
+
+            ImGui::SameLine();
+            bool& tagFrozen = FreezeEntity::tagHandleFrozen(highlightEntity->tagID);
+            ImGui::Checkbox("tag frozen", &tagFrozen);
+        }
+        
         if (paused && ImGui::CollapsingHeader("Filter")) {
             int maxDistInt = (int)espSettings.maxDistance;
             ImGui::SliderInt("Max Distance", &maxDistInt, 1, 200, "%d");

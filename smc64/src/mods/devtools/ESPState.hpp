@@ -45,5 +45,6 @@ namespace Mod::DevTools {
 
     inline bool freezeTime = false;
     inline bool invincibility = false;
+    inline bool noDamageToAnyone = false;
 
 } // namespace Mod::DevTools
