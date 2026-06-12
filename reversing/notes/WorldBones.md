@@ -12,7 +12,7 @@ Analysis of how Halo CE computes, propagates, and commits entity bone transforms
 | `_updateAttachedEntityBones` | `0xB3AF10` | Medium |
 | `_attachEntityToBone` | `0xB375D8` | Medium |
 | `_moveEntityAndUpdate` | `0xB359E8` | Medium |
-| `getAttachmentTransformTable` | `0xB36E64` | High |
+| `getBoneTransforms` | `0xB36E64` | High |
 | `_commitEntityRenderState` | `0xBA8414` | Medium |
 
 ---
@@ -26,7 +26,7 @@ This function **fully reconstructs all world-space bone transforms from scratch*
 | Buffer | Self-relative ptr offset | Layout | Purpose |
 |---|---|---|---|
 | **Pose buffer** | `+0x1A8` | 8 floats/bone: `[Quaternion rotation \| {x=tx, y=ty, z=tz, w=bone_scale}]` | Written by animation evaluator and overlays |
-| **World bone buffer** | `+0x1AC` | `Transform` (0x34 bytes/bone: `float scale, Mat3 rotation, Vec3 translation`) | Written by BFS pass; what `worldBones.get()` returns in the mod |
+| **World bone buffer** | `+0x1AE` (`entity->worldBones` `RelativePointer`) | `Transform` (0x34 bytes/bone: `float scale, Mat3 rotation, Vec3 translation`) | Written by BFS pass; what `worldBones.get()` returns in the mod. Retrieved via `getBoneTransforms(handle)` |
 
 ### Phase 1 — No model tag
 
@@ -40,13 +40,13 @@ If `entity.tag (field_0x34) == -1` (no gbxmodel), a trivial single-bone `Transfo
 
 3. **Entity-level scale** — if `entity[0x6c] > 0`, the root bone's `{tx, ty, tz, bone_scale}` in the **pose buffer** are multiplied by the scale value before BFS. Uniformly grows/shrinks the model.
 
-4. **Animation graph / IK** — `FUN_7fff4a9a5430` if animation graph present; `FUN_7fff4aa43d88` applies IK constraints.
+4. **Animation graph + blend** — `FUN_7fff38cb5430` (animation graph state machine, confidence: medium) runs if `modelTag[0x44]` is present. `lerpQuaternionTransforms(boneCount, secondaryPose, poseBuffer, animFrame2, animFrameCount)` blends two animation poses in-place into `poseBuffer` when `entity->animFrameCount > 0`. Secondary pose pointer is nullable (blends with default when null). Bogus frame values cause flaking poses at animation transitions.
 
 5. **BFS world-space pass** — iterates bone hierarchy breadth-first (`local_d8[64]` queue, starting at root = bone 0). For each bone:
    - `setTransformFromQuaternion(poseBuffer[i].rotation)` → local `Mat3`
    - Unpack translation from `poseBuffer[i+1].{x,y,z}`
    - **Root bone, not attached**: construct parent transform from entity pos/facing/up (see below)
-   - **Root bone, attached** (`entity[0x10c]` != -1): parent = `getAttachmentTransformTable(parent)[boneIndex]`, re-fetched live each call
+   - **Root bone, attached** (`entity->parentAttachHandle` != -1): parent = `getBoneTransforms(parent)[boneIndex]`, re-fetched live each call
    - **Non-root**: parent = `worldBones[parentBoneIndex]` (already written by BFS)
    - `multiplyTransforms(parent, localBone)` → `worldBones[i]`
    - Enqueue `firstChild` and `secondChild` bone indices from bone hierarchy table
@@ -149,7 +149,7 @@ Leading hypotheses:
 ## `_attachEntityToBone` — Detailed Steps
 
 1. **Cycle check** — walks ancestor chain via `entity[0x10C]` to confirm child is not already an ancestor of parent. Returns early if cycle detected.
-2. Fetches `getAttachmentTransformTable(parentHandle)[boneIndex]` → `parentBoneWorld`.
+2. Fetches `getBoneTransforms(parentHandle)[boneIndex]` → `parentBoneWorld`.
 3. **Zero-scale safety**: if `parentBoneWorld.scale == 0`, skips invert and zeroes local transform.
 4. `invertTransform(parentBoneWorld, &inverted)`
 5. Converts child world-space state into parent-bone-local space:
@@ -174,6 +174,5 @@ Offsets are from the entity data base (`entity_ptr + 0x34` in raw memory, i.e. t
 | `+0x108` | `firstChildHandle` | Head of this entity's attachment list |
 | `+0x10C` | `parentAttachHandle` | Parent entity handle (if attached) |
 | `+0x110` | `parentBoneIndex` (byte) | Which bone on parent this is attached to |
-| `+0x1A8` | self-relative ptr → pose buffer | Animation quaternion poses; 8 floats/bone |
-| `+0x1AC` | self-relative ptr → world bone buffer | `Transform` structs; 0x34 bytes/bone |
-| `+0x1AE` | self-relative ptr → attachment transform table | `Transform` structs matching world bone buffer; read by children via `getAttachmentTransformTable` |
+| `+0x1AA` | `RelativePointer` → pose buffer | Animation quaternion poses; 8 floats/bone. `uint16` offset, `0xFFFF` = null |
+| `+0x1AE` | `entity->worldBones` (`RelativePointer`) → world bone buffer | `Transform[]`; 0x34 bytes/bone. Resolved as `entity_base + (short)offset`. Read by attached children via `getBoneTransforms` |

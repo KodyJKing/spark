@@ -819,22 +819,6 @@ halo1.dll+BE615D: F3 0F 59 3D 6B 99 D6 00  - mulss xmm7,[halo1.dll+194FAD0]
       <Options moAlwaysHideChildren="1" moManualExpandCollapse="1"/>
       <GroupHeader>1</GroupHeader>
     </CheatEntry>
-    <CheatEntry>
-      <ID>101</ID>
-      <Description>"Test"</Description>
-      <VariableType>Auto Assembler Script</VariableType>
-      <AssemblerScript>[ENABLE]
-
-[DISABLE]
-
-</AssemblerScript>
-    </CheatEntry>
-    <CheatEntry>
-      <ID>104</ID>
-      <Description>"ageMilis"</Description>
-      <VariableType>4 Bytes</VariableType>
-      <Address>1E2E3AD762C+14</Address>
-    </CheatEntry>
   </CheatEntries>
   <CheatCodes>
     <CodeEntry>
@@ -5067,6 +5051,380 @@ halo1.dll+BE615D: F3 0F 59 3D 6B 99 D6 00  - mulss xmm7,[halo1.dll+194FAD0]
         <Byte>CF</Byte>
       </After>
     </CodeEntry>
+    <CodeEntry>
+      <Description>Change of call 7FFF38D53D88</Description>
+      <AddressString>halo1.dll+B3A9D2</AddressString>
+      <Before>
+        <Byte>88</Byte>
+        <Byte>B8</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+      </Before>
+      <Actual>
+        <Byte>E8</Byte>
+        <Byte>B1</Byte>
+        <Byte>93</Byte>
+        <Byte>10</Byte>
+        <Byte>00</Byte>
+      </Actual>
+      <After>
+        <Byte>33</Byte>
+        <Byte>D2</Byte>
+        <Byte>F3</Byte>
+        <Byte>0F</Byte>
+        <Byte>10</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of divss xmm6,xmm0</Description>
+      <AddressString>halo1.dll+C43DC6</AddressString>
+      <Before>
+        <Byte>33</Byte>
+        <Byte>C0</Byte>
+        <Byte>0F</Byte>
+        <Byte>5B</Byte>
+        <Byte>C0</Byte>
+      </Before>
+      <Actual>
+        <Byte>F3</Byte>
+        <Byte>0F</Byte>
+        <Byte>5E</Byte>
+        <Byte>F0</Byte>
+      </Actual>
+      <After>
+        <Byte>F3</Byte>
+        <Byte>0F</Byte>
+        <Byte>5C</Byte>
+        <Byte>FE</Byte>
+        <Byte>66</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of call 7FFF38D534E0</Description>
+      <AddressString>halo1.dll+C41B31</AddressString>
+      <Before>
+        <Byte>D6</Byte>
+        <Byte>48</Byte>
+        <Byte>8D</Byte>
+        <Byte>0C</Byte>
+        <Byte>48</Byte>
+      </Before>
+      <Actual>
+        <Byte>E8</Byte>
+        <Byte>AA</Byte>
+        <Byte>19</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+      </Actual>
+      <After>
+        <Byte>49</Byte>
+        <Byte>8B</Byte>
+        <Byte>CE</Byte>
+        <Byte>E8</Byte>
+        <Byte>96</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of call 7FFF38D52478</Description>
+      <AddressString>halo1.dll+B3A8E6</AddressString>
+      <Before>
+        <Byte>C9</Byte>
+        <Byte>F3</Byte>
+        <Byte>0F</Byte>
+        <Byte>59</Byte>
+        <Byte>CA</Byte>
+      </Before>
+      <Actual>
+        <Byte>E8</Byte>
+        <Byte>8D</Byte>
+        <Byte>7B</Byte>
+        <Byte>10</Byte>
+        <Byte>00</Byte>
+      </Actual>
+      <After>
+        <Byte>EB</Byte>
+        <Byte>24</Byte>
+        <Byte>B9</Byte>
+        <Byte>01</Byte>
+        <Byte>00</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of call 7FFF38D521A4</Description>
+      <AddressString>halo1.dll+B3A90C</AddressString>
+      <Before>
+        <Byte>F7</Byte>
+        <Byte>F1</Byte>
+        <Byte>49</Byte>
+        <Byte>8B</Byte>
+        <Byte>CA</Byte>
+      </Before>
+      <Actual>
+        <Byte>E8</Byte>
+        <Byte>93</Byte>
+        <Byte>78</Byte>
+        <Byte>10</Byte>
+        <Byte>00</Byte>
+      </Actual>
+      <After>
+        <Byte>45</Byte>
+        <Byte>33</Byte>
+        <Byte>DB</Byte>
+        <Byte>66</Byte>
+        <Byte>41</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of call setTransformFromForwardUp</Description>
+      <AddressString>halo1.dll+B3AABF</AddressString>
+      <Before>
+        <Byte>24</Byte>
+        <Byte>68</Byte>
+        <Byte>89</Byte>
+        <Byte>45</Byte>
+        <Byte>88</Byte>
+      </Before>
+      <Actual>
+        <Byte>E8</Byte>
+        <Byte>28</Byte>
+        <Byte>7A</Byte>
+        <Byte>06</Byte>
+        <Byte>00</Byte>
+      </Actual>
+      <After>
+        <Byte>F7</Byte>
+        <Byte>43</Byte>
+        <Byte>10</Byte>
+        <Byte>00</Byte>
+        <Byte>10</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of call setTransformFromQuaternion</Description>
+      <AddressString>halo1.dll+B3AA54</AddressString>
+      <Before>
+        <Byte>00</Byte>
+        <Byte>48</Byte>
+        <Byte>8D</Byte>
+        <Byte>4D</Byte>
+        <Byte>38</Byte>
+      </Before>
+      <Actual>
+        <Byte>E8</Byte>
+        <Byte>EF</Byte>
+        <Byte>7E</Byte>
+        <Byte>06</Byte>
+        <Byte>00</Byte>
+      </Actual>
+      <After>
+        <Byte>F3</Byte>
+        <Byte>0F</Byte>
+        <Byte>10</Byte>
+        <Byte>42</Byte>
+        <Byte>1C</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of call 7FFF38CB5430</Description>
+      <AddressString>halo1.dll+B3A98A</AddressString>
+      <Before>
+        <Byte>8B</Byte>
+        <Byte>D7</Byte>
+        <Byte>41</Byte>
+        <Byte>8B</Byte>
+        <Byte>CC</Byte>
+      </Before>
+      <Actual>
+        <Byte>E8</Byte>
+        <Byte>A1</Byte>
+        <Byte>AA</Byte>
+        <Byte>06</Byte>
+        <Byte>00</Byte>
+      </Actual>
+      <After>
+        <Byte>33</Byte>
+        <Byte>D2</Byte>
+        <Byte>45</Byte>
+        <Byte>3B</Byte>
+        <Byte>E7</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of call multiplyTransforms</Description>
+      <AddressString>halo1.dll+B3ACC7</AddressString>
+      <Before>
+        <Byte>8B</Byte>
+        <Byte>CE</Byte>
+        <Byte>4C</Byte>
+        <Byte>03</Byte>
+        <Byte>C6</Byte>
+      </Before>
+      <Actual>
+        <Byte>E8</Byte>
+        <Byte>94</Byte>
+        <Byte>86</Byte>
+        <Byte>06</Byte>
+        <Byte>00</Byte>
+      </Actual>
+      <After>
+        <Byte>49</Byte>
+        <Byte>8B</Byte>
+        <Byte>C8</Byte>
+        <Byte>EB</Byte>
+        <Byte>0C</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of call setTransformFromQuaternion</Description>
+      <AddressString>halo1.dll+B3AD1D</AddressString>
+      <Before>
+        <Byte>03</Byte>
+        <Byte>C6</Byte>
+        <Byte>49</Byte>
+        <Byte>8B</Byte>
+        <Byte>C8</Byte>
+      </Before>
+      <Actual>
+        <Byte>E8</Byte>
+        <Byte>26</Byte>
+        <Byte>7C</Byte>
+        <Byte>06</Byte>
+        <Byte>00</Byte>
+      </Actual>
+      <After>
+        <Byte>8B</Byte>
+        <Byte>4A</Byte>
+        <Byte>1C</Byte>
+        <Byte>41</Byte>
+        <Byte>89</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of call propagateWorldBones</Description>
+      <AddressString>halo1.dll+B3A5E0</AddressString>
+      <Before>
+        <Byte>4A</Byte>
+        <Byte>63</Byte>
+        <Byte>74</Byte>
+        <Byte>82</Byte>
+        <Byte>08</Byte>
+      </Before>
+      <Actual>
+        <Byte>E8</Byte>
+        <Byte>97</Byte>
+        <Byte>FF</Byte>
+        <Byte>FF</Byte>
+        <Byte>FF</Byte>
+      </Actual>
+      <After>
+        <Byte>48</Byte>
+        <Byte>8D</Byte>
+        <Byte>83</Byte>
+        <Byte>04</Byte>
+        <Byte>01</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of call _updateAttachedEntityBones</Description>
+      <AddressString>halo1.dll+B3A2F8</AddressString>
+      <Before>
+        <Byte>00</Byte>
+        <Byte>EB</Byte>
+        <Byte>07</Byte>
+        <Byte>8B</Byte>
+        <Byte>CF</Byte>
+      </Before>
+      <Actual>
+        <Byte>E8</Byte>
+        <Byte>13</Byte>
+        <Byte>0C</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+      </Actual>
+      <After>
+        <Byte>48</Byte>
+        <Byte>8B</Byte>
+        <Byte>5C</Byte>
+        <Byte>24</Byte>
+        <Byte>48</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of call updateWorldBones</Description>
+      <AddressString>halo1.dll+B35B8C</AddressString>
+      <Before>
+        <Byte>44</Byte>
+        <Byte>0D</Byte>
+        <Byte>00</Byte>
+        <Byte>8B</Byte>
+        <Byte>CB</Byte>
+      </Before>
+      <Actual>
+        <Byte>E8</Byte>
+        <Byte>83</Byte>
+        <Byte>4A</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+      </Actual>
+      <After>
+        <Byte>33</Byte>
+        <Byte>D2</Byte>
+        <Byte>8B</Byte>
+        <Byte>CB</Byte>
+        <Byte>0F</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of call _broadcastEntityDamaged</Description>
+      <AddressString>halo1.dll+B35A74</AddressString>
+      <Before>
+        <Byte>89</Byte>
+        <Byte>41</Byte>
+        <Byte>08</Byte>
+        <Byte>8B</Byte>
+        <Byte>CB</Byte>
+      </Before>
+      <Actual>
+        <Byte>E8</Byte>
+        <Byte>33</Byte>
+        <Byte>45</Byte>
+        <Byte>0D</Byte>
+        <Byte>00</Byte>
+      </Actual>
+      <After>
+        <Byte>48</Byte>
+        <Byte>85</Byte>
+        <Byte>FF</Byte>
+        <Byte>0F</Byte>
+        <Byte>84</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of call updateWorldBones</Description>
+      <AddressString>halo1.dll+BC67C2</AddressString>
+      <Before>
+        <Byte>74</Byte>
+        <Byte>40</Byte>
+        <Byte>41</Byte>
+        <Byte>8B</Byte>
+        <Byte>CE</Byte>
+      </Before>
+      <Actual>
+        <Byte>E8</Byte>
+        <Byte>4D</Byte>
+        <Byte>3E</Byte>
+        <Byte>F7</Byte>
+        <Byte>FF</Byte>
+      </Actual>
+      <After>
+        <Byte>48</Byte>
+        <Byte>63</Byte>
+        <Byte>86</Byte>
+        <Byte>08</Byte>
+        <Byte>02</Byte>
+      </After>
+    </CodeEntry>
   </CheatCodes>
   <UserdefinedSymbols/>
   <Structures StructVersion="2">
@@ -7920,6 +8278,11 @@ halo1.dll+BE615D: F3 0F 59 3D 6B 99 D6 00  - mulss xmm7,[halo1.dll+194FAD0]
 </Header>
     </DisassemblerComment>
     <DisassemblerComment>
+      <Address>"halo1.dll"+B3A9D2</Address>
+      <Comment>lerp poses during transition between animations
+</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
       <Address>"halo1.dll"+B48A72</Address>
       <Comment>Render FPV Model
 </Comment>
@@ -8243,6 +8606,16 @@ RCX = VertexBlockBase
     <DisassemblerComment>
       <Address>"halo1.dll"+BDB03B</Address>
       <Comment>Creates decal
+</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+C41ACC</Address>
+      <Comment>__loadPackedQuaternions2
+</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+C41B31</Address>
+      <Comment>unpackQuaternion
 </Comment>
     </DisassemblerComment>
     <DisassemblerComment>

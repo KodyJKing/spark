@@ -40,7 +40,9 @@ namespace Engine {
         uint32_t animSetTagID;
         uint16_t animId; 
         uint16_t animFrame; 
-        char pad_0090[12]; 
+        uint16_t animFrame2;
+        uint16_t animFrameCount;
+        char pad_0094[8]; 
         float health; 
         float shield; 
         char pad_00A4[44]; 
@@ -84,6 +86,9 @@ namespace Engine {
         Transform* getBoneTransforms() { return bones.get( this, 0 ); }
         std::vector<Transform> copyBoneTransforms();
     };
+    static_assert( offsetof(Entity, animId) == 0x8C );
+    static_assert( offsetof(Entity, animFrame) == 0x8E );
+    static_assert( offsetof(Entity, animFrame2) == 0x90 );
     static_assert( offsetof(Entity, pad_01B0) == 0x1B0 );
     static_assert( offsetof(Entity, pad_02FE) == 0x2FE );
     static_assert( offsetof(Entity, entityCategory) == 0x70 );
