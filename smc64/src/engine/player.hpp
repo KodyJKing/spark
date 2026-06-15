@@ -38,7 +38,7 @@ namespace Engine {
     bool isPlayerInputDisabled();
     void enterThirdPerson();
     uint32_t getPlayerHandle();
-    uint32_t getHeldWeaponHandle();
+    uint32_t getPlayerHeldWeaponHandle();
     PlayerController * getPlayerControllerPointer();
 
     EntityRecord* getPlayerRecord();

@@ -5533,10 +5533,14 @@ halo1.dll+BE615D: F3 0F 59 3D 6B 99 D6 00  - mulss xmm7,[halo1.dll+194FAD0]
         <Element Offset="696" Vartype="4 Bytes" Bytesize="4" RLECount="2" OffsetHex="000002B8" DisplayMethod="unsigned integer"/>
         <Element Offset="704" Vartype="Float" Bytesize="4" OffsetHex="000002C0" DisplayMethod="unsigned integer"/>
         <Element Offset="708" Vartype="4 Bytes" Bytesize="4" RLECount="3" OffsetHex="000002C4" DisplayMethod="unsigned integer"/>
-        <Element Offset="720" Vartype="4 Bytes" Bytesize="4" OffsetHex="000002D0" DisplayMethod="hexadecimal"/>
+        <Element Offset="720" Vartype="Byte" Bytesize="1" RLECount="3" OffsetHex="000002D0" DisplayMethod="hexadecimal"/>
+        <Element Offset="723" Vartype="Byte" Bytesize="1" OffsetHex="000002D3" Description="heldWeaponIndex" DisplayMethod="hexadecimal"/>
         <Element Offset="724" Vartype="4 Bytes" Bytesize="4" OffsetHex="000002D4" DisplayMethod="unsigned integer"/>
-        <Element Offset="728" Vartype="4 Bytes" Bytesize="4" RLECount="2" OffsetHex="000002D8" DisplayMethod="hexadecimal"/>
-        <Element Offset="736" Vartype="4 Bytes" Bytesize="4" RLECount="7" OffsetHex="000002E0" DisplayMethod="unsigned integer"/>
+        <Element Offset="728" Vartype="4 Bytes" Bytesize="4" OffsetHex="000002D8" Description="weaponHandle0" DisplayMethod="hexadecimal"/>
+        <Element Offset="732" Vartype="4 Bytes" Bytesize="4" OffsetHex="000002DC" Description="weaponHandle1" DisplayMethod="hexadecimal"/>
+        <Element Offset="736" Vartype="4 Bytes" Bytesize="4" OffsetHex="000002E0" Description="weaponHandle2" DisplayMethod="unsigned integer"/>
+        <Element Offset="740" Vartype="4 Bytes" Bytesize="4" OffsetHex="000002E4" Description="weaponHandle3" DisplayMethod="unsigned integer"/>
+        <Element Offset="744" Vartype="4 Bytes" Bytesize="4" RLECount="5" OffsetHex="000002E8" DisplayMethod="unsigned integer"/>
         <Element Offset="764" Vartype="Byte" Bytesize="1" OffsetHex="000002FC" Description="frags" DisplayMethod="unsigned integer"/>
         <Element Offset="765" Vartype="Byte" Bytesize="1" OffsetHex="000002FD" Description="plasmas" DisplayMethod="unsigned integer"/>
         <Element Offset="766" Vartype="Byte" Bytesize="1" RLECount="2" OffsetHex="000002FE" DisplayMethod="hexadecimal"/>
@@ -8062,10 +8066,11 @@ halo1.dll+BE615D: F3 0F 59 3D 6B 99 D6 00  - mulss xmm7,[halo1.dll+194FAD0]
         <Element Offset="4" Vartype="2 Bytes" Bytesize="2" OffsetHex="00000004" Description="shaderIndex" DisplayMethod="hexadecimal"/>
         <Element Offset="6" Vartype="Byte" Bytesize="1" RLECount="2" OffsetHex="00000006" DisplayMethod="hexadecimal"/>
         <Element Offset="8" Vartype="Float" Bytesize="4" RLECount="4" OffsetHex="00000008" DisplayMethod="unsigned integer"/>
-        <Element Offset="24" Vartype="4 Bytes" Bytesize="4" OffsetHex="00000018" DisplayMethod="hexadecimal"/>
+        <Element Offset="24" Vartype="4 Bytes" Bytesize="4" RLECount="2" OffsetHex="00000018" DisplayMethod="hexadecimal"/>
         <Element Offset="28" Vartype="Float" Bytesize="4" OffsetHex="0000001C" DisplayMethod="unsigned integer"/>
-        <Element Offset="28" Vartype="4 Bytes" Bytesize="4" RLECount="2" OffsetHex="0000001C" DisplayMethod="hexadecimal"/>
-        <Element Offset="32" Vartype="4 Bytes" Bytesize="4" RLECount="11" OffsetHex="00000020" DisplayMethod="unsigned integer"/>
+        <Element Offset="32" Vartype="4 Bytes" Bytesize="4" OffsetHex="00000020" DisplayMethod="unsigned integer"/>
+        <Element Offset="32" Vartype="4 Bytes" Bytesize="4" OffsetHex="00000020" DisplayMethod="hexadecimal"/>
+        <Element Offset="36" Vartype="4 Bytes" Bytesize="4" RLECount="10" OffsetHex="00000024" DisplayMethod="unsigned integer"/>
         <Element Offset="76" Vartype="4 Bytes" Bytesize="4" RLECount="2" OffsetHex="0000004C" DisplayMethod="hexadecimal"/>
         <Element Offset="84" Vartype="4 Bytes" Bytesize="4" RLECount="2" OffsetHex="00000054" DisplayMethod="unsigned integer"/>
         <Element Offset="92" Vartype="4 Bytes" Bytesize="4" OffsetHex="0000005C" DisplayMethod="hexadecimal"/>

@@ -31,12 +31,6 @@ namespace Engine {
     uint32_t getPlayerHandle() { return *(uint32_t*) ( dllBase() + 0x1C563F0U ); }
     PlayerController* getPlayerControllerPointer() { return * (PlayerController**) ( dllBase() + 0x2D8FE70U ); }
 
-    uint32_t getHeldWeaponHandle() {
-        auto playerEntity = getPlayerEntity();
-        if (!playerEntity) return 0xFFFFFFFF;
-        return playerEntity->childHandle;
-    }
-
     EntityRecord* getPlayerRecord() {
         auto rec = getEntityRecord( getPlayerHandle() );
         if ( !rec || !rec->entity() )
@@ -49,6 +43,16 @@ namespace Engine {
         if (!rec)
             return nullptr;
         return rec->entity();
+    }
+
+    Inventory* getPlayerInventory() {
+        return Engine::getInventoryTypeSafe(getPlayerHandle());
+    }
+
+    uint32_t getPlayerHeldWeaponHandle() {
+        auto inventory = getPlayerInventory();
+        if (!inventory) return 0xFFFFFFFF;
+        return inventory->activeWeaponHandle();
     }
 
     std::optional<Vec3> getPlayerPosition() {

@@ -178,6 +178,40 @@ namespace Mod::DevTools {
 
 #define PLAYER_CONTROLLER_TAB
 #ifdef PLAYER_CONTROLLER_TAB
+    void playerInventory() {
+        auto inventory = Engine::getInventoryTypeSafe(Engine::getPlayerHandle());
+        if (!inventory) return;
+        ImGui::Text("Active Weapon Index: %d", inventory->activeWeaponIndex);
+        ImGui::Text("Active Grenade Index: %d", inventory->activeGrenadeIndex);
+        ImGui::Text("Frag Count: %d", inventory->fragCount);
+        ImGui::Text("Plasma Count: %d", inventory->plasmaCount);
+        ImGui::Text("Active Weapon Handle: %X", inventory->activeWeaponHandle());
+    }
+
+    void playerController() {
+        auto playerController = Engine::getPlayerControllerPointer();
+        ImGui::Text("Player Controller: %p", playerController);
+
+        uint32_t actions = playerController->actions;
+        for (int i = 0; i < 32; i++) {
+            if (i > 0 && i % 8 != 0) ImGui::SameLine();
+            char text[255] = {0};
+            snprintf(text, 255, "##flag%d", i);
+            ImGui::CheckboxFlags(text, &actions, 1 << i);
+        }
+
+        ImVec4 green = ImVec4(0.0f, 1.0f, 0.0f, 1.0f);
+        ImVec4 white = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+#define SHOW_ACTION_1(name) ImGui::TextColored((actions & Engine::PlayerActionFlags::name) ? green : white, #name);
+#define SHOW_ACTION_2(name) ImGui::SameLine(); SHOW_ACTION_1(name);
+        SHOW_ACTION_1(crouch); SHOW_ACTION_2(jump);  SHOW_ACTION_2(flash); SHOW_ACTION_2(melee);
+        SHOW_ACTION_1(reload); SHOW_ACTION_2(shoot); SHOW_ACTION_2(grenade1); SHOW_ACTION_2(grenade2);
+#undef SHOW_ACTION_2
+#undef SHOW_ACTION_1
+        ImGui::Text("WalkX %.2f", playerController->walkX);
+        ImGui::Text("WalkY %.2f", playerController->walkY);
+    }
+
     void playerTab() {
         auto playerHandle = Engine::getPlayerHandle();
         ImGui::Text("Player Controller Handle: %X", playerHandle);
@@ -203,27 +237,8 @@ namespace Mod::DevTools {
         bool inputDisabled = Engine::isPlayerInputDisabled();
         ImGui::Text("Player Input Disabled: %s", inputDisabled ? "Yes" : "No");
 
-        auto playerController = Engine::getPlayerControllerPointer();
-        ImGui::Text("Player Controller: %p", playerController);
-
-        uint32_t actions = playerController->actions;
-        for (int i = 0; i < 32; i++) {
-            if (i > 0 && i % 8 != 0) ImGui::SameLine();
-            char text[255] = {0};
-            snprintf(text, 255, "##flag%d", i);
-            ImGui::CheckboxFlags(text, &actions, 1 << i);
-        }
-
-        ImVec4 green = ImVec4(0.0f, 1.0f, 0.0f, 1.0f);
-        ImVec4 white = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
-#define SHOW_ACTION_1(name) ImGui::TextColored((actions & Engine::PlayerActionFlags::name) ? green : white, #name);
-#define SHOW_ACTION_2(name) ImGui::SameLine(); SHOW_ACTION_1(name);
-        SHOW_ACTION_1(crouch); SHOW_ACTION_2(jump);  SHOW_ACTION_2(flash); SHOW_ACTION_2(melee);
-        SHOW_ACTION_1(reload); SHOW_ACTION_2(shoot); SHOW_ACTION_2(grenade1); SHOW_ACTION_2(grenade2);
-#undef SHOW_ACTION_2
-#undef SHOW_ACTION_1
-        ImGui::Text("WalkX %.2f", playerController->walkX);
-        ImGui::Text("WalkY %.2f", playerController->walkY);
+        // playerController();
+        playerInventory();
     }
 #endif
 

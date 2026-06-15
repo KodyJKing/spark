@@ -1,12 +1,13 @@
 #pragma once
 
+#include "spark/mod/ModId.hpp"
 #include "engine/halo1.hpp"
 #include "stdint.h"
 
 namespace HaloCE::Mod::Mario::MarioModel {
-    void processEntity(uint32_t entityHandle, Engine::Entity* entity);
-
     void renderEntity(Engine::RenderEntityRequest* request, Engine::renderEntity_t renderEntityOriginal);
+
+    void addHandlers(Spark::ModId modId);
 
     extern uint32_t marioHandle;
     

@@ -16,7 +16,7 @@ namespace HaloCE::Mod::ThirdPersonFix {
         Spark::UpdateFlareTransform::addHandler(modId, +[](void* /*ctx*/, auto next, uint32_t flareHandle) {
             auto entry = Engine::getFlareEntry(flareHandle);
             if (entry && entry->mountEntityHandle != NULL_HANDLE) {
-                if (entry->mountEntityHandle == Engine::getHeldWeaponHandle()) {
+                if (entry->mountEntityHandle == Engine::getPlayerHeldWeaponHandle()) {
                     return;
                 }
             }

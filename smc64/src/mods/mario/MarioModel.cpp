@@ -6,6 +6,17 @@
 #include <string>
 #include "decomp/sm64.h"
 #include "Coordinates.hpp"
+#include "spark/hook/Hooks.hpp"
+
+// #define DEBUG_MARIO_MODEL 1
+
+#ifdef DEBUG_MARIO_MODEL
+#include <iostream>
+#define LOG(x) std::cout << x << std::endl;
+#else
+#define LOG(x)
+#endif
+
 namespace HaloCE::Mod::Mario::MarioModel {
     const char* marioTagPath = "smc64\\mario\\mario";
 
@@ -20,12 +31,6 @@ namespace HaloCE::Mod::Mario::MarioModel {
         auto entity = rec->entity();
         if (!entity) return false;
         return isMario(entity);
-    }
-
-    uint32_t playerWeaponHandle() {
-        auto playerEntity = Engine::getPlayerEntity();
-        if (!playerEntity) return 0xFFFFFFFF;
-        return playerEntity->childHandle;
     }
 
     void updateMarioPosition(Engine::Entity* marioEntity, Vec3 newPos) {
@@ -98,17 +103,6 @@ namespace HaloCE::Mod::Mario::MarioModel {
 
     uint32_t marioHandle  = 0xFFFFFFFF;
 
-    void processEntity(uint32_t entityHandle, Engine::Entity* entity) {
-        if (!entity) return;
-        if (isMario(entity)) {
-            marioHandle = entityHandle;
-            updatePose(entityHandle, entity);
-        }
-        if (entityHandle == playerWeaponHandle()) {
-            updateWeaponPose(entityHandle);
-        }
-    }
-
     void renderEntity(Engine::RenderEntityRequest *request, Engine::renderEntity_t renderEntityOriginal) {
         // if (!isMario(request->entityHandle)) return;
 
@@ -116,17 +110,42 @@ namespace HaloCE::Mod::Mario::MarioModel {
         auto playerHandle = Engine::getPlayerHandle();
         if (renderedHandle != playerHandle) return;
         
-        uint32_t weaponHandle = playerWeaponHandle();
-        if (weaponHandle != 0xFFFFFFFF) {
+        uint32_t weaponHandle = Engine::getPlayerHeldWeaponHandle();
+        if (weaponHandle != NULL_HANDLE) {
             Engine::RenderEntityRequest childRequest = *request;
             childRequest.entityHandle = weaponHandle;
             renderEntityOriginal(&childRequest);
         }
 
-        if (marioHandle != 0xFFFFFFFF) {
+        if (marioHandle != NULL_HANDLE) {
             Engine::RenderEntityRequest marioRequest = *request;
             marioRequest.entityHandle = marioHandle;
             renderEntityOriginal(&marioRequest);
         }
     }
+
+    void addHandlers(Spark::ModId modId) {
+        Spark::UpdateWorldBones::addHandler(modId, +[](void*, auto next, uint32_t entityHandle) {
+            auto rec = Engine::getEntityRecord(entityHandle);
+            if (!rec) return next(entityHandle);
+            auto entity = rec->entity();
+            if (!entity) return next(entityHandle);
+
+            next(entityHandle);
+
+            if (isMario(entity)) {
+                marioHandle = entityHandle;
+                updatePose(entityHandle, entity);
+            } else if (entityHandle == Engine::getPlayerHeldWeaponHandle()) {
+                updateWeaponPose(entityHandle);
+
+                // Print tag info for the entity.
+                auto entity = Engine::getEntityPointer(entityHandle);
+                auto tag = Engine::getTag(entity->tagID);
+                LOG("Entity Handle: " << entityHandle << ", Tag: " << tag->getResourcePath());
+            }
+            
+        }, nullptr);
+    }
+
 }

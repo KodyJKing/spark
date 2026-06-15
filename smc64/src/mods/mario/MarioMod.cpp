@@ -11,6 +11,9 @@ void MarioMod::init() {
     // must all be complete before any hook can fire update().
     HaloCE::Mod::Mario::init(modId_);
 
+    // Initialize Mario model handlers.
+    HaloCE::Mod::Mario::MarioModel::addHandlers(modId_);
+
     Spark::LoadCheckpoint::addHandler(modId_, +[](void*, auto next) {
         HaloCE::Mod::Mario::deinitMario();
         next();
@@ -19,15 +22,6 @@ void MarioMod::init() {
     Spark::UpdateAllEntities::addHandler(modId_, +[](void*, auto next) {
         HaloCE::Mod::Mario::update();
         next();
-    }, nullptr);
-
-    Spark::UpdateWorldBones::addHandler(modId_, +[](void*, auto next, uint32_t entityHandle) {
-        auto rec = Engine::getEntityRecord(entityHandle);
-        if (!rec) return next(entityHandle);
-        auto entity = rec->entity();
-        if (!entity) return next(entityHandle);
-        next(entityHandle);
-        HaloCE::Mod::Mario::MarioModel::processEntity(entityHandle, entity);
     }, nullptr);
 
     Spark::RenderEntity::addHandler(modId_, +[](void*, auto next, Engine::RenderEntityRequest* request) {

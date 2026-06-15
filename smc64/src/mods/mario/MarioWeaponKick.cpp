@@ -71,7 +71,7 @@ namespace HaloCE::Mod::Mario::MarioWeaponKick {
                 return projectileHandle;
 
             // Check the held weapon's kick config.
-            uint32_t weaponHandle      = Engine::getHeldWeaponHandle();
+            uint32_t weaponHandle      = Engine::getPlayerHeldWeaponHandle();
             const KickConfig* cfg      = kickConfigForWeapon(weaponHandle);
             if (!cfg) return projectileHandle;
 
