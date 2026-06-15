@@ -206,11 +206,13 @@ namespace Spark::Overlay {
         gameWindow = DX11Hook::findMainWindow();
         DX11Hook::hook(gameWindow);
         WndProcHook::hook(gameWindow);
+        ESP::DX11::init();
     }
 
     void free() {
         WndProcHook::unhook(gameWindow);
         DX11Hook::unhook();
+        ESP::DX11::free();
     }
 
 }

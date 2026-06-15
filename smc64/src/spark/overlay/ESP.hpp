@@ -25,4 +25,15 @@ namespace Spark::Overlay::ESP {
     void beginESPWindow(const char * name);
 
     void endESPWindow();
+
+    namespace DX11 {
+        void init();
+        void free();
+
+        // Call begin() before a batch of drawLine calls, end() after.
+        void begin();
+        void end();
+
+        void drawLine(Vec3 a, Vec3 b, ImU32 color);
+    }
 }

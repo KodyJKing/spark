@@ -12,8 +12,15 @@
 #include <cstdio>
 #include <string>
 
+// Predeclare DX11RenderTest initHandlers
+namespace Mod::DevTools::DX11RenderTest {
+    void initHandlers(Spark::ModId modId);
+}
+
 void DevToolsMod::init() {
     using Bus = Spark::EventBus<void>;
+
+    Mod::DevTools::DX11RenderTest::initHandlers(modId_);
 
     Spark::UpdateAllEntities::addHandler(modId_, +[](void*, auto next) {
         Mod::DevTools::VectorProfiler::start(GetCurrentThreadId());

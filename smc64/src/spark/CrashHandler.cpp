@@ -4,6 +4,7 @@
 
 #include <Windows.h>
 #include <TlHelp32.h>
+#include <DbgHelp.h>
 #include <cstdio>
 #include <iostream>
 #include <fstream>
@@ -11,6 +12,8 @@
 #include <unordered_map>
 #include <mutex>
 #include <string>
+
+#pragma comment(lib, "dbghelp.lib")
 
 namespace Spark::CrashHandler {
 
@@ -41,6 +44,76 @@ static void saveDecisions() {
     f << "# CrashHandler decisions — '+CODE' = stop, '-CODE' = ignore\n";
     for (auto& [code, stop] : s_decisions)
         f << (stop ? '+' : '-') << std::hex << (unsigned long)code << "\n";
+}
+
+static void printStackTrace(CONTEXT* ctx) {
+    HANDLE process = GetCurrentProcess();
+    HANDLE thread  = GetCurrentThread();
+
+    SymInitialize(process, nullptr, TRUE);
+    SymSetOptions(SYMOPT_LOAD_LINES | SYMOPT_UNDNAME | SYMOPT_DEFERRED_LOADS);
+
+    STACKFRAME64 frame{};
+    frame.AddrPC.Offset    = ctx->Rip;
+    frame.AddrPC.Mode      = AddrModeFlat;
+    frame.AddrFrame.Offset = ctx->Rbp;
+    frame.AddrFrame.Mode   = AddrModeFlat;
+    frame.AddrStack.Offset = ctx->Rsp;
+    frame.AddrStack.Mode   = AddrModeFlat;
+
+    constexpr int kMaxFrames = 64;
+    printf("[CrashHandler] Stack trace:\n");
+
+    char symBuf[sizeof(SYMBOL_INFO) + MAX_SYM_NAME * sizeof(char)];
+    SYMBOL_INFO* sym = reinterpret_cast<SYMBOL_INFO*>(symBuf);
+    sym->SizeOfStruct = sizeof(SYMBOL_INFO);
+    sym->MaxNameLen   = MAX_SYM_NAME;
+
+    IMAGEHLP_LINE64 line{};
+    line.SizeOfStruct = sizeof(IMAGEHLP_LINE64);
+
+    for (int i = 0; i < kMaxFrames; ++i) {
+        BOOL ok = StackWalk64(
+            IMAGE_FILE_MACHINE_AMD64,
+            process, thread,
+            &frame, ctx,
+            nullptr,
+            SymFunctionTableAccess64,
+            SymGetModuleBase64,
+            nullptr);
+        if (!ok || frame.AddrPC.Offset == 0) break;
+
+        DWORD64 pc     = frame.AddrPC.Offset;
+        DWORD64 disp64 = 0;
+        DWORD   disp32 = 0;
+
+        if (SymFromAddr(process, pc, &disp64, sym)) {
+            if (SymGetLineFromAddr64(process, pc, &disp32, &line))
+                printf("  #%-2d  0x%016llX  %s+0x%llX  (%s:%lu)\n",
+                       i, (unsigned long long)pc,
+                       sym->Name, (unsigned long long)disp64,
+                       line.FileName, (unsigned long)line.LineNumber);
+            else
+                printf("  #%-2d  0x%016llX  %s+0x%llX\n",
+                       i, (unsigned long long)pc,
+                       sym->Name, (unsigned long long)disp64);
+        } else {
+            // No symbol — at least show module+offset
+            IMAGEHLP_MODULE64 mod{};
+            mod.SizeOfStruct = sizeof(mod);
+            if (SymGetModuleInfo64(process, pc, &mod))
+                printf("  #%-2d  0x%016llX  %s+0x%llX\n",
+                       i, (unsigned long long)pc,
+                       mod.ModuleName,
+                       (unsigned long long)(pc - mod.BaseOfImage));
+            else
+                printf("  #%-2d  0x%016llX  <unknown>\n",
+                       i, (unsigned long long)pc);
+        }
+    }
+    fflush(stdout);
+
+    SymCleanup(process);
 }
 
 static void suspendOtherThreads(DWORD tid, DWORD pid) {
@@ -95,6 +168,9 @@ static LONG WINAPI handler(EXCEPTION_POINTERS* ep) {
     printf("[CrashHandler]   TID: %lu  <-- offending thread\n", (unsigned long)tid);
     printf("[CrashHandler]   RIP: 0x%016llX\n", (unsigned long long)rip);
     fflush(stdout);
+
+    printStackTrace(ep->ContextRecord);
+
     std::cout << "[CrashHandler] Suspending all other threads — attach a debugger now." << std::endl;
 
     Console::showConsole(true);
