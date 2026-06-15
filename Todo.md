@@ -17,7 +17,6 @@
         - Implement ridable jackal shield. (rideable as koopa shell)
         - Collision:
             - Entity collision:
-                - [Blocker] Support collision with other bones besides 0th bone.
                 - Support collision with bipeds.
                     - Allow bi-directional pushing. (might need custom collision/solving rather than using Mario engine)
                 - Support per tag type model override for finer developer control.
@@ -42,7 +41,6 @@
             - Arm IK:
                 - Smooth out arm IK transition from busy to not busy.
                 - Implement pole targets so Mario's elbows bend naturally.
-                - [Blocker] Fix gun positioning bug when needled.
             - Torso IK:
                 - Try out making Mario lean slightly as he aims up and down.
         - Head:
