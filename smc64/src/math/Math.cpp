@@ -24,4 +24,10 @@ namespace Math {
         std::normal_distribution<float> dist( mean, stddev );
         return dist( rng );
     }
+
+    float convertFov(float fov, float currentDimension, float targetDimension) {
+        // Convert FOV from one dimension to another (e.g. vertical to horizontal).
+        // Uses the formula: tan(fov_target / 2) = (targetDim / currentDim) * tan(fov_current / 2)
+        return 2.0f * atanf((targetDimension / currentDimension) * tanf(fov / 2.0f));
+    }
 }

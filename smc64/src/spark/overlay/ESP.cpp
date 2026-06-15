@@ -1,8 +1,21 @@
 #include "ESP.hpp"
+#include "engine/halo1.hpp"
+#include "math/Math.hpp"
 
 namespace Spark::Overlay::ESP {
 
     Camera camera;
+
+    void updateCamera() {
+        // const float fovScale = 0.627f; // Converts Halo's horizontal FOV to the vertical FOV used by our projection math.
+        auto haloCam = Engine::getPlayerCameraPointer();
+        camera.pos        = haloCam->pos;
+        camera.fwd        = haloCam->fwd;
+        camera.up         = haloCam->up;
+        // camera.fov        = haloCam->fov * fovScale;
+        camera.fov        = Math::convertFov(haloCam->fov, static_cast<float>(camera.width), static_cast<float>(camera.height));
+        camera.verticalFov = true;
+    }
 
     struct Line {
         Vec3 a, b;

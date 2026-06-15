@@ -131,14 +131,7 @@ namespace Spark::Overlay {
             // Sync ESP camera to the player camera, then fire the world-space debug render bus.
             // Spark owns this sync; handlers must not touch Overlay::ESP::camera setup.
             if (Engine::isGameLoaded()) {
-                const float fovScale = 0.627f; // Magic number to convert Halo's vertical FOV to the horizontal FOV used by our projection math.
-                auto haloCam = Engine::getPlayerCameraPointer();
-                auto& cam = Overlay::ESP::camera;
-                cam.pos = haloCam->pos;
-                cam.fwd = haloCam->fwd;
-                cam.up  = haloCam->up;
-                cam.fov = haloCam->fov * fovScale;
-                cam.verticalFov = true;
+                Overlay::ESP::updateCamera();
                 Overlay::ESP::beginESPWindow("__ESP");
                 Spark::onRenderDebugWorld.dispatch(Spark::noopTerminal, nullptr);
                 Overlay::ESP::endESPWindow();
