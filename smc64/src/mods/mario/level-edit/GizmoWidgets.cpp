@@ -8,6 +8,7 @@ namespace Gizmo {
 
 static std::vector<GizmoWidget> s_widgets;
 static Camera    s_frameCamera    = {};
+static bool      s_inputEnabled   = false;
 static uint32_t  s_hotId          = 0;
 static uint32_t  s_activeId       = 0;
 static Ray       s_prevMouseRay   = {};
@@ -34,8 +35,9 @@ static float screenDistToSegment(ImVec2 p, ImVec2 a, ImVec2 b) {
 
 // ── API implementation ────────────────────────────────────────────────────────
 
-void beginGizmos(Camera cam) {
-    s_frameCamera = cam;
+void beginGizmos(Camera cam, bool inputEnabled) {
+    s_frameCamera  = cam;
+    s_inputEnabled = inputEnabled;
     s_widgets.clear();
 }
 
@@ -48,6 +50,14 @@ bool endGizmos() {
 
     // ── Build this frame's mouse ray ─────────────────────────────────────────
     Ray mouseRay = s_frameCamera.mouseRay(mouse.x, mouse.y);
+
+    // ── Hit-test and interaction: only when input is enabled ─────────────────
+    if (!s_inputEnabled) {
+        // Clear any stale hot/active state so gizmos don't appear stuck.
+        s_hotId    = 0;
+        s_activeId = 0;
+        return false;
+    }
 
     // ── Hit-test: find closest widget within kHitPx ──────────────────────────
     uint32_t newHot  = 0;

@@ -55,7 +55,9 @@ struct GizmoWidget {
 
 // Call once per frame before submitting widgets.
 // Snapshots the camera and clears the submission buffer.
-void beginGizmos(Camera cam);
+// Pass inputEnabled=false to suppress all mouse interaction (widgets still
+// rendered / coloured, but no hot/active state changes and no drag callbacks).
+void beginGizmos(Camera cam, bool inputEnabled = true);
 
 // Submit a widget into the buffer for this frame's hit-test pass.
 void submitGizmo(GizmoWidget w);

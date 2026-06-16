@@ -8,6 +8,7 @@
 #include "GizmoWidgets.hpp"
 #include "level-edits/index.hpp"
 #include "spark/overlay/ESP.hpp"
+#include "spark/Spark.hpp"
 #include "engine/raycast.hpp"
 #include "engine/player.hpp"
 #include "math/Math.hpp"
@@ -106,10 +107,11 @@ void renderWorldCursor(EditorState& state, Camera& cam) {
 }
 
 void renderWorld(EditorState& state) {
+    if (!Spark::showDebugOverlay) return;
     if (!state.editorOpen || !state.currentEdits) return;
 
     Camera cam = buildEditorCamera();
-    Gizmo::beginGizmos(cam);
+    Gizmo::beginGizmos(cam, state.editorInputEnabled);
 
     ESP::DX11::begin();
     auto& obbs = state.currentEdits->orientedBoundingBoxes;
@@ -265,6 +267,7 @@ static void renderCursor(const EditorState& state) {
 }
 
 void renderUI(EditorState& state) {
+    if (!Spark::showDebugOverlay) return;
     if (ImGui::IsKeyPressed(ImGuiKey_F6, false)) {
         state.editorOpen = !state.editorOpen;
         if (state.editorOpen) {
