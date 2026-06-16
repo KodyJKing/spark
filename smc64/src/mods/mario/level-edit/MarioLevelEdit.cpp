@@ -129,9 +129,9 @@ static TranslateDragCtx s_dragCtx[3];
 
 // ── World rendering ───────────────────────────────────────────────────────────
 
-// Draw OBB axis arrows, tinting hot/active axes bright.
-// obbIdx is used to build the gizmo id for isHot/isActive queries.
-static void drawOBBAxes(const OrientedBoundingBox& obb, int obbIdx) {
+// Draw OBB axis arrows and (for the selected OBB) submit translate gizmos.
+// isHot/isActive reflect last frame's state, so color and submission are consistent.
+static void drawOBBAxes(OrientedBoundingBox& obb, int obbIdx) {
     static const ImU32 kNormal[3] = {
         IM_COL32(200,  48,  48, 220), // X — red
         IM_COL32( 48, 200,  48, 220), // Y — green
@@ -152,6 +152,7 @@ static void drawOBBAxes(const OrientedBoundingBox& obb, int obbIdx) {
     Vec3 axArr[3] = { axes.columns.x, axes.columns.y, axes.columns.z };
     const float he[3] = { obb.halfExtents.x, obb.halfExtents.y, obb.halfExtents.z };
     Vec3 center = obb.center;
+    bool selected = (obbIdx == s_selectedIdx);
 
     ESP::DX11::setDepthBias(1.0f);
 
@@ -169,36 +170,23 @@ static void drawOBBAxes(const OrientedBoundingBox& obb, int obbIdx) {
         Vec3 headBase  = center + axArr[i] * (he[i] * 1.2f * 0.8f);
         ESP::DX11::drawLine(tip, headBase + perp * headSize, col);
         ESP::DX11::drawLine(tip, headBase - perp * headSize, col);
+
+        if (selected) {
+            s_dragCtx[i].obb     = &obb;
+            s_dragCtx[i].axisDir = axArr[i];
+
+            Gizmo::GizmoWidget w = {};
+            w.id         = id;
+            w.numPoints  = 2;
+            w.points[0]  = center;
+            w.points[1]  = tip;
+            w.onDrag     = onTranslateDrag;
+            w.ctx        = &s_dragCtx[i];
+            Gizmo::submitGizmo(w);
+        }
     }
 
     ESP::DX11::setDepthBias(0.0f);
-}
-
-// Submit gizmo widgets for the selected OBB's three translate handles.
-// Must be called between Gizmo::beginGizmos and Gizmo::endGizmos.
-static void submitOBBGizmos(OrientedBoundingBox& obb, int obbIdx) {
-    auto axes = getAxes(obb);
-    Vec3 axArr[3] = { axes.columns.x, axes.columns.y, axes.columns.z };
-    const float he[3] = { obb.halfExtents.x, obb.halfExtents.y, obb.halfExtents.z };
-    Vec3 center = obb.center;
-
-    for (int i = 0; i < 3; i++) {
-        Vec3 tip = center + axArr[i] * (he[i] * 1.2f);
-
-        // Prepare drag context (points at the live OBB).
-        s_dragCtx[i].obb     = &obb;
-        s_dragCtx[i].axisDir = axArr[i];
-
-        Gizmo::GizmoWidget w = {};
-        w.id         = gizmoId(obbIdx, i);
-        w.numPoints  = 2;
-        w.points[0]  = center;
-        w.points[1]  = tip;
-        w.onDragBegin     = nullptr;
-        w.onDrag          = onTranslateDrag;
-        w.ctx             = &s_dragCtx[i];
-        Gizmo::submitGizmo(w);
-    }
 }
 
 static Camera buildEditorCamera() {
@@ -232,9 +220,6 @@ static void renderWorld() {
             : IM_COL32(255, 255, 255, 200);  // default  — white
         drawOBBWireframe(obbs[i], wireColor);
         drawOBBAxes(obbs[i], i);
-        if (i == s_selectedIdx) {
-            submitOBBGizmos(obbs[i], i);
-        }
     }
 
     // ── Debug: visualize mouse ray hit ────────────────────────────────────────
