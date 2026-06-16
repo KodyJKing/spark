@@ -149,6 +149,20 @@ struct Ray {
     Vec3 direction; // should be normalized
 };
 
+// Returns the closest point on an infinite axis (axisOrigin + t·axisDir) to a ray.
+// Returns axisOrigin when the axis and ray are nearly parallel (degenerate).
+// Typical gizmo usage: call each frame with the mouse ray, project the delta
+// onto axisDir to get the signed translation amount.
+inline Vec3 closestPointOnAxisToRay(const Ray& r, Vec3 axisOrigin, Vec3 axisDir) {
+    Vec3  w   = axisOrigin - r.origin;
+    float b   = axisDir.dot(r.direction);
+    Vec3  rd  = r.direction; // non-const copy — Vec3::dot is not const-qualified
+    float den = 1.f - b * b;
+    if (fabsf(den) < 1e-6f) return axisOrigin;
+    float t   = (b * rd.dot(w) - axisDir.dot(w)) / den;
+    return axisOrigin + axisDir * t;
+}
+
 struct Camera {
     Vec3 pos, fwd, up;
     float fov, width, height;

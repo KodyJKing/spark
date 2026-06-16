@@ -11,20 +11,6 @@ namespace Math {
     // Ray is defined in Vectors.hpp as a global struct.
     using Ray = ::Ray;
 
-    // Returns the closest point on an infinite axis to a given ray.
-    // If the axis and ray are nearly parallel (degenerate), returns axisOrigin.
-    // Use this to implement axis-drag gizmos: call once per frame with the mouse ray,
-    // take axisDir · (P_new − P_prev) as the signed translation delta.
-    inline Vec3 closestPointOnAxisToRay(const Ray& r, Vec3 axisOrigin, Vec3 axisDir) {
-        Vec3 w    = axisOrigin - r.origin;
-        float b   = axisDir.dot(r.direction);
-        Vec3 rd   = r.direction; // non-const copy — Vec3::dot is not const-qualified
-        float den = 1.f - b * b;                   // both dirs normalized
-        if (fabsf(den) < 1e-6f) return axisOrigin;  // parallel fallback
-        float t   = (axisDir.dot(w) - b * rd.dot(w)) / den;
-        return axisOrigin + axisDir * t;
-    }
-
     // Ray-OBB intersection using the separating axis / slab method.
     // axes[0..2] must be unit vectors (the OBB's local frame).
     // Returns true on hit; tOut is the distance along ray.direction to the entry point

@@ -117,8 +117,8 @@ struct TranslateDragCtx {
 
 static void onTranslateDrag(void* ctx, Ray current, Ray prev) {
     auto* c = static_cast<TranslateDragCtx*>(ctx);
-    Vec3 pCur  = Math::closestPointOnAxisToRay(current, c->obb->center, c->axisDir);
-    Vec3 pPrev = Math::closestPointOnAxisToRay(prev,    c->obb->center, c->axisDir);
+    Vec3 pCur  = closestPointOnAxisToRay(current, c->obb->center, c->axisDir);
+    Vec3 pPrev = closestPointOnAxisToRay(prev,    c->obb->center, c->axisDir);
     Vec3 delta = pCur - pPrev;
     float d    = c->axisDir.dot(delta);
     c->obb->center += c->axisDir * d;
