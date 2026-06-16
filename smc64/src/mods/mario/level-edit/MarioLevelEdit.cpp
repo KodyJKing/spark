@@ -46,16 +46,17 @@ static int              s_selectedIdx   = -1;
 
 // ── OBB geometry helpers ─────────────────────────────────────────────────────
 
-static std::array<Vec3, 3> getAxes(const OrientedBoundingBox& obb) {
-    return Math::eulerDegreesToAxes(obb.orientation);
+static Matrix3 getAxes(const OrientedBoundingBox& obb) {
+    Vec3 euler = obb.orientation;
+    return Matrix3::fromEulerYXZ(euler);
 }
 
 // Returns all 8 corners. Indices encode ±X, ±Y, ±Z as bits 2,1,0 (0=+, 1=-).
 static std::array<Vec3, 8> getCorners(const OrientedBoundingBox& obb) {
     auto ax = getAxes(obb);
-    Vec3 ex = ax[0] * obb.halfExtents.x;
-    Vec3 ey = ax[1] * obb.halfExtents.y;
-    Vec3 ez = ax[2] * obb.halfExtents.z;
+    Vec3 ex = ax.columns.x * obb.halfExtents.x;
+    Vec3 ey = ax.columns.y * obb.halfExtents.y;
+    Vec3 ez = ax.columns.z * obb.halfExtents.z;
     Vec3 c  = obb.center; // non-const copy — Vec3 operators are not const-qualified
     return {
         c + ex + ey + ez,   // 000
@@ -97,18 +98,19 @@ static void drawOBBAxes(const OrientedBoundingBox& obb) {
         IM_COL32( 64,  64, 255, 255), // Z — blue
     };
     auto axes = getAxes(obb);
+    Vec3 axArr[3] = { axes.columns.x, axes.columns.y, axes.columns.z };
     const float he[3] = { obb.halfExtents.x, obb.halfExtents.y, obb.halfExtents.z };
     Vec3 center = obb.center; // non-const copy — Vec3 operators are not const-qualified
 
     for (int i = 0; i < 3; i++) {
-        Vec3 tip  = center + axes[i] * (he[i] * 1.2f);
+        Vec3 tip  = center + axArr[i] * (he[i] * 1.2f);
         ESP::DX11::drawLine(center, tip, kAxisColors[i]);
 
         // Arrow head: two short lines angling back from the tip.
         // The head lies in the plane spanned by this axis and the next one.
-        Vec3 perp      = axes[(i + 1) % 3];
+        Vec3 perp      = axArr[(i + 1) % 3];
         float headSize = he[i] * 0.15f;
-        Vec3 headBase  = center + axes[i] * (he[i] * 1.2f * 0.8f);
+        Vec3 headBase  = center + axArr[i] * (he[i] * 1.2f * 0.8f);
         ESP::DX11::drawLine(tip, headBase + perp * headSize,  kAxisColors[i]);
         ESP::DX11::drawLine(tip, headBase - perp * headSize, kAxisColors[i]);
     }
@@ -224,6 +226,7 @@ static void renderEditWindow() {
 
     auto& obb  = obbs[s_selectedIdx];
     auto  axes = getAxes(obb);
+    Vec3 axArr[3] = { axes.columns.x, axes.columns.y, axes.columns.z };
 
     ImGui::Begin("OBB Edit", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
     ImGui::Text("OBB #%d", s_selectedIdx);
@@ -240,9 +243,9 @@ static void renderEditWindow() {
 
     static const char* kLabels[3][2] = { {"+X","-X"}, {"+Y","-Y"}, {"+Z","-Z"} };
     for (int i = 0; i < 3; i++) {
-        if (ImGui::Button(kLabels[i][0])) obb.center += axes[i] * s_nudge;
+        if (ImGui::Button(kLabels[i][0])) obb.center += axArr[i] * s_nudge;
         ImGui::SameLine();
-        if (ImGui::Button(kLabels[i][1])) obb.center -= axes[i] * s_nudge;
+        if (ImGui::Button(kLabels[i][1])) obb.center -= axArr[i] * s_nudge;
         if (i < 2) ImGui::SameLine();
     }
     ImGui::End();

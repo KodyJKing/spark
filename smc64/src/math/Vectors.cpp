@@ -112,6 +112,21 @@ Vec3 Vec3::orientationToEuler_YXZ(Vec3 xCol, Vec3 zCol) {
 }
 
 ////////////////////////////////////////
+// Matrix3
+
+Matrix3 Matrix3::fromEulerYXZ(Vec3 eulerDeg) {
+    constexpr float DEG2RAD = 3.14159265358979323846f / 180.0f;
+    float cy = cosf(eulerDeg.y * DEG2RAD), sy = sinf(eulerDeg.y * DEG2RAD); // yaw
+    float cx = cosf(eulerDeg.x * DEG2RAD), sx = sinf(eulerDeg.x * DEG2RAD); // pitch
+    float cz = cosf(eulerDeg.z * DEG2RAD), sz = sinf(eulerDeg.z * DEG2RAD); // roll
+    Matrix3 m;
+    m.columns.x = {  cy*cz + sy*sx*sz,   cx*sz,  -sy*cz + cy*sx*sz }; // local +X
+    m.columns.y = { -cy*sz + sy*sx*cz,   cx*cz,   sy*sz + cy*sx*cz }; // local +Y
+    m.columns.z = {  sy*cx,             -sx,       cy*cx             }; // local +Z
+    return m;
+}
+
+////////////////////////////////////////
 // Vec3i
 
 Vec3i Vec3i::operator+( const Vec3i& b ) { return Vec3i{ x + b.x, y + b.y, z + b.z }; }

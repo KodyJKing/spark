@@ -38,7 +38,7 @@ struct Vec3 {
 
     // Given the X and Z column vectors of a rotation matrix (i.e. local +X and +Z axes),
     // returns the YXZ intrinsic Euler angles in degrees that reproduce that orientation.
-    // Matches the convention used by eulerDegreesToAxes() in OBBIntersect.hpp.
+    // Inverse of Matrix3::fromEulerYXZ().
     static Vec3 orientationToEuler_YXZ(Vec3 xCol, Vec3 zCol);
 
     // Gram-Schmidt: returns a new zCol that is orthogonal to xCol and normalized.
@@ -87,6 +87,11 @@ struct Matrix3 {
             Vec3 x, y, z; 
         } columns;
     };
+
+    // Convert YXZ intrinsic Euler angles (degrees) to a rotation matrix.
+    // Column layout: columns.x = local +X, columns.y = local +Y, columns.z = local +Z.
+    // Rotation order: Ry(yaw) * Rx(pitch) * Rz(roll).
+    static Matrix3 fromEulerYXZ(Vec3 eulerDeg);
 };
 
 struct Matrix4 {
