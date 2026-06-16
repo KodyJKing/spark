@@ -52,7 +52,10 @@
     - Third person camera:
         - Render a false projectile exiting the player's barrel.
             - False projectile should converge with the actual projectile over distance.
-        - [Blocker] Move or disable all FPV weapon lights/effects.
+        - [Critical] Move or disable all FPV weapon lights/effects.
+    
+    - Sound:
+        - [Blocker] Scale Mario sound by game's volume setting.
 
 - Usability:
     - Keybinds:

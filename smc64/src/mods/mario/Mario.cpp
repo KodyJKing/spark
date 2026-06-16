@@ -33,6 +33,7 @@
 #include "MarioDamageHook.hpp"
 #include "MarioSkeleton.hpp"
 #include "MarioModel.hpp"
+#include "level-edit/MarioLevelEdit.hpp"
 #include "MarioMelee.hpp"
 #include "MarioWeaponOffset.hpp"
 #include "MarioAimingIK.hpp"
@@ -262,10 +263,10 @@ namespace HaloCE::Mod::Mario {
         #ifdef ENABLE_MARIO
         std::lock_guard<std::mutex> updateLock(s_updateMutex);
 
-        if (Engine::isPlayerInputDisabled()) {
-            // Don't do anything with Mario if player input is disabled.
+        if (Engine::isPlayerInputDisabled() || ::Mod::Mario::LevelEdit::isInputSuppressed()) {
+            // Don't do anything with Mario if player input is disabled or the level editor has focus.
             MarioCamera::onDisable();
-            deinitMario();
+            if (Engine::isPlayerInputDisabled()) deinitMario();
             return;
         }
 

@@ -5,6 +5,7 @@
 #include <cstdint>
 
 #include "math/Vectors.hpp"
+#include "spark/mod/ModId.hpp"
 
 /**
  * This module gives us means for tweaking levels to resolve some edge cases for Mario's movement and interactions within the levels.
@@ -18,7 +19,7 @@ namespace Mod::Mario::LevelEdit {
     struct OrientedBoundingBox {
         Vec3 center;
         Vec3 halfExtents;
-        Vec3 orientation; // Euler angles in degrees
+        Vec3 orientation; // Euler angles in degrees (YXZ intrinsic: yaw, pitch, roll)
     };
 
     struct LevelEdits {
@@ -30,8 +31,19 @@ namespace Mod::Mario::LevelEdit {
         uint64_t bspSignature;
     };
 
+    // Returns a pointer to the static LevelEdits for this context, or nullptr.
+    // Caller does not own the returned pointer.
     LevelEdits* getLevelEdits(LevelEditContext& context);
 
-    void initHandlers();
+    // Call this whenever the active level changes (e.g. on BSP load).
+    // Sets the current context and refreshes the internal LevelEdits pointer.
+    void setContext(LevelEditContext context);
+
+    // Registers render and UI handlers. Must be called from the mod's init().
+    void initHandlers(Spark::ModId modId);
+
+    // Returns true when the level editor is open and an ImGui window has focus,
+    // indicating that game input should be suppressed.
+    bool isInputSuppressed();
 
 }

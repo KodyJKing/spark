@@ -3,6 +3,7 @@
 #include "spark/RenderBuses.hpp"
 #include "Mario.hpp"
 #include "engine/halo1.hpp"
+#include "level-edit/MarioLevelEdit.hpp"
 
 void MarioMod::init() {
     using Bus = Spark::EventBus<void>;
@@ -33,6 +34,8 @@ void MarioMod::init() {
         HaloCE::Mod::Mario::debugRender();
         next();
     }, nullptr);
+
+    Mod::Mario::LevelEdit::initHandlers(modId_);
 
 }
 

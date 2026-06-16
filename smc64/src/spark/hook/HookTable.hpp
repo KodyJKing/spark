@@ -6,7 +6,8 @@
 
 HOOK( LoadCheckpoint,       void,     0xBE8A64U                                                         )
 HOOK( UpdateCamera,         void,     0xB14380U, float /*dt*/                                           )
-HOOK( UpdatePlayerControls, void,     0xA9A8A4U, float*, float*                                         )
+HOOK( UpdatePlayerControls,         void,     0xA9A8A4U, float*, float*                                         )
+HOOK( UpdatePlayerControlsAndLook, void,     0xA997B8U, uint32_t, uint32_t                                   )
 HOOK( RenderFPVModel,       void,     0xB275B8U                                                         )
 HOOK( UpdateAllEntities,    void,     0xB35654U                                                         )
 HOOK( UpdateEntity,         uint64_t, 0xB3A06CU, uint32_t /*entityHandle*/                              )

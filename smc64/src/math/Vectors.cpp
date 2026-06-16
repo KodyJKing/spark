@@ -87,6 +87,30 @@ Vec3 Vec3::randomUnitVector() {
     return Vec3{ r * cosf(theta), r * sinf(theta), z };
 }
 
+Vec3 Vec3::orthonormalize(Vec3 xCol, Vec3 zCol) {
+    float dot = zCol.dot(xCol);
+    if (fabsf(dot) > 0.99f) {
+        zCol = { 0.f, 1.f, 0.f };
+        dot  = zCol.dot(xCol);
+    }
+    return (zCol - xCol * dot).normalize();
+}
+
+// Closed-form inverse of eulerDegreesToAxes() in OBBIntersect.hpp.
+// Given: R = Ry(y) * Rx(x) * Rz(z)  (YXZ intrinsic)
+//   col2 (Z col) gives:  zCol.y = -sx,  zCol.x = sy*cx,  zCol.z = cy*cx
+//   col0 (X col) gives:  xCol.y = cx*sz
+//   col1 (Y col) = zCol × xCol  gives:  yCol.y = cx*cz
+Vec3 Vec3::orientationToEuler_YXZ(Vec3 xCol, Vec3 zCol) {
+    constexpr float RAD2DEG = 180.0f / 3.14159265f;
+    Vec3 yCol = zCol.cross(xCol);
+    return {
+         asinf(-zCol.y)           * RAD2DEG,   // pitch (x)
+         atan2f(zCol.x, zCol.z)   * RAD2DEG,   // yaw   (y)
+         atan2f(xCol.y, yCol.y)   * RAD2DEG,   // roll  (z)
+    };
+}
+
 ////////////////////////////////////////
 // Vec3i
 

@@ -35,6 +35,15 @@ struct Vec3 {
 
     static Vec3 randomGaussian(float stddev);
     static Vec3 randomUnitVector();
+
+    // Given the X and Z column vectors of a rotation matrix (i.e. local +X and +Z axes),
+    // returns the YXZ intrinsic Euler angles in degrees that reproduce that orientation.
+    // Matches the convention used by eulerDegreesToAxes() in OBBIntersect.hpp.
+    static Vec3 orientationToEuler_YXZ(Vec3 xCol, Vec3 zCol);
+
+    // Gram-Schmidt: returns a new zCol that is orthogonal to xCol and normalized.
+    // If zCol is nearly parallel to xCol (|dot| > 0.99), falls back to world +Y.
+    static Vec3 orthonormalize(Vec3 xCol, Vec3 zCol);
 };
 
 struct Vec3i {
@@ -69,6 +78,15 @@ struct Vec4 {
     Vec4& operator/=( float scalar );
 
     float dot( const Vec4& other );
+};
+
+struct Matrix3 {
+    union {
+        float m[9]; // Column-major order
+        struct {
+            Vec3 x, y, z; 
+        } columns;
+    };
 };
 
 struct Matrix4 {
