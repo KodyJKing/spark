@@ -57,8 +57,8 @@ bool endGizmos() {
         if (w.numPoints < 2) continue;
         int segCount = w.closed ? w.numPoints : w.numPoints - 1;
         for (int s = 0; s < segCount; s++) {
-            Vec3 sA = w.screenPoints[s];
-            Vec3 sB = w.screenPoints[(s + 1) % w.numPoints];
+            Vec3 sA = s_frameCamera.project(w.points[s]);
+            Vec3 sB = s_frameCamera.project(w.points[(s + 1) % w.numPoints]);
             // Skip segments behind the camera (depth <= 0)
             if (sA.z <= 0.f || sB.z <= 0.f) continue;
             float d = screenDistToSegment(

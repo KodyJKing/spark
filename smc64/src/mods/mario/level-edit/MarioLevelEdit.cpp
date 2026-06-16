@@ -176,7 +176,7 @@ static void drawOBBAxes(const OrientedBoundingBox& obb, int obbIdx) {
 
 // Submit gizmo widgets for the selected OBB's three translate handles.
 // Must be called between Gizmo::beginGizmos and Gizmo::endGizmos.
-static void submitOBBGizmos(OrientedBoundingBox& obb, int obbIdx, Camera cam) {
+static void submitOBBGizmos(OrientedBoundingBox& obb, int obbIdx) {
     auto axes = getAxes(obb);
     Vec3 axArr[3] = { axes.columns.x, axes.columns.y, axes.columns.z };
     const float he[3] = { obb.halfExtents.x, obb.halfExtents.y, obb.halfExtents.z };
@@ -185,19 +185,15 @@ static void submitOBBGizmos(OrientedBoundingBox& obb, int obbIdx, Camera cam) {
     for (int i = 0; i < 3; i++) {
         Vec3 tip = center + axArr[i] * (he[i] * 1.2f);
 
-        // Project arrow shaft endpoints to screen.
-        Vec3 scCenter = cam.project(center);
-        Vec3 scTip    = cam.project(tip);
-
         // Prepare drag context (points at the live OBB).
         s_dragCtx[i].obb     = &obb;
         s_dragCtx[i].axisDir = axArr[i];
 
         Gizmo::GizmoWidget w = {};
-        w.id              = gizmoId(obbIdx, i);
-        w.numPoints       = 2;
-        w.screenPoints[0] = scCenter;
-        w.screenPoints[1] = scTip;
+        w.id         = gizmoId(obbIdx, i);
+        w.numPoints  = 2;
+        w.points[0]  = center;
+        w.points[1]  = tip;
         w.onDragBegin     = nullptr;
         w.onDrag          = onTranslateDrag;
         w.ctx             = &s_dragCtx[i];
@@ -237,7 +233,7 @@ static void renderWorld() {
         drawOBBWireframe(obbs[i], wireColor);
         drawOBBAxes(obbs[i], i);
         if (i == s_selectedIdx) {
-            submitOBBGizmos(obbs[i], i, cam);
+            submitOBBGizmos(obbs[i], i);
         }
     }
 

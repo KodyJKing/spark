@@ -15,8 +15,8 @@
 //   GizmoWidget w;
 //   w.id        = myId;
 //   w.numPoints = 2;
-//   cam.project(worldPtA).copyTo(w.screenPoints[0]);   // z = depth
-//   cam.project(worldPtB).copyTo(w.screenPoints[1]);
+//   w.points[0] = worldPtA;
+//   w.points[1] = worldPtB;
 //   w.onDragBegin = nullptr;           // optional
 //   w.onDrag      = myDragCallback;
 //   w.ctx         = myCtx;
@@ -35,10 +35,9 @@ static constexpr int MAX_WIDGET_POINTS = 16;
 struct GizmoWidget {
     uint32_t id;                               // stable caller-assigned id (non-zero)
 
-    // Pre-projected screen points (x, y in pixels; z = view-space depth).
-    // The widget is represented as a polyline: segments are [0→1], [1→2], etc.
-    // If closed=true the last segment connects back to point 0 (for rotation rings).
-    Vec3 screenPoints[MAX_WIDGET_POINTS];
+    // World-space points defining the widget's hit shape as a polyline.
+    // segments are [0→1], [1→2], etc.  If closed=true the last segment wraps to 0.
+    Vec3 points[MAX_WIDGET_POINTS];
     int  numPoints = 0;
     bool closed    = false;
 
