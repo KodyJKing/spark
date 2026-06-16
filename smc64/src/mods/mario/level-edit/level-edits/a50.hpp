@@ -1,0 +1,1 @@
+// A unordered map of level edits (by bsp signature) for the A50 level should go here.

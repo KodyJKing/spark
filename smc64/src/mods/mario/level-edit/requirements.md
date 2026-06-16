@@ -1,0 +1,12 @@
+- When ENABLE_LEVEL_EDITOR is on, a level editor UI is available (behind a toggle key).
+    - OOBBs are rendered in world (not with ImGui) using ESP::DX11::drawLine.
+    - Can place OOBBs based on the level geometry using Engine::raycastPlayerCrosshair.
+        - When placed, an OOBB becomes selected.
+    - An ImGui window allows for editing the selected OOBB's position, rotation, and scale.
+        - Has buttons to nudge OOBB along its local axes.
+    - Another ImGui window allows for managing all OOBBs in the level, including selecting, duplicating, and deleting them.
+        - Can save level edits to a <levelName>.hpp file.
+    - Can pick OOBBs when looking at them
+    - When the level editor is active, player controls are limited.
+
+- When ENABLE_LEVEL_EDITOR is off, this module just hosts the level edits which will be consumed by the main mod later on (no action now).
