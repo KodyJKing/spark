@@ -234,11 +234,9 @@ static void renderManagerWindow(EditorState& state) {
     }
 
     ImGui::Separator();
-    if (ImGui::Button("Save .hpp")) {
-        saveLevelEdits(state);
+    if (ImGui::Button("Copy .hpp to clipboard")) {
+        copyLevelEditsToClipboard(state);
     }
-    ImGui::SameLine();
-    ImGui::TextDisabled("Re-compile to activate.");
 
     ImGui::End();
 }

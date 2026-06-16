@@ -6,7 +6,7 @@
 
 namespace Mod::Mario::LevelEdit {
 
-void saveLevelEdits(EditorState& state);
+void copyLevelEditsToClipboard(EditorState& state);
 
 } // namespace Mod::Mario::LevelEdit
 

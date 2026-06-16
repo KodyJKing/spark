@@ -4,7 +4,7 @@
 namespace Mod::Mario::LevelEdit::A50Edits {
     inline LevelEdits s_edits = {
         .orientedBoundingBoxes = {
-            // Populated by the level editor — save via the "OBB Manager" window.
+            { { -7.06787f, 10.1748f, -21.7969f }, { 0.6f, 0.45f, 3.25f }, { 0.f, 0.f, 90.f } },
         }
     };
 }

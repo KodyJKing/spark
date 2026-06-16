@@ -30,7 +30,7 @@
 
 namespace Gizmo {
 
-static constexpr int MAX_WIDGET_POINTS = 16;
+static constexpr int MAX_WIDGET_POINTS = 32;
 
 struct GizmoWidget {
     uint32_t id;                               // stable caller-assigned id (non-zero)

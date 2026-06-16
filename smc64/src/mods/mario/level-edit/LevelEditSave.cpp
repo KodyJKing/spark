@@ -2,31 +2,35 @@
 
 #ifdef ENABLE_LEVEL_EDITOR
 
-#include <fstream>
-#include <filesystem>
+#include "imgui.h"
+#include <sstream>
 
 namespace Mod::Mario::LevelEdit {
 
-static std::filesystem::path savePath(const std::string& levelName) {
-    std::filesystem::path src = __FILE__; // .../level-edit/LevelEditSave.cpp
-    return src.parent_path() / "level-edits" / (levelName + ".hpp");
-}
-
-void saveLevelEdits(EditorState& state) {
+void copyLevelEditsToClipboard(EditorState& state) {
     if (!state.currentEdits) return;
     const std::string& name = state.currentContext.levelName;
     if (name.empty()) return;
 
-    std::filesystem::path path = savePath(name);
-    std::ofstream f(path);
-    if (!f) {
-        fprintf(stderr, "[LevelEdit] Failed to open %s for writing\n", path.string().c_str());
-        return;
-    }
+    std::ostringstream f;
 
     auto& obbs = state.currentEdits->orientedBoundingBoxes;
     std::string NS = name;
     if (!NS.empty()) NS[0] = (char)toupper((unsigned char)NS[0]);
+
+    // Format a float literal that always has a decimal point so "90f" never appears.
+    auto flt = [](float v) -> std::string {
+        char buf[32];
+        snprintf(buf, sizeof(buf), "%g", v);
+        std::string s = buf;
+        // If no '.', 'e', or 'E' is present, append '.' so the 'f' suffix is valid.
+        if (s.find('.') == std::string::npos &&
+            s.find('e') == std::string::npos &&
+            s.find('E') == std::string::npos) {
+            s += '.';
+        }
+        return s;
+    };
 
     f << "#pragma once\n";
     f << "#include \"../MarioLevelEdit.hpp\"\n\n";
@@ -35,15 +39,15 @@ void saveLevelEdits(EditorState& state) {
     f << "        .orientedBoundingBoxes = {\n";
     for (const auto& obb : obbs) {
         f << "            { "
-          << "{ " << obb.center.x      << "f, " << obb.center.y      << "f, " << obb.center.z      << "f }, "
-          << "{ " << obb.halfExtents.x << "f, " << obb.halfExtents.y << "f, " << obb.halfExtents.z << "f }, "
-          << "{ " << obb.orientation.x << "f, " << obb.orientation.y << "f, " << obb.orientation.z << "f } },\n";
+          << "{ " << flt(obb.center.x)      << "f, " << flt(obb.center.y)      << "f, " << flt(obb.center.z)      << "f }, "
+          << "{ " << flt(obb.halfExtents.x) << "f, " << flt(obb.halfExtents.y) << "f, " << flt(obb.halfExtents.z) << "f }, "
+          << "{ " << flt(obb.orientation.x) << "f, " << flt(obb.orientation.y) << "f, " << flt(obb.orientation.z) << "f } },\n";
     }
     f << "        }\n";
     f << "    };\n";
     f << "}\n";
 
-    printf("[LevelEdit] Saved %zu OBB(s) to %s\n", obbs.size(), path.string().c_str());
+    ImGui::SetClipboardText(f.str().c_str());
 }
 
 } // namespace Mod::Mario::LevelEdit
