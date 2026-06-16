@@ -13,8 +13,9 @@ using namespace Spark::Overlay;
 
 static constexpr float kPi              = 3.14159265358979f;
 static constexpr int   kRingSegments    = 32;
-static constexpr float kRingRadiusScale = 1.8f; // relative to max half-extent
-static constexpr float kRingRadiusMin   = 0.4f; // world-unit minimum
+static constexpr float kRingRadius      = 0.6f; // fixed world-unit ring radius
+static constexpr float kArrowLength     = 0.7f; // fixed world-unit arrow shaft length
+static constexpr float kArrowHeadSize   = 0.10f; // fixed world-unit arrowhead half-width
 
 // ── Gizmo ID encoding ────────────────────────────────────────────────────────
 // Lower nibble: axis 0-2 = translate, axis 4-6 = rotate.
@@ -184,8 +185,7 @@ void drawOBBAxes(OrientedBoundingBox& obb, int obbIdx, int selectedIdx) {
     // Anchor gizmos at the bottom face (local -Z) so they don't obscure the OBB.
     Vec3  gizmoOrigin = center - axArr[2] * he[2];
     bool  selected    = (obbIdx == selectedIdx);
-    float maxHe       = fmaxf(fmaxf(he[0], he[1]), he[2]);
-    float ringR       = fmaxf(maxHe * kRingRadiusScale, kRingRadiusMin);
+    float ringR       = kRingRadius;
 
     ESP::DX11::setDepthBias(1.0f);
 
@@ -196,13 +196,14 @@ void drawOBBAxes(OrientedBoundingBox& obb, int obbIdx, int selectedIdx) {
                      : Gizmo::isHot(id)    ? kHot[i]
                      :                       kArrowNormal[i];
 
-        Vec3  tip      = gizmoOrigin + axArr[i] * (he[i] * 1.2f);
+        // Arrows are fixed-length, centered at the OBB center.
+        Vec3  base     = center;
+        Vec3  tip      = center + axArr[i] * (kArrowLength * 0.5f);
         Vec3  perp     = axArr[(i + 1) % 3];
-        float headSize = he[i] * 0.15f;
-        Vec3  headBase = gizmoOrigin + axArr[i] * (he[i] * 1.2f * 0.8f);
-        ESP::DX11::drawLine(gizmoOrigin, tip, col);
-        ESP::DX11::drawLine(tip, headBase + perp * headSize, col);
-        ESP::DX11::drawLine(tip, headBase - perp * headSize, col);
+        Vec3  headBase = center + axArr[i] * (kArrowLength * 0.5f * 0.75f);
+        ESP::DX11::drawLine(base, tip, col);
+        ESP::DX11::drawLine(tip, headBase + perp * kArrowHeadSize, col);
+        ESP::DX11::drawLine(tip, headBase - perp * kArrowHeadSize, col);
 
         if (selected) {
             s_dragCtx[i].obb     = &obb;
@@ -211,7 +212,7 @@ void drawOBBAxes(OrientedBoundingBox& obb, int obbIdx, int selectedIdx) {
             Gizmo::GizmoWidget w = {};
             w.id        = id;
             w.numPoints = 2;
-            w.points[0] = gizmoOrigin;
+            w.points[0] = base;
             w.points[1] = tip;
             w.onDrag    = onTranslateDrag;
             w.ctx       = &s_dragCtx[i];
@@ -291,23 +292,23 @@ void drawOBBAxes(OrientedBoundingBox& obb, int obbIdx, int selectedIdx) {
             ESP::DX11::drawLine(fc + u * iconR, fc - u * iconR, col);
             ESP::DX11::drawLine(fc + v * iconR, fc - v * iconR, col);
             // Short outward tick
-            ESP::DX11::drawLine(fc, fc + axArr[i] * (iconR * s), col);
+            ESP::DX11::drawLine(fc, fc + axArr[i] * (0.1f * s), col);
 
             if (selected) {
                 s_faceCtx[face].obb     = &obb;
                 s_faceCtx[face].axisDir = axArr[i];
                 s_faceCtx[face].axis    = i;
                 s_faceCtx[face].sign    = s;
-
-                // Widget: small square in the face plane
+                
+                // Just use the cross icon already drawn in the face plane as the interactive handle
                 Gizmo::GizmoWidget w = {};
                 w.id        = fid;
                 w.closed    = true;
                 w.numPoints = 4;
-                w.points[0] = fc + u * iconR + v * iconR;
-                w.points[1] = fc - u * iconR + v * iconR;
-                w.points[2] = fc - u * iconR - v * iconR;
-                w.points[3] = fc + u * iconR - v * iconR;
+                w.points[0] = fc + u * iconR;
+                w.points[1] = fc - u * iconR;
+                w.points[2] = fc + v * iconR;
+                w.points[3] = fc - v * iconR;
                 w.onDrag    = onFaceDrag;
                 w.ctx       = &s_faceCtx[face];
                 Gizmo::submitGizmo(w);
