@@ -269,12 +269,15 @@ static void renderWorld() {
 
 // ── Placement + picking ───────────────────────────────────────────────────────
 
-static void placeOBB() {
+static void placeOBB(const Ray& mouseRay) {
     Beep(440, 100); // Play a beep sound at 440 Hz for 100 ms
 
     if (!s_currentEdits) return;
     Engine::RaycastResult result;
-    Engine::raycastPlayerCrosshair(&result);
+    Vec3 origin = mouseRay.origin;
+    Vec3 dir    = mouseRay.direction;
+    Vec3 displ  = dir * 200.f;
+    Engine::raycast(ENGINE_RAYCAST_PROJECTILE_FLAGS, &origin, &displ, 0, &result);
     if (result.hitType == Engine::HitType_Nothing) return;
 
     OrientedBoundingBox obb;
@@ -290,12 +293,10 @@ static void placeOBB() {
     s_selectedIdx = (int)s_currentEdits->orientedBoundingBoxes.size() - 1;
 }
 
-static void pickOBB() {
+static void pickOBB(const Ray& mouseRay) {
     if (!s_currentEdits) return;
-    auto* camera = Engine::getPlayerCameraPointer();
-    if (!camera) return;
 
-    Math::Ray ray{ camera->pos, camera->fwd };
+    Ray ray = mouseRay;
     auto& obbs = s_currentEdits->orientedBoundingBoxes;
 
     int   bestIdx = -1;
@@ -448,7 +449,9 @@ static void renderManagerWindow() {
     ImGui::Separator();
 
     if (ImGui::Button("Add (raycast)")) {
-        placeOBB();
+        Camera cam = buildEditorCamera();
+        ImGuiIO& io = ImGui::GetIO();
+        placeOBB(cam.mouseRay(io.MousePos.x, io.MousePos.y));
     }
     ImGui::SameLine();
     if (ImGui::Button("Duplicate") && s_selectedIdx >= 0 && s_selectedIdx < (int)obbs.size()) {
@@ -513,8 +516,15 @@ static void renderUI() {
     renderManagerWindow();
     renderCursor();
 
-    if (ImGui::IsKeyPressed(ImGuiKey_Keypad0, false)) placeOBB();
-    if (ImGui::IsKeyPressed(ImGuiKey_Keypad1, false)) pickOBB();
+    // Left click = pick OBB, Right click = place OBB.
+    // Guard against clicks that land inside an ImGui window.
+    if (!ImGui::GetIO().WantCaptureMouse) {
+        Camera cam = buildEditorCamera();
+        ImGuiIO& io = ImGui::GetIO();
+        Ray mRay = cam.mouseRay(io.MousePos.x, io.MousePos.y);
+        if (ImGui::IsMouseClicked(ImGuiMouseButton_Left,  false)) pickOBB(mRay);
+        if (ImGui::IsMouseClicked(ImGuiMouseButton_Right, false)) placeOBB(mRay);
+    }
 }
 
 #endif // ENABLE_LEVEL_EDITOR
