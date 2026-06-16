@@ -15,7 +15,7 @@
 #include "DynamicGeometry.hpp"
 
 // #define DEBUG_MARIO_GEOMETRY 1
-#define DEBUG_MARIO_COLLISION 1
+// #define DEBUG_MARIO_COLLISION 1
 
 namespace HaloCE::Mod::Mario {
 

@@ -392,6 +392,22 @@ Vec3 Camera::project(Vec3 p) {
     return Vec3{ x, y, z };
 }
 
+Ray Camera::mouseRay(float sx, float sy) {
+    // Invert project(): reconstruct the view-space direction at unit depth (z=1).
+    float t = tanf(fov / 2);
+    float xLocal, yLocal;
+    if (verticalFov) {
+        xLocal = (1.f - 2.f * sx / width)  * t * (width / height);
+        yLocal = (1.f - 2.f * sy / height) * t;
+    } else {
+        xLocal = (1.f - 2.f * sx / width)  * t;
+        yLocal = (1.f - 2.f * sy / height) * t * (height / width);
+    }
+    Vec3 l   = left();
+    Vec3 dir = (fwd + l * xLocal + up * yLocal).normalize();
+    return Ray{ pos, dir };
+}
+
 
 Vec3 orientationToEulerAngles(Vec3 xCol, Vec3 zCol) {
     // Context:

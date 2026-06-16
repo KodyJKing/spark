@@ -11,7 +11,9 @@
 #include "spark/hook/Hooks.hpp"
 #include "engine/raycast.hpp"
 #include "engine/player.hpp"       // getPlayerCameraPointer
+#include "math/Math.hpp"           // Math::convertFov
 #include "math/OBBIntersect.hpp"
+#include "GizmoWidgets.hpp"
 #include <array>
 #include <fstream>
 #include <filesystem>
@@ -39,10 +41,18 @@ LevelEdits* getLevelEdits(LevelEditContext& context) {
 
 // ── Editor state ─────────────────────────────────────────────────────────────
 
-static bool             s_editorOpen    = false;
+static bool             s_editorOpen         = false;
+static bool             s_editorInputEnabled = false; // toggled by Tab; suppresses game input
 static LevelEditContext s_currentContext = { "a50", 0 };
 static LevelEdits*      s_currentEdits  = Index::lookup(s_currentContext.levelName);
 static int              s_selectedIdx   = -1;
+
+// Per-axis UI colors: X=dark red, Y=dark green, Z=dark blue (XYZ→RGB convention).
+static const ImVec4 kAxisBg[3] = {
+    { 0.42f, 0.10f, 0.10f, 1.f },  // X — dark red
+    { 0.10f, 0.36f, 0.10f, 1.f },  // Y — dark green
+    { 0.10f, 0.18f, 0.44f, 1.f },  // Z — dark blue
+};
 
 // ── OBB geometry helpers ─────────────────────────────────────────────────────
 
@@ -91,33 +101,133 @@ static void drawOBBWireframe(const OrientedBoundingBox& obb, ImU32 color) {
     ESP::DX11::drawLine(c[6], c[7], color);
 }
 
-static void drawOBBAxes(const OrientedBoundingBox& obb) {
-    static const ImU32 kAxisColors[3] = {
-        IM_COL32(255, 64,  64,  255), // X — red
-        IM_COL32( 64, 255, 64,  255), // Y — green
-        IM_COL32( 64,  64, 255, 255), // Z — blue
+// ── Gizmo IDs ─────────────────────────────────────────────────────────────────
+
+// Encode (obb index 0-255, axis 0-2) into a stable non-zero uint32_t gizmo id.
+static uint32_t gizmoId(int obbIdx, int axis) {
+    return (uint32_t)(obbIdx + 1) << 4 | (uint32_t)axis;
+}
+
+// ── Translate drag context ────────────────────────────────────────────────────
+
+struct TranslateDragCtx {
+    OrientedBoundingBox* obb;
+    Vec3                 axisDir;   // world-space normalized axis
+};
+
+static void onTranslateDrag(void* ctx, Ray current, Ray prev) {
+    auto* c = static_cast<TranslateDragCtx*>(ctx);
+    Vec3 pCur  = Math::closestPointOnAxisToRay(current, c->obb->center, c->axisDir);
+    Vec3 pPrev = Math::closestPointOnAxisToRay(prev,    c->obb->center, c->axisDir);
+    Vec3 delta = pCur - pPrev;
+    float d    = c->axisDir.dot(delta);
+    c->obb->center += c->axisDir * d;
+}
+
+// Storage for drag contexts — one per axis, reused each frame.
+static TranslateDragCtx s_dragCtx[3];
+
+// ── World rendering ───────────────────────────────────────────────────────────
+
+// Draw OBB axis arrows, tinting hot/active axes bright.
+// obbIdx is used to build the gizmo id for isHot/isActive queries.
+static void drawOBBAxes(const OrientedBoundingBox& obb, int obbIdx) {
+    static const ImU32 kNormal[3] = {
+        IM_COL32(200,  48,  48, 220), // X — red
+        IM_COL32( 48, 200,  48, 220), // Y — green
+        IM_COL32( 48,  48, 200, 220), // Z — blue
     };
+    static const ImU32 kHot[3] = {
+        IM_COL32(255, 120, 120, 255), // X hot
+        IM_COL32(120, 255, 120, 255), // Y hot
+        IM_COL32(120, 120, 255, 255), // Z hot
+    };
+    static const ImU32 kActive[3] = {
+        IM_COL32(255, 255,  80, 255), // active — yellow for all axes
+        IM_COL32(255, 255,  80, 255),
+        IM_COL32(255, 255,  80, 255),
+    };
+
     auto axes = getAxes(obb);
     Vec3 axArr[3] = { axes.columns.x, axes.columns.y, axes.columns.z };
     const float he[3] = { obb.halfExtents.x, obb.halfExtents.y, obb.halfExtents.z };
-    Vec3 center = obb.center; // non-const copy — Vec3 operators are not const-qualified
+    Vec3 center = obb.center;
+
+    ESP::DX11::setDepthBias(1.0f);
 
     for (int i = 0; i < 3; i++) {
-        Vec3 tip  = center + axArr[i] * (he[i] * 1.2f);
-        ESP::DX11::drawLine(center, tip, kAxisColors[i]);
+        uint32_t id = gizmoId(obbIdx, i);
+        ImU32 col = Gizmo::isActive(id) ? kActive[i]
+                  : Gizmo::isHot(id)    ? kHot[i]
+                  :                       kNormal[i];
 
-        // Arrow head: two short lines angling back from the tip.
-        // The head lies in the plane spanned by this axis and the next one.
+        Vec3 tip  = center + axArr[i] * (he[i] * 1.2f);
+        ESP::DX11::drawLine(center, tip, col);
+
         Vec3 perp      = axArr[(i + 1) % 3];
         float headSize = he[i] * 0.15f;
         Vec3 headBase  = center + axArr[i] * (he[i] * 1.2f * 0.8f);
-        ESP::DX11::drawLine(tip, headBase + perp * headSize,  kAxisColors[i]);
-        ESP::DX11::drawLine(tip, headBase - perp * headSize, kAxisColors[i]);
+        ESP::DX11::drawLine(tip, headBase + perp * headSize, col);
+        ESP::DX11::drawLine(tip, headBase - perp * headSize, col);
     }
+
+    ESP::DX11::setDepthBias(0.0f);
+}
+
+// Submit gizmo widgets for the selected OBB's three translate handles.
+// Must be called between Gizmo::beginGizmos and Gizmo::endGizmos.
+static void submitOBBGizmos(OrientedBoundingBox& obb, int obbIdx, Camera cam) {
+    auto axes = getAxes(obb);
+    Vec3 axArr[3] = { axes.columns.x, axes.columns.y, axes.columns.z };
+    const float he[3] = { obb.halfExtents.x, obb.halfExtents.y, obb.halfExtents.z };
+    Vec3 center = obb.center;
+
+    for (int i = 0; i < 3; i++) {
+        Vec3 tip = center + axArr[i] * (he[i] * 1.2f);
+
+        // Project arrow shaft endpoints to screen.
+        Vec3 scCenter = cam.project(center);
+        Vec3 scTip    = cam.project(tip);
+
+        // Prepare drag context (points at the live OBB).
+        s_dragCtx[i].obb     = &obb;
+        s_dragCtx[i].axisDir = axArr[i];
+
+        Gizmo::GizmoWidget w = {};
+        w.id              = gizmoId(obbIdx, i);
+        w.numPoints       = 2;
+        w.screenPoints[0] = scCenter;
+        w.screenPoints[1] = scTip;
+        w.onDragBegin     = nullptr;
+        w.onDrag          = onTranslateDrag;
+        w.ctx             = &s_dragCtx[i];
+        Gizmo::submitGizmo(w);
+    }
+}
+
+static Camera buildEditorCamera() {
+    auto* ec = Engine::getPlayerCameraPointer();
+    ImGuiIO& io = ImGui::GetIO();
+    Camera cam;
+    cam.width  = io.DisplaySize.x;
+    cam.height = io.DisplaySize.y;
+    if (ec) {
+        cam.pos = ec->pos;
+        cam.fwd = ec->fwd;
+        cam.up  = ec->up;
+        // Engine FOV is horizontal — convert to vertical to match Camera::project / mouseRay.
+        cam.fov = Math::convertFov(ec->fov, cam.width, cam.height);
+    }
+    cam.verticalFov = true;
+    return cam;
 }
 
 static void renderWorld() {
     if (!s_editorOpen || !s_currentEdits) return;
+
+    Camera cam = buildEditorCamera();
+    Gizmo::beginGizmos(cam);
+
     ESP::DX11::begin();
     auto& obbs = s_currentEdits->orientedBoundingBoxes;
     for (int i = 0; i < (int)obbs.size(); i++) {
@@ -125,9 +235,36 @@ static void renderWorld() {
             ? IM_COL32(255, 220, 0,   255)   // selected — yellow
             : IM_COL32(255, 255, 255, 200);  // default  — white
         drawOBBWireframe(obbs[i], wireColor);
-        drawOBBAxes(obbs[i]);
+        drawOBBAxes(obbs[i], i);
+        if (i == s_selectedIdx) {
+            submitOBBGizmos(obbs[i], i, cam);
+        }
     }
+
+    // ── Debug: visualize mouse ray hit ────────────────────────────────────────
+    // Draws a short magenta vertical post wherever the mouse ray hits geometry.
+    // Remove once picking / axis drag are confirmed correct.
+    {
+        ImGuiIO& io = ImGui::GetIO();
+        Ray mRay = cam.mouseRay(io.MousePos.x, io.MousePos.y);
+        Vec3 origin  = mRay.origin;
+        Vec3 displ   = mRay.direction * 200.f;
+        Engine::RaycastResult hit;
+        Engine::raycast(ENGINE_RAYCAST_PROJECTILE_FLAGS, &origin, &displ, 0, &hit);
+        if (hit.hitType != Engine::HitType_Nothing) {
+            Vec3 lo = hit.pos + Vec3{ 0.f, 0.f, -0.05f }; // slightly below surface
+            Vec3 hi = hit.pos + Vec3{ 0.f, 0.f,  0.5f  };
+            ESP::DX11::drawLine(lo, hi, IM_COL32(255, 0, 255, 255));
+        }
+    }
+
     ESP::DX11::end();
+
+    bool gizmoDrag = Gizmo::endGizmos();
+    // If a drag became active while input mode was off, enable it automatically.
+    if (gizmoDrag && !s_editorInputEnabled) {
+        s_editorInputEnabled = true;
+    }
 }
 
 // ── Placement + picking ───────────────────────────────────────────────────────
@@ -217,6 +354,33 @@ static void saveLevelEdits() {
     printf("[LevelEdit] Saved %zu OBB(s) to %s\n", obbs.size(), path.string().c_str());
 }
 
+// ── ImGui helpers ─────────────────────────────────────────────────────────────
+
+// DragFloat3 with per-component XYZ background tinting (X=dark red, Y=dark green, Z=dark blue).
+static bool dragFloat3XYZ(const char* label, float* v, float speed, float vMin = 0.f, float vMax = 0.f) {
+    bool changed = false;
+    const ImGuiStyle& style = ImGui::GetStyle();
+    float totalWidth = ImGui::CalcItemWidth();
+    float compWidth  = (totalWidth - style.ItemInnerSpacing.x * 2.f) / 3.f;
+    const char* ids[3] = { "##x", "##y", "##z" };
+    ImGui::PushID(label);
+    for (int i = 0; i < 3; i++) {
+        if (i > 0) ImGui::SameLine(0.f, style.ItemInnerSpacing.x);
+        ImVec4 bgHov = { kAxisBg[i].x * 1.35f, kAxisBg[i].y * 1.35f, kAxisBg[i].z * 1.35f, 1.f };
+        ImVec4 bgAct = { kAxisBg[i].x * 1.65f, kAxisBg[i].y * 1.65f, kAxisBg[i].z * 1.65f, 1.f };
+        ImGui::PushStyleColor(ImGuiCol_FrameBg,        kAxisBg[i]);
+        ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, bgHov);
+        ImGui::PushStyleColor(ImGuiCol_FrameBgActive,  bgAct);
+        ImGui::SetNextItemWidth(compWidth);
+        changed |= ImGui::DragFloat(ids[i], v + i, speed, vMin, vMax);
+        ImGui::PopStyleColor(3);
+    }
+    ImGui::SameLine(0.f, style.ItemInnerSpacing.x);
+    ImGui::TextUnformatted(label);
+    ImGui::PopID();
+    return changed;
+}
+
 // ── ImGui windows ─────────────────────────────────────────────────────────────
 
 static void renderEditWindow() {
@@ -231,9 +395,9 @@ static void renderEditWindow() {
     ImGui::Begin("OBB Edit", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
     ImGui::Text("OBB #%d", s_selectedIdx);
     ImGui::Separator();
-    ImGui::DragFloat3("Center",       &obb.center.x,      0.05f);
-    ImGui::DragFloat3("Half Extents", &obb.halfExtents.x, 0.05f, 0.01f, 100.0f);
-    ImGui::DragFloat3("Orientation",  &obb.orientation.x, 1.0f, -180.0f, 180.0f);
+    dragFloat3XYZ("Center",       &obb.center.x,      0.05f);
+    dragFloat3XYZ("Half Extents", &obb.halfExtents.x, 0.05f, 0.01f, 100.0f);
+    dragFloat3XYZ("Orientation",  &obb.orientation.x, 1.0f, -180.0f, 180.0f);
 
     ImGui::Separator();
     ImGui::Text("Nudge (local axes):");
@@ -243,9 +407,16 @@ static void renderEditWindow() {
 
     static const char* kLabels[3][2] = { {"+X","-X"}, {"+Y","-Y"}, {"+Z","-Z"} };
     for (int i = 0; i < 3; i++) {
+        ImVec4 bg    = kAxisBg[i];
+        ImVec4 bgHov = { bg.x * 1.35f, bg.y * 1.35f, bg.z * 1.35f, 1.f };
+        ImVec4 bgAct = { bg.x * 1.65f, bg.y * 1.65f, bg.z * 1.65f, 1.f };
+        ImGui::PushStyleColor(ImGuiCol_Button,        bg);
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, bgHov);
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive,  bgAct);
         if (ImGui::Button(kLabels[i][0])) obb.center += axArr[i] * s_nudge;
         ImGui::SameLine();
         if (ImGui::Button(kLabels[i][1])) obb.center -= axArr[i] * s_nudge;
+        ImGui::PopStyleColor(3);
         if (i < 2) ImGui::SameLine();
     }
     ImGui::End();
@@ -326,18 +497,16 @@ static void renderUI() {
         if (s_editorOpen) {
             // Refresh in case the level changed since last open.
             s_currentEdits = Index::lookup(s_currentContext.levelName);
+        } else {
+            s_editorInputEnabled = false; // reset input mode when editor closes
         }
     }
 
     if (!s_editorOpen) return;
 
-    // Tab toggles focus of the OBB Edit window.
+    // Tab toggles editor input mode (suppresses game controls, shows cursor).
     if (ImGui::IsKeyPressed(ImGuiKey_Tab, false)) {
-        if (ImGui::IsWindowFocused(ImGuiFocusedFlags_AnyWindow)) {
-            ImGui::SetWindowFocus(nullptr);
-        } else {
-            ImGui::SetWindowFocus("OBB Edit");
-        }
+        s_editorInputEnabled = !s_editorInputEnabled;
     }
 
     renderEditWindow();
@@ -389,7 +558,7 @@ void initHandlers(Spark::ModId modId) {
 
 bool isInputSuppressed() {
 #ifdef ENABLE_LEVEL_EDITOR
-    return s_editorOpen && ImGui::IsWindowFocused(ImGuiFocusedFlags_AnyWindow);
+    return s_editorOpen && s_editorInputEnabled;
 #else
     return false;
 #endif

@@ -144,12 +144,20 @@ struct Quaternion {
     Quaternion pow( float exponent );
 };
 
+struct Ray {
+    Vec3 origin;
+    Vec3 direction; // should be normalized
+};
+
 struct Camera {
     Vec3 pos, fwd, up;
     float fov, width, height;
     bool verticalFov;
     Vec3 left();
     Vec3 project(Vec3 p);
+    // Unproject a screen-space pixel (sx, sy) to a world-space ray from the camera.
+    // Exact inverse of project() at unit depth. direction is normalized.
+    Ray  mouseRay(float sx, float sy);
 };
 
 Vec3 orientationToEulerAngles(Vec3 fwd, Vec3 up);
