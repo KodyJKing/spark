@@ -2,6 +2,7 @@
 #include "math/Vectors.hpp"
 #include "engine/halo1.hpp"
 #include "decomp/sm64.h"
+#include "level-edit/MarioLevelEdit.hpp"
 
 namespace HaloCE::Mod::Mario {
     bool enableMario = true;
@@ -38,7 +39,7 @@ namespace HaloCE::Mod::Mario {
         if (playerEntity->vehicleHandle != NULL_HANDLE) return false;
         if (playerEntity->parentHandle != NULL_HANDLE) return false;
 
-        return enableMario && possessMario;
+        return enableMario && possessMario && !::Mod::Mario::LevelEdit::isInputSuppressed();
     }
 
     bool marioAirborne() {
