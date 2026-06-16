@@ -4,9 +4,8 @@
 
 namespace Mod::DevTools::DX11RenderTest {
     void initHandlers(Spark::ModId modId) {
-        Spark::RenderEntityModels::addHandler(modId, +[](void*, Spark::RenderEntityModels::Cursor next, uint32_t* pEntityHandle) {
-            // Custom rendering logic for entity models can be added here.
-            next(pEntityHandle);
+        Spark::RenderBSPAlbedo::addHandler(modId, +[](void*, Spark::RenderBSPAlbedo::Cursor next) {
+            next();
 
             using namespace Spark::Overlay;
 

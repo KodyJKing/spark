@@ -13,6 +13,7 @@ HOOK( UpdateEntity,         uint64_t, 0xB3A06CU, uint32_t /*entityHandle*/      
 HOOK( UpdateWorldBones,     void,     0xB3A614U, uint32_t /*entityHandle*/                              )
 HOOK( RenderEntityModels,   void,     0xB48C90U, uint32_t* /*entityHandleScratch*/                      )
 HOOK( RenderEntity,         void,     0xB48CD0U, Engine::RenderEntityRequest*                           )
+HOOK( RenderBSPAlbedo,      void,     0xC76CD0U                                                         )
 HOOK( TryPickInteractable,  void,     0xAD559CU, uint16_t, int16_t, uint32_t /*entityHandle*/, int16_t  )
 HOOK( UpdateFlareTransform, void,     0xBE7D70U, uint32_t /*flareHandle*/                               )
 // This is a misnoner. It spawns many types of objects. Todo: Rename this everywhere.

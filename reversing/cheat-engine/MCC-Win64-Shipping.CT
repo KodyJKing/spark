@@ -5425,6 +5425,256 @@ halo1.dll+BE615D: F3 0F 59 3D 6B 99 D6 00  - mulss xmm7,[halo1.dll+194FAD0]
         <Byte>02</Byte>
       </After>
     </CodeEntry>
+    <CodeEntry>
+      <Description>Change of call 7FFF276B23B8</Description>
+      <AddressString>halo1.dll+BBD39F</AddressString>
+      <Before>
+        <Byte>E8</Byte>
+        <Byte>B1</Byte>
+        <Byte>9B</Byte>
+        <Byte>0B</Byte>
+        <Byte>00</Byte>
+      </Before>
+      <Actual>
+        <Byte>E8</Byte>
+        <Byte>14</Byte>
+        <Byte>50</Byte>
+        <Byte>05</Byte>
+        <Byte>00</Byte>
+      </Actual>
+      <After>
+        <Byte>66</Byte>
+        <Byte>41</Byte>
+        <Byte>3B</Byte>
+        <Byte>F4</Byte>
+        <Byte>75</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of call 7FFF27716F50</Description>
+      <AddressString>halo1.dll+BBD39A</AddressString>
+      <Before>
+        <Byte>E8</Byte>
+        <Byte>C2</Byte>
+        <Byte>47</Byte>
+        <Byte>F2</Byte>
+        <Byte>FF</Byte>
+      </Before>
+      <Actual>
+        <Byte>E8</Byte>
+        <Byte>B1</Byte>
+        <Byte>9B</Byte>
+        <Byte>0B</Byte>
+        <Byte>00</Byte>
+      </Actual>
+      <After>
+        <Byte>E8</Byte>
+        <Byte>14</Byte>
+        <Byte>50</Byte>
+        <Byte>05</Byte>
+        <Byte>00</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of call 7FFF27581B5C</Description>
+      <AddressString>halo1.dll+BBD395</AddressString>
+      <Before>
+        <Byte>6F</Byte>
+        <Byte>03</Byte>
+        <Byte>00</Byte>
+        <Byte>33</Byte>
+        <Byte>C9</Byte>
+      </Before>
+      <Actual>
+        <Byte>E8</Byte>
+        <Byte>C2</Byte>
+        <Byte>47</Byte>
+        <Byte>F2</Byte>
+        <Byte>FF</Byte>
+      </Actual>
+      <After>
+        <Byte>E8</Byte>
+        <Byte>B1</Byte>
+        <Byte>9B</Byte>
+        <Byte>0B</Byte>
+        <Byte>00</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of call 7FFF26B50D40</Description>
+      <AddressString>halo1.dll+BBD3AA</AddressString>
+      <Before>
+        <Byte>41</Byte>
+        <Byte>3B</Byte>
+        <Byte>F4</Byte>
+        <Byte>75</Byte>
+        <Byte>05</Byte>
+      </Before>
+      <Actual>
+        <Byte>E8</Byte>
+        <Byte>91</Byte>
+        <Byte>39</Byte>
+        <Byte>4F</Byte>
+        <Byte>FF</Byte>
+      </Actual>
+      <After>
+        <Byte>E8</Byte>
+        <Byte>D4</Byte>
+        <Byte>49</Byte>
+        <Byte>F7</Byte>
+        <Byte>FF</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of call 7FFF275D1D88</Description>
+      <AddressString>halo1.dll+BBD3AF</AddressString>
+      <Before>
+        <Byte>E8</Byte>
+        <Byte>91</Byte>
+        <Byte>39</Byte>
+        <Byte>4F</Byte>
+        <Byte>FF</Byte>
+      </Before>
+      <Actual>
+        <Byte>E8</Byte>
+        <Byte>D4</Byte>
+        <Byte>49</Byte>
+        <Byte>F7</Byte>
+        <Byte>FF</Byte>
+      </Actual>
+      <After>
+        <Byte>E8</Byte>
+        <Byte>8B</Byte>
+        <Byte>B4</Byte>
+        <Byte>F0</Byte>
+        <Byte>FF</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of call 7FFF27568844</Description>
+      <AddressString>halo1.dll+BBD3B4</AddressString>
+      <Before>
+        <Byte>E8</Byte>
+        <Byte>D4</Byte>
+        <Byte>49</Byte>
+        <Byte>F7</Byte>
+        <Byte>FF</Byte>
+      </Before>
+      <Actual>
+        <Byte>E8</Byte>
+        <Byte>8B</Byte>
+        <Byte>B4</Byte>
+        <Byte>F0</Byte>
+        <Byte>FF</Byte>
+      </Actual>
+      <After>
+        <Byte>E8</Byte>
+        <Byte>FE</Byte>
+        <Byte>39</Byte>
+        <Byte>F2</Byte>
+        <Byte>FF</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of call 7FFF27580DBC</Description>
+      <AddressString>halo1.dll+BBD3B9</AddressString>
+      <Before>
+        <Byte>E8</Byte>
+        <Byte>8B</Byte>
+        <Byte>B4</Byte>
+        <Byte>F0</Byte>
+        <Byte>FF</Byte>
+      </Before>
+      <Actual>
+        <Byte>E8</Byte>
+        <Byte>FE</Byte>
+        <Byte>39</Byte>
+        <Byte>F2</Byte>
+        <Byte>FF</Byte>
+      </Actual>
+      <After>
+        <Byte>48</Byte>
+        <Byte>8B</Byte>
+        <Byte>8D</Byte>
+        <Byte>80</Byte>
+        <Byte>01</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of call _renderBSP</Description>
+      <AddressString>halo1.dll+BBD24E</AddressString>
+      <Before>
+        <Byte>E8</Byte>
+        <Byte>5A</Byte>
+        <Byte>7F</Byte>
+        <Byte>02</Byte>
+        <Byte>00</Byte>
+      </Before>
+      <Actual>
+        <Byte>E8</Byte>
+        <Byte>7D</Byte>
+        <Byte>9A</Byte>
+        <Byte>0B</Byte>
+        <Byte>00</Byte>
+      </Actual>
+      <After>
+        <Byte>66</Byte>
+        <Byte>39</Byte>
+        <Byte>1D</Byte>
+        <Byte>FA</Byte>
+        <Byte>01</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of call 7FFF276851A8</Description>
+      <AddressString>halo1.dll+BBD249</AddressString>
+      <Before>
+        <Byte>F3</Byte>
+        <Byte>DF</Byte>
+        <Byte>01</Byte>
+        <Byte>7C</Byte>
+        <Byte>DA</Byte>
+      </Before>
+      <Actual>
+        <Byte>E8</Byte>
+        <Byte>5A</Byte>
+        <Byte>7F</Byte>
+        <Byte>02</Byte>
+        <Byte>00</Byte>
+      </Actual>
+      <After>
+        <Byte>E8</Byte>
+        <Byte>7D</Byte>
+        <Byte>9A</Byte>
+        <Byte>0B</Byte>
+        <Byte>00</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of call 7FFF27684C94</Description>
+      <AddressString>halo1.dll+BBD20E</AddressString>
+      <Before>
+        <Byte>B9</Byte>
+        <Byte>03</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+      </Before>
+      <Actual>
+        <Byte>E8</Byte>
+        <Byte>81</Byte>
+        <Byte>7A</Byte>
+        <Byte>02</Byte>
+        <Byte>00</Byte>
+      </Actual>
+      <After>
+        <Byte>84</Byte>
+        <Byte>C0</Byte>
+        <Byte>74</Byte>
+        <Byte>32</Byte>
+        <Byte>66</Byte>
+      </After>
+    </CodeEntry>
   </CheatCodes>
   <UserdefinedSymbols/>
   <Structures StructVersion="2">
@@ -8066,10 +8316,11 @@ halo1.dll+BE615D: F3 0F 59 3D 6B 99 D6 00  - mulss xmm7,[halo1.dll+194FAD0]
         <Element Offset="4" Vartype="2 Bytes" Bytesize="2" OffsetHex="00000004" Description="shaderIndex" DisplayMethod="hexadecimal"/>
         <Element Offset="6" Vartype="Byte" Bytesize="1" RLECount="2" OffsetHex="00000006" DisplayMethod="hexadecimal"/>
         <Element Offset="8" Vartype="Float" Bytesize="4" RLECount="4" OffsetHex="00000008" DisplayMethod="unsigned integer"/>
-        <Element Offset="24" Vartype="4 Bytes" Bytesize="4" OffsetHex="00000018" DisplayMethod="hexadecimal"/>
+        <Element Offset="24" Vartype="4 Bytes" Bytesize="4" RLECount="2" OffsetHex="00000018" DisplayMethod="hexadecimal"/>
         <Element Offset="28" Vartype="Float" Bytesize="4" OffsetHex="0000001C" DisplayMethod="unsigned integer"/>
-        <Element Offset="28" Vartype="4 Bytes" Bytesize="4" RLECount="2" OffsetHex="0000001C" DisplayMethod="hexadecimal"/>
-        <Element Offset="32" Vartype="4 Bytes" Bytesize="4" RLECount="11" OffsetHex="00000020" DisplayMethod="unsigned integer"/>
+        <Element Offset="32" Vartype="4 Bytes" Bytesize="4" OffsetHex="00000020" DisplayMethod="unsigned integer"/>
+        <Element Offset="32" Vartype="4 Bytes" Bytesize="4" OffsetHex="00000020" DisplayMethod="hexadecimal"/>
+        <Element Offset="36" Vartype="4 Bytes" Bytesize="4" RLECount="10" OffsetHex="00000024" DisplayMethod="unsigned integer"/>
         <Element Offset="76" Vartype="4 Bytes" Bytesize="4" RLECount="2" OffsetHex="0000004C" DisplayMethod="hexadecimal"/>
         <Element Offset="84" Vartype="4 Bytes" Bytesize="4" RLECount="2" OffsetHex="00000054" DisplayMethod="unsigned integer"/>
         <Element Offset="92" Vartype="4 Bytes" Bytesize="4" OffsetHex="0000005C" DisplayMethod="hexadecimal"/>
@@ -8140,6 +8391,11 @@ halo1.dll+BE615D: F3 0F 59 3D 6B 99 D6 00  - mulss xmm7,[halo1.dll+194FAD0]
 
 </LuaScript>
   <DisassemblerComments>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+92DCC</Address>
+      <Comment>simulation thread entry point?
+</Comment>
+    </DisassemblerComment>
     <DisassemblerComment>
       <Address>"halo1.dll"+A99888</Address>
       <Comment>call update player controller (other)
@@ -8610,6 +8866,16 @@ RCX = VertexBlockBase
     <DisassemblerComment>
       <Address>"halo1.dll"+BDB03B</Address>
       <Comment>Creates decal
+</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+BF5E79</Address>
+      <Comment>access dx11 device ctx vftable
+</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+BF5FE8</Address>
+      <Comment>?? renders translucent effects
 </Comment>
     </DisassemblerComment>
     <DisassemblerComment>

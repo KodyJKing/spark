@@ -62,9 +62,8 @@ namespace Spark::Overlay::ESP::DX11 {
     static ID3D11DepthStencilState* s_depthState      = nullptr;
 
     static Vertex s_drawList[MAX_VERTS];
-    static UINT   s_vertexCount       = 0;
-    static float  s_depthBias         = 0.0f;
-    static float  s_cachedDepthBias   = 0.0f; // matches bias baked into s_rasterizerState
+    static UINT   s_vertexCount = 0;
+    static float  s_depthBias   = 0.0f;
 
     void init() {
         ID3D11DeviceContext* context = Engine::getD3D11Context();
@@ -239,22 +238,6 @@ namespace Spark::Overlay::ESP::DX11 {
         }
 
         // --- Set our pipeline state ---
-        // Rebuild rasterizer state if depth bias changed since last frame.
-        if (s_depthBias != s_cachedDepthBias) {
-            ID3D11Device* device = nullptr;
-            context->GetDevice(&device);
-            if (device) {
-                if (s_rasterizerState) { s_rasterizerState->Release(); s_rasterizerState = nullptr; }
-                D3D11_RASTERIZER_DESC rastDesc = {};
-                rastDesc.FillMode             = D3D11_FILL_SOLID;
-                rastDesc.CullMode             = D3D11_CULL_NONE;
-                rastDesc.DepthClipEnable      = TRUE;
-                rastDesc.SlopeScaledDepthBias = s_depthBias;
-                device->CreateRasterizerState(&rastDesc, &s_rasterizerState);
-                device->Release();
-                s_cachedDepthBias = s_depthBias;
-            }
-        }
         UINT stride = sizeof(Vertex), offset = 0;
         context->IASetInputLayout(s_inputLayout);
         context->IASetVertexBuffers(0, 1, &s_vertexBuffer, &stride, &offset);
@@ -313,6 +296,12 @@ namespace Spark::Overlay::ESP::DX11 {
         if (s_vertexCount + 2 > MAX_VERTS) return;
 
         auto& cam = ESP::camera;
+
+        // --- Depth bias: push vertices toward the camera position ---
+        if (s_depthBias != 0.0f) {
+            a = a + (cam.pos - a).normalize() * s_depthBias;
+            b = b + (cam.pos - b).normalize() * s_depthBias;
+        }
 
         // --- CPU near-plane clip: prevents degenerate vertices behind the camera ---
         {
