@@ -26,6 +26,10 @@ static uint32_t translateId(int obbIdx, int axis) {
 static uint32_t rotateId(int obbIdx, int axis) {
     return (uint32_t)(obbIdx + 1) << 4 | 4u | (uint32_t)axis;
 }
+// face = axis*2 + (sign>0 ? 0 : 1), values 0-5 → lower-nibble bits 8-13
+static uint32_t faceId(int obbIdx, int face) {
+    return (uint32_t)(obbIdx + 1) << 4 | (8u + (uint32_t)face);
+}
 
 // ── Translate drag ────────────────────────────────────────────────────────────
 
@@ -101,6 +105,35 @@ static void onRotateDrag(void* ctx, Ray current, Ray prev) {
 
 static RotateDragCtx s_rotCtx[3]; // one per axis, reused each frame
 
+// ── Face extrude drag ────────────────────────────────────────────────────────────
+
+struct FaceDragCtx {
+    OrientedBoundingBox* obb;
+    Vec3                 axisDir; // outward face normal (world-space)
+    int                  axis;   // 0=X, 1=Y, 2=Z
+    float                sign;   // +1 = positive face, -1 = negative face
+};
+
+static void onFaceDrag(void* ctx, Ray current, Ray prev) {
+    auto* c     = static_cast<FaceDragCtx*>(ctx);
+    Vec3  ax    = c->axisDir;
+    Vec3  pCur  = closestPointOnAxisToRay(current, c->obb->center, ax);
+    Vec3  pPrev = closestPointOnAxisToRay(prev,    c->obb->center, ax);
+    // raw: +ve = moved in +axisDir direction
+    float raw  = ax.dot(pCur - pPrev);
+    // hd: half the outward delta (applied symmetrically to he and center)
+    float hd   = c->sign * raw * 0.5f;
+
+    float& he = c->axis == 0 ? c->obb->halfExtents.x
+              : c->axis == 1 ? c->obb->halfExtents.y
+              :                 c->obb->halfExtents.z;
+    if (he + hd < 0.02f) hd = 0.02f - he; // prevent inversion
+    he += hd;
+    c->obb->center += ax * (c->sign * hd);
+}
+
+static FaceDragCtx s_faceCtx[6]; // one per face (±X, ±Y, ±Z), reused each frame
+
 // ── Public draw functions ─────────────────────────────────────────────────────
 
 void drawOBBWireframe(const OrientedBoundingBox& obb, ImU32 color) {
@@ -147,10 +180,12 @@ void drawOBBAxes(OrientedBoundingBox& obb, int obbIdx, int selectedIdx) {
     auto axes = getAxes(obb);
     Vec3 axArr[3] = { axes.columns.x, axes.columns.y, axes.columns.z };
     const float he[3] = { obb.halfExtents.x, obb.halfExtents.y, obb.halfExtents.z };
-    Vec3  center   = obb.center;
-    bool  selected = (obbIdx == selectedIdx);
-    float maxHe    = fmaxf(fmaxf(he[0], he[1]), he[2]);
-    float ringR    = fmaxf(maxHe * kRingRadiusScale, kRingRadiusMin);
+    Vec3  center      = obb.center;
+    // Anchor gizmos at the bottom face (local -Z) so they don't obscure the OBB.
+    Vec3  gizmoOrigin = center - axArr[2] * he[2];
+    bool  selected    = (obbIdx == selectedIdx);
+    float maxHe       = fmaxf(fmaxf(he[0], he[1]), he[2]);
+    float ringR       = fmaxf(maxHe * kRingRadiusScale, kRingRadiusMin);
 
     ESP::DX11::setDepthBias(1.0f);
 
@@ -161,11 +196,11 @@ void drawOBBAxes(OrientedBoundingBox& obb, int obbIdx, int selectedIdx) {
                      : Gizmo::isHot(id)    ? kHot[i]
                      :                       kArrowNormal[i];
 
-        Vec3  tip      = center + axArr[i] * (he[i] * 1.2f);
+        Vec3  tip      = gizmoOrigin + axArr[i] * (he[i] * 1.2f);
         Vec3  perp     = axArr[(i + 1) % 3];
         float headSize = he[i] * 0.15f;
-        Vec3  headBase = center + axArr[i] * (he[i] * 1.2f * 0.8f);
-        ESP::DX11::drawLine(center, tip, col);
+        Vec3  headBase = gizmoOrigin + axArr[i] * (he[i] * 1.2f * 0.8f);
+        ESP::DX11::drawLine(gizmoOrigin, tip, col);
         ESP::DX11::drawLine(tip, headBase + perp * headSize, col);
         ESP::DX11::drawLine(tip, headBase - perp * headSize, col);
 
@@ -176,7 +211,7 @@ void drawOBBAxes(OrientedBoundingBox& obb, int obbIdx, int selectedIdx) {
             Gizmo::GizmoWidget w = {};
             w.id        = id;
             w.numPoints = 2;
-            w.points[0] = center;
+            w.points[0] = gizmoOrigin;
             w.points[1] = tip;
             w.onDrag    = onTranslateDrag;
             w.ctx       = &s_dragCtx[i];
@@ -210,16 +245,73 @@ void drawOBBAxes(OrientedBoundingBox& obb, int obbIdx, int selectedIdx) {
             s_rotCtx[i].axisDir = axArr[i];
 
             Gizmo::GizmoWidget w = {};
-            w.id       = rid;
-            w.closed   = true;
+            w.id        = rid;
+            w.closed    = true;
             w.numPoints = kRingSegments;
             for (int k = 0; k < kRingSegments; k++) {
-                float ang    = (2.f * kPi * k) / (float)kRingSegments;
-                w.points[k]  = center + u * (cosf(ang) * ringR) + v * (sinf(ang) * ringR);
+                float ang   = (2.f * kPi * k) / (float)kRingSegments;
+                w.points[k] = center + u * (cosf(ang) * ringR) + v * (sinf(ang) * ringR);
             }
             w.onDrag = onRotateDrag;
             w.ctx    = &s_rotCtx[i];
             Gizmo::submitGizmo(w);
+        }
+    }
+
+    // ── Face extrude handles ──────────────────────────────────────────────────────
+    // Small crosshair icon at each face center; drag to extrude that face.
+    // Opposite face stays fixed; the OBB center shifts by half the delta.
+    static const ImU32 kFaceNormal[3] = {
+        IM_COL32(220,  70,  70, 180),
+        IM_COL32( 70, 220,  70, 180),
+        IM_COL32( 70,  70, 220, 180),
+    };
+    static constexpr float kFaceIconScale = 0.30f;
+
+    for (int i = 0; i < 3; i++) {
+        Vec3  u  = axArr[(i + 1) % 3];
+        Vec3  v  = axArr[(i + 2) % 3];
+        float us = he[(i + 1) % 3];
+        float vs = he[(i + 2) % 3];
+        float iconR = fmaxf(fminf(us, vs) * kFaceIconScale, 0.05f);
+
+        for (int si = 0; si < 2; si++) {
+            float    s    = si == 0 ? 1.f : -1.f;
+            int      face = i * 2 + si;
+            uint32_t fid  = faceId(obbIdx, face);
+
+            ImU32 col = Gizmo::isActive(fid) ? kActive[i]
+                      : Gizmo::isHot(fid)    ? kHot[i]
+                      : selected             ? kFaceNormal[i]
+                      :                        IM_COL32(120, 120, 120, 80);
+
+            Vec3 fc = center + axArr[i] * (he[i] * s); // face center
+
+            // Cross icon in the face plane
+            ESP::DX11::drawLine(fc + u * iconR, fc - u * iconR, col);
+            ESP::DX11::drawLine(fc + v * iconR, fc - v * iconR, col);
+            // Short outward tick
+            ESP::DX11::drawLine(fc, fc + axArr[i] * (iconR * s), col);
+
+            if (selected) {
+                s_faceCtx[face].obb     = &obb;
+                s_faceCtx[face].axisDir = axArr[i];
+                s_faceCtx[face].axis    = i;
+                s_faceCtx[face].sign    = s;
+
+                // Widget: small square in the face plane
+                Gizmo::GizmoWidget w = {};
+                w.id        = fid;
+                w.closed    = true;
+                w.numPoints = 4;
+                w.points[0] = fc + u * iconR + v * iconR;
+                w.points[1] = fc - u * iconR + v * iconR;
+                w.points[2] = fc - u * iconR - v * iconR;
+                w.points[3] = fc + u * iconR - v * iconR;
+                w.onDrag    = onFaceDrag;
+                w.ctx       = &s_faceCtx[face];
+                Gizmo::submitGizmo(w);
+            }
         }
     }
 

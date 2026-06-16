@@ -44,6 +44,15 @@ struct Vec3 {
     // Gram-Schmidt: returns a new zCol that is orthogonal to xCol and normalized.
     // If zCol is nearly parallel to xCol (|dot| > 0.99), falls back to world +Y.
     static Vec3 orthonormalize(Vec3 xCol, Vec3 zCol);
+
+    static Vec3 getTangent(Vec3 normal, Vec3 reference) {
+        Vec3 tangent = normal.cross(reference);
+        if (tangent.lengthSquared() < 1e-6f)
+            tangent = normal.cross(Vec3{ 0.f, 1.f, 0.f });
+        if (tangent.lengthSquared() < 1e-6f)
+            tangent = normal.cross(Vec3{ 1.f, 0.f, 0.f });
+        return tangent.normalize();
+    }
 };
 
 struct Vec3i {

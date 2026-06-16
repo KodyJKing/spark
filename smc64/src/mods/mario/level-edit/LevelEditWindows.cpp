@@ -83,6 +83,28 @@ static void pickOBB(EditorState& state, const Ray& mouseRay) {
 
 // ── World rendering ───────────────────────────────────────────────────────────
 
+void renderWorldCursor(EditorState& state, Camera& cam) {
+    ImGuiIO& io = ImGui::GetIO();
+    Ray mRay   = cam.mouseRay(io.MousePos.x, io.MousePos.y);
+    Vec3 origin = mRay.origin;
+    Vec3 displ  = mRay.direction * 200.f;
+    Engine::RaycastResult hit;
+    Engine::raycast(ENGINE_RAYCAST_PROJECTILE_FLAGS, &origin, &displ, 0, &hit);
+    if (hit.hitType != Engine::HitType_Nothing) {
+        auto drawLine = +[](Vec3 a, Vec3 n, float r) {
+            ESP::DX11::drawLine(a - n * r, a + n * r, IM_COL32(255, 255, 255, 128));
+        };
+        Vec3 normal = hit.normal;
+        Vec3 tangent = Vec3::getTangent(normal, Vec3{ 0.f, 0.f, 1.f });
+        Vec3 bitangent = normal.cross(tangent);
+        ESP::DX11::setDepthBias(0.01f);
+        drawLine(hit.pos, normal, 0.1f);
+        drawLine(hit.pos, tangent, 0.05f);
+        drawLine(hit.pos, bitangent, 0.05f);
+        ESP::DX11::setDepthBias(0.f);
+    }
+}
+
 void renderWorld(EditorState& state) {
     if (!state.editorOpen || !state.currentEdits) return;
 
@@ -99,22 +121,8 @@ void renderWorld(EditorState& state) {
         drawOBBAxes(obbs[i], i, state.selectedIdx);
     }
 
-    // ── Debug: visualize mouse ray hit ────────────────────────────────────────
-    // Draws a short magenta vertical post wherever the mouse ray hits geometry.
-    // Remove once picking / axis drag are confirmed correct.
-    {
-        ImGuiIO& io = ImGui::GetIO();
-        Ray mRay   = cam.mouseRay(io.MousePos.x, io.MousePos.y);
-        Vec3 origin = mRay.origin;
-        Vec3 displ  = mRay.direction * 200.f;
-        Engine::RaycastResult hit;
-        Engine::raycast(ENGINE_RAYCAST_PROJECTILE_FLAGS, &origin, &displ, 0, &hit);
-        if (hit.hitType != Engine::HitType_Nothing) {
-            Vec3 lo = hit.pos + Vec3{ 0.f, 0.f, -0.05f };
-            Vec3 hi = hit.pos + Vec3{ 0.f, 0.f,  0.5f  };
-            ESP::DX11::drawLine(lo, hi, IM_COL32(255, 0, 255, 255));
-        }
-    }
+    if (state.editorInputEnabled)
+        renderWorldCursor(state, cam);
 
     ESP::DX11::end();
 
