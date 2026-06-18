@@ -25,6 +25,7 @@
                     - Allow placement of planes, boxes, capsules.
                     - Allow deletion of unwanted faces from Halo's BSP.
                     - Level tweak exporter.
+                - Fix Mario getting stuck behind backfacing sliver triangles in Covenant hallways.
         
     - Combat:
         - Melee

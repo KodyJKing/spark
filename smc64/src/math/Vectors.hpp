@@ -53,6 +53,30 @@ struct Vec3 {
             tangent = normal.cross(Vec3{ 1.f, 0.f, 0.f });
         return tangent.normalize();
     }
+
+    static Vec3 up() {
+        return Vec3{ 0.f, 0.f, 1.f };
+    }
+
+    static Vec3 down() {
+        return Vec3{ 0.f, 0.f, -1.f };
+    }
+    
+    static Vec3 right() {
+        return Vec3{ 0.f, 1.f, 0.f };
+    }
+
+    static Vec3 left() {
+        return Vec3{ 0.f, -1.f, 0.f };
+    }
+    
+    static Vec3 forward() {
+        return Vec3{ 1.f, 0.f, 0.f };
+    }
+
+    static Vec3 back() {
+        return Vec3{ -1.f, 0.f, 0.f };
+    }
 };
 
 struct Vec3i {

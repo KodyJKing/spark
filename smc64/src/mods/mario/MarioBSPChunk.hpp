@@ -27,4 +27,7 @@ namespace HaloCE::Mod::Mario::MarioBSPChunk {
     // Release the static surface buffer (call on shutdown).
     void free();
 
+    // Draw the currently loaded static surfaces as wireframe triangles (debug only).
+    void debugRender();
+
 }

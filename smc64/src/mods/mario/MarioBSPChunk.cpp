@@ -12,10 +12,12 @@
 #include <cmath>
 #include <cstring>
 
-// #define DEBUG_BSP_CHUNK 1
+#define DEBUG_BSP_CHUNK 1
 
 #ifdef DEBUG_BSP_CHUNK
+    #define MAX_DISTANCE_WORLD_UNITS 2.0f
     #include <iostream>
+    #include "spark/overlay/ESP.hpp"
     #define LOG(x) std::cout << "[MarioBSPChunk] " << x << std::endl;
 #else
     #define LOG(x) ;
@@ -120,6 +122,42 @@ namespace HaloCE::Mod::Mario::MarioBSPChunk {
             staticSurfaces = nullptr;
             staticSurfacesCount = 0;
         }
+    }
+
+    #ifdef DEBUG_BSP_CHUNK
+    static void drawStaticSurfaces() {
+        namespace ESP = Spark::Overlay::ESP;
+        auto cameraPos = ESP::camera.pos;
+        constexpr ImU32 color = IM_COL32(0, 255, 128, 80);
+        for (size_t i = 0; i < staticSurfacesCount; i++) {
+            const SM64Surface& s = staticSurfaces[i];
+            Vec3 v0 = Coordinates::marioLocalToHaloWorld(s.vertices[0], marioChunk);
+            Vec3 v1 = Coordinates::marioLocalToHaloWorld(s.vertices[1], marioChunk);
+            Vec3 v2 = Coordinates::marioLocalToHaloWorld(s.vertices[2], marioChunk);
+
+            if ((v0 - cameraPos).length() > MAX_DISTANCE_WORLD_UNITS &&
+                (v1 - cameraPos).length() > MAX_DISTANCE_WORLD_UNITS &&
+                (v2 - cameraPos).length() > MAX_DISTANCE_WORLD_UNITS) {
+                continue;
+            }
+            
+            ESP::drawLine(v0, v1, color);
+            ESP::drawLine(v1, v2, color);
+            ESP::drawLine(v2, v0, color);
+
+            Vec3 normal = (v2 - v0).cross(v1 - v0).normalize();
+            Vec3 center = (v0 + v1 + v2) / 3.0f;
+            Vec3 normalEnd = center + normal * 0.025f;
+            ESP::drawLine(center, normalEnd, IM_COL32(255, 0, 0, 255));
+            ESP::drawPoint(center, IM_COL32(255, 0, 0, 255));
+        }
+    }
+    #endif // DEBUG_BSP_CHUNK
+
+    void debugRender() {
+        #ifdef DEBUG_BSP_CHUNK
+        drawStaticSurfaces();
+        #endif
     }
 
 }

@@ -13,32 +13,15 @@
 #include "MarioBSPChunk.hpp"
 #include "Coordinates.hpp"
 #include "DynamicGeometry.hpp"
+#include "MarioCollisionDebugRender.hpp"
 
 // #define DEBUG_MARIO_GEOMETRY 1
-// #define DEBUG_MARIO_COLLISION 1
 
 namespace HaloCE::Mod::Mario {
 
     int32_t highlightTriangleIndex = -1;
 
-    void draw_SM64SurfaceCollisionData(SM64SurfaceCollisionData* surfaceData, ImU32 color) {
-        namespace ESP = Spark::Overlay::ESP;
-        Camera& camera = ESP::camera;
-        Vec3 v1 = Coordinates::marioLocalToHaloWorld(surfaceData->vertex1, marioChunk);
-        Vec3 v2 = Coordinates::marioLocalToHaloWorld(surfaceData->vertex2, marioChunk);
-        Vec3 v3 = Coordinates::marioLocalToHaloWorld(surfaceData->vertex3, marioChunk);
-        ESP::drawLine(v1, v2, color);
-        ESP::drawLine(v2, v3, color);
-        ESP::drawLine(v3, v1, color);
-
-        Vec3 center = (v1 + v2 + v3) / 3.0f;
-        auto n = surfaceData->normal;
-        Vec3 normalEnd = center + Vec3{n.x, n.z, n.y} * 0.1f;
-        ESP::drawLine(center, normalEnd, color);
-        ESP::drawPoint(center, color);
-    }
-
-    void marioDebugWindow(SM64WallCollisionData& wallData, SM64SurfaceCollisionData* floorData) {
+    void marioDebugWindow() {
         ImGui::Begin("Mario Debug Info", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
 
         std::string strMarioInControl = marioInControl() ? "Yes" : "No";
@@ -70,17 +53,7 @@ namespace HaloCE::Mod::Mario {
         ImGui::Text("Flags: 0x%X", marioState.flags);
 
         #ifdef DEBUG_MARIO_COLLISION
-        ImGui::Text("Num walls: %d", wallData.numWalls);
-        if (floorData) {
-            auto* v1 = floorData->vertex1;
-            auto* v2 = floorData->vertex2;
-            auto* v3 = floorData->vertex3;
-            ImGui::Text("Floor v1: (%d, %d, %d)", v1[0], v1[1], v1[2]);
-            ImGui::Text("Floor v2: (%d, %d, %d)", v2[0], v2[1], v2[2]);
-            ImGui::Text("Floor v3: (%d, %d, %d)", v3[0], v3[1], v3[2]);
-        } else {
-            ImGui::Text("Floor: none");
-        }
+        CollisionDebugRender::renderImGuiSection();
         #endif // DEBUG_MARIO_COLLISION
 
         ImGui::End();
@@ -132,40 +105,8 @@ namespace HaloCE::Mod::Mario {
         }
         #endif // DEBUG_MARIO_GEOMETRY
 
-        SM64SurfaceCollisionData* floorData = nullptr;
-        SM64SurfaceCollisionData* ceilData = nullptr;
-        SM64WallCollisionData wallData = {};
         #ifdef DEBUG_MARIO_COLLISION
-        sm64_surface_find_floor(
-            marioState.position[0],
-            marioState.position[1],
-            marioState.position[2],
-            &floorData
-        );
-        if (floorData)
-            draw_SM64SurfaceCollisionData(floorData, IM_COL32(255, 200, 0, 255));
-
-        sm64_surface_find_ceil(
-            marioState.position[0],
-            marioState.position[1],
-            marioState.position[2],
-            &ceilData
-        );
-        if (ceilData)
-            draw_SM64SurfaceCollisionData(ceilData, IM_COL32(255, 0, 200, 255));
-
-        wallData.x = marioState.position[0];
-        wallData.y = marioState.position[1];
-        wallData.z = marioState.position[2];
-        wallData.radius = 100.0f;
-        wallData.offsetY = 10.0f;
-        sm64_surface_find_wall_collisions(&wallData);
-
-        for (int i = 0; i < wallData.numWalls; i++) {
-            SM64SurfaceCollisionData* wallSurface = wallData.walls[i];
-            if (wallSurface)
-                draw_SM64SurfaceCollisionData(wallSurface, IM_COL32(0, 200, 255, 255));
-        }
+        CollisionDebugRender::render();
         #endif // DEBUG_MARIO_COLLISION
 
         #ifdef DEBUG_MARIO_GEOMETRY
@@ -174,8 +115,9 @@ namespace HaloCE::Mod::Mario {
 
         MarioMelee::debugRender();
         DynamicGeometry::debugRender();
+        MarioBSPChunk::debugRender();
 
-        marioDebugWindow(wallData, floorData);
+        marioDebugWindow();
 
 #endif // ENABLE_MARIO
     }
