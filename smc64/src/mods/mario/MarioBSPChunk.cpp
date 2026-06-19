@@ -6,13 +6,14 @@
 #include "Coordinates.hpp"
 #include "BSPConversion.hpp"
 #include "DynamicGeometry.hpp"
+#include "level-edit/MarioLevelEdit.hpp"
 
 #include <cstdlib>
 #include <cstdio>
 #include <cmath>
 #include <cstring>
 
-// #define DEBUG_BSP_CHUNK 1
+#define DEBUG_BSP_CHUNK 1
 
 #ifdef DEBUG_BSP_CHUNK
     #define MAX_DISTANCE_WORLD_UNITS 2.0f
@@ -41,6 +42,8 @@ namespace HaloCE::Mod::Mario::MarioBSPChunk {
     static void uploadFor(Vec3i chunk) {
         auto surfaces = HaloCE::Mod::BSPConversion::haloGeometryToMarioForChunk(chunk, 1);
 
+        auto levelEditSurfaces = ::Mod::Mario::LevelEdit::getStaticSurfaces(chunk);
+        surfaces.insert(surfaces.end(), levelEditSurfaces.begin(), levelEditSurfaces.end());
         if (staticSurfaces) {
             ::free(staticSurfaces);
             staticSurfaces = nullptr;

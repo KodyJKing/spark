@@ -45,9 +45,9 @@ namespace Mod::Mario::LevelEdit {
     // indicating that game input should be suppressed.
     bool isInputSuppressed();
 
-    // Get a vector of static surfaces to add the the given BSP.
-    std::vector<SM64Surface> getStaticSurfaces(uint64_t bspSignature);
+    // Get a vector of static surfaces to add the the given BSP, in coordinates local to the given chunk.
+    std::vector<SM64Surface> getStaticSurfaces(uint64_t bspSignature, Vec3i chunk);
 
-    // Get a vector of static surfaces to add to the current BSP.
-    std::vector<SM64Surface> getStaticSurfaces();
+    // Get a vector of static surfaces to add to the current BSP, in coordinates local to the given chunk.
+    std::vector<SM64Surface> getStaticSurfaces(Vec3i chunk);
 }

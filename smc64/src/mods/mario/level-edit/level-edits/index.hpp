@@ -8,11 +8,14 @@ namespace Mod::Mario::LevelEdit::Index {
     // To add a new level: run the game on that level, read the signature from
     // Engine::getBSPSignature(), and add an entry here.
     inline std::unordered_map<uint64_t, LevelEdits> s_allEdits = {
+        
+        // BSP 0x0x5B4FEA6A0330002AULL
         { 0x5B4FEA6A0330002AULL, LevelEdits {
             .orientedBoundingBoxes = {
-                { { 53.6054f, -91.0562f, -91.1296f }, { 3.91512f, 3.16784f, 0.5f }, { -0.f, -0.f, 90.f } },
+                { { 53.3375f, -90.9193f, -84.5287f }, { 7.16046f, 5.90961f, 0.5f }, { -0.f, -0.f, 90.f } },
             }
         }},
+
     };
 
     // Returns a mutable pointer to the LevelEdits for the given BSP signature,
