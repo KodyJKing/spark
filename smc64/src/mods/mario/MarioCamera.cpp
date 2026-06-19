@@ -57,14 +57,13 @@ namespace HaloCE::Mod::Mario::MarioCamera {
             }
         }
 
-        // // Retract immediately; extend gradually so the camera doesn't pop back through walls.
-        // if (targetScale < camDistanceScale)
-        //     camDistanceScale = targetScale;
-        // else if (camDistanceScale < targetScale)
-        //     camDistanceScale = camDistanceScale + CAM_EXTEND_RATE < targetScale
-        //                      ? camDistanceScale + CAM_EXTEND_RATE
-        //                      : targetScale;
-        camDistanceScale = 1.0f;
+        // Retract immediately; extend gradually so the camera doesn't pop back through walls.
+        if (targetScale < camDistanceScale)
+            camDistanceScale = targetScale;
+        else if (camDistanceScale < targetScale)
+            camDistanceScale = camDistanceScale + CAM_EXTEND_RATE < targetScale
+                             ? camDistanceScale + CAM_EXTEND_RATE
+                             : targetScale;
 
         Vec3 result = marioPos
             + (camera->fwd * CAM_BACK + right * CAM_RIGHT) * camDistanceScale 

@@ -1,7 +1,7 @@
 #pragma once
 
 #define DEBUG_MARIO_COLLISION 1
-#define DEBUG_MARIO_COLLISION_HISTORY 1
+// #define DEBUG_MARIO_COLLISION_HISTORY 1
 #define COLLISION_HISTORY_SIZE 16
 
 namespace HaloCE::Mod::Mario {

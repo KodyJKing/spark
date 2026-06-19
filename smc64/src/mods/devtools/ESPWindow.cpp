@@ -272,7 +272,9 @@ namespace Mod::DevTools {
         ImGuiUtils::renderCopyableText("BSP Edge Array", bspEdgesStr);
 
         uint64_t bspSignature = Engine::getBSPSignature();
-        ImGui::Text("BSP Signature: %p", (void*)bspSignature);
+        char bspSignatureStr[255] = {0};
+        snprintf(bspSignatureStr, 255, "%p", (void*)bspSignature);
+        ImGuiUtils::renderCopyableText("BSP Signature", bspSignatureStr);
     }
 #endif
 

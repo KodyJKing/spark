@@ -5,6 +5,30 @@
 
 #include <vector>
 
+#define BAN_PLANES 1
+
+#ifdef BAN_PLANES
+// Experimental collision improvement by hand banning certain problem plane-indices.
+namespace {
+    #include <unordered_set>
+
+    #define KEY(index, signature)  ((int64_t)(index) ^ static_cast<int64_t>(signature))
+
+    // Todo: Combine with BSP Signature.
+    std::unordered_set<int64_t> bannedPlanes = {
+        // Keyes:
+        KEY(0x89D, 0x5B4FEA6A0330002A),
+        KEY(0xBAE, 0x5B4FEA6A0330002A),
+        KEY(0xBAD, 0x5B4FEA6A0330002A),
+    };
+
+    bool isPlaneBanned(int32_t planeIndex) {
+        int64_t key = KEY(planeIndex, Engine::getBSPSignature());
+        return bannedPlanes.find(key) != bannedPlanes.end();
+    }
+}
+#endif // BAN_PLANES
+
 namespace HaloCE::Mod::BSPConversion {
 
     std::vector<SM64Surface> convertBSP(Engine::CollisionBSP* bsp, uint16_t defaultSurfaceType) {
@@ -184,6 +208,11 @@ namespace HaloCE::Mod::BSPConversion {
                 if (cross.lengthSquared() < 0.0001f) continue;
 
                 if (surface->planeIndex >= bsp->planes.count) continue;
+
+                #ifdef BAN_PLANES
+                if (isPlaneBanned(surface->planeIndex)) continue;
+                #endif // BAN_PLANES
+
                 Engine::BSPPlane* plane = &planes[surface->planeIndex];
 
                 Vec3* mPtrs[3] = { &m0, &m2, &m1 };
