@@ -13,4 +13,5 @@ namespace HaloCE::Mod::Mario::MarioModel {
     
     bool isMario(uint32_t entityHandle);
     uint32_t playerWeaponHandle();
+    uint32_t spawnMarioModel(Vec3 position);
 }

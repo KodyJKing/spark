@@ -41,12 +41,20 @@ struct EventBus {
 
     std::vector<Entry> handlers;
     std::shared_mutex  handlersMutex;
+    TerminalFn defaultHandler;
 
     void addHandler(ModId owner, HandlerFn fn, void* ctx, int priority = 0) {
         std::unique_lock lock(handlersMutex);
         auto it = std::lower_bound(handlers.begin(), handlers.end(), priority,
             [](const Entry& e, int p) { return e.priority < p; });
         handlers.insert(it, { owner, priority, fn, ctx });
+    }
+    void addHandler(ModId owner, TerminalFn fn, int priority = 0) {
+        auto handler = +[](void* ctx, Cursor next, Args... args) {
+            next(args...);
+            return static_cast<TerminalFn>(ctx)(nullptr, args...);
+        };
+        addHandler(owner, handler, fn, priority);
     }
 
     void unregisterHandlers(ModId owner) {
@@ -69,6 +77,12 @@ struct EventBus {
         Cursor cursor { &EventBus::doAdvance, this, 0, termFn, termCtx };
         return doAdvance(cursor, args...);
     }
+    Ret dispatch(Args... args) {
+        return dispatch(defaultHandler, nullptr, args...);
+    }
+
+    EventBus() : defaultHandler(nullptr) {}
+    EventBus(TerminalFn defaultHandler) : defaultHandler(defaultHandler) {}
 
 private:
     static Ret doAdvance(Cursor cursor, Args... args) {

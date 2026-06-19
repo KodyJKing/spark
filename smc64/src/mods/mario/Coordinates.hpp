@@ -25,6 +25,7 @@ namespace HaloCE::Mod::Coordinates {
     Vec3i haloPosToMarioChunk(const Vec3& haloPos);
     Vec3  marioLocalToHaloWorld(const Vec3& localMario, const Vec3i& chunk);
     Vec3  marioLocalToHaloWorld(const int32_t* localMario, const Vec3i& chunk);
+    Vec3 haloToMarioLocal(const Vec3 &haloPos, const Vec3i &chunk);
 
     extern const float maxSafeMarioCoord;
 }

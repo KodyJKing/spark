@@ -3,12 +3,11 @@
     - [Blocker] Fix file naming inconsistencies (mostly casing).
     - Break up Entity type by type. Eg: Vehicle, Biped, Weapon, etc.
     - Create a fork of LibSM64 that exposes bone transforms.
+    - [Major] Fix `SpawnProjectile` misnomer (should be `SpawnObject`).
+    - [Major] Fix namespace naming inconsistencies in Mario mod. (should match DevTools mod)
 
 - Bugs and Stability:
     - Audit all raw memory accesses. Replace with safe wrappers in non-performance critical code.
-    - [Blocker] Fix Mario getting kick from throwing grenades while holding shotgun.
-    - [Blocker] Fix Mario thinking the coolant drop in Keyes is OOB.
-        - Add a plane under the map.
     - [Blocker] Fix ghost entity colliders getting left behind.
 
 - Performance:

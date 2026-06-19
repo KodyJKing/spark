@@ -80,4 +80,9 @@ namespace HaloCE::Mod::Coordinates {
         Vec3 v = { (float)localMario[0], (float)localMario[1], (float)localMario[2] };
         return marioLocalToHaloWorld(v, chunk);
     }
+
+    Vec3 haloToMarioLocal(const Vec3& haloPos, const Vec3i& chunk) {
+        Vec3 marioPos = haloToMario(haloPos);
+        return marioWorldToLocal(marioPos, chunk);
+    }
 }

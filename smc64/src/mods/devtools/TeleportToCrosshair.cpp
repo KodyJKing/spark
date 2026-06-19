@@ -1,4 +1,5 @@
 #include "engine/halo1.hpp"
+#include "spark/events/TeleportPlayer.hpp"
 
 namespace Mod::DevTools {
 
@@ -12,8 +13,7 @@ namespace Mod::DevTools {
         Engine::raycastPlayerCrosshair(&result);
         if (result.hitType == Engine::HitType_Nothing) return;
 
-        player->pos = result.pos - camera->fwd * 0.5f;
-        camera->pos = player->pos; // In case a free camera is active.
+        Spark::teleportPlayer.dispatch(result.pos - camera->fwd * 0.5f);
     }
 
 }

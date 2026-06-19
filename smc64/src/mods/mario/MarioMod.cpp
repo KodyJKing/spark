@@ -4,6 +4,8 @@
 #include "Mario.hpp"
 #include "engine/halo1.hpp"
 #include "level-edit/MarioLevelEdit.hpp"
+#include "spark/events/TeleportPlayer.hpp"
+#include "functions/TeleportMario.hpp"
 
 void MarioMod::init() {
     using Bus = Spark::EventBus<void>;
@@ -36,6 +38,12 @@ void MarioMod::init() {
     }, nullptr);
 
     Mod::Mario::LevelEdit::initHandlers(modId_);
+
+    // Teleport player handler:
+    Spark::teleportPlayer.addHandler(modId_, +[](void*, Vec3 position) {
+        HaloCE::Mod::Mario::teleportMario(position);
+    });
+
 
 }
 

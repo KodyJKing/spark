@@ -38,8 +38,8 @@ namespace {
         KEY(0x05A1, 0x3C40AA6F51DF3165),
     };
 
-    bool isPlaneBanned(int32_t planeIndex) {
-        int64_t key = KEY(planeIndex, Engine::getBSPSignature());
+    bool isPlaneBanned(int32_t planeIndex, int64_t signature) {
+        int64_t key = KEY(planeIndex, signature);
         return bannedPlanes.find(key) != bannedPlanes.end();
     }
 }
@@ -155,6 +155,10 @@ namespace HaloCE::Mod::BSPConversion {
     // Convert Halo CE static world geometry into mario-space surfaces for the chunk
     // neighborhood centered on `loadedChunk` (radius=1 -> 3x3x3 chunks).
     std::vector<SM64Surface> haloGeometryToMarioForChunk(Vec3i loadedChunk, int radius) {
+        #ifdef BAN_PLANES
+        int64_t bspSignature = Engine::getBSPSignature();
+        #endif // BAN_PLANES
+        
         std::vector<SM64Surface> result;
 
         auto bsp = (Engine::CollisionBSP*) Engine::getBSPPointer();
@@ -226,7 +230,7 @@ namespace HaloCE::Mod::BSPConversion {
                 if (surface->planeIndex >= bsp->planes.count) continue;
 
                 #ifdef BAN_PLANES
-                if (isPlaneBanned(surface->planeIndex)) continue;
+                if (isPlaneBanned(surface->planeIndex, bspSignature)) continue;
                 #endif // BAN_PLANES
 
                 Engine::BSPPlane* plane = &planes[surface->planeIndex];

@@ -15,11 +15,12 @@ namespace HaloCE::Mod::Mario::MarioWeaponKick {
 
     struct KickConfig {
         float speed; // launch speed in mario units/tick
+        std::string projectileType;
     };
 
     // Add entries here to enable kick for a weapon. Tag paths use double backslashes.
     static const std::unordered_map<std::string, KickConfig> kickMap = {
-        { "weapons\\shotgun\\shotgun", { 60.0f } },
+        { "weapons\\shotgun\\shotgun", { 60.0f, "weapons\\shotgun\\pellet" } },
     };
 
     // ── Debounce state ─────────────────────────────────────────────────────────
@@ -74,6 +75,11 @@ namespace HaloCE::Mod::Mario::MarioWeaponKick {
             uint32_t weaponHandle      = Engine::getPlayerHeldWeaponHandle();
             const KickConfig* cfg      = kickConfigForWeapon(weaponHandle);
             if (!cfg) return projectileHandle;
+
+            // Ignore projectiles that are not of the type specified in the kick config.
+            auto projectileTag = Engine::getTag(options->projectileTagId);
+            if (cfg->projectileType != "" && std::string(projectileTag->getResourcePath()) != cfg->projectileType)
+                return projectileHandle;
 
             // Debounce: apply at most once per game tick regardless of pellet count.
             auto* playerEnt = Engine::getPlayerEntity();

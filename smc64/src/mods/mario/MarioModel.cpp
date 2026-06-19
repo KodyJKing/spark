@@ -103,6 +103,19 @@ namespace HaloCE::Mod::Mario::MarioModel {
 
     uint32_t marioHandle  = 0xFFFFFFFF;
 
+    uint32_t spawnMarioModel(Vec3 position) {
+        auto tag = Engine::findTag(marioTagPath, "weap");
+        if (!tag) return NULL_HANDLE;
+
+        Engine::ProjectileSpawnArgs args{};
+        args.projectileTagId    = tag->tagID;
+        args.ownerEntityHandle  = NULL_HANDLE;
+        args.spawnPosition      = position;
+
+        if (!Spark::SpawnProjectile::original) return NULL_HANDLE;
+        return Spark::SpawnProjectile::original(&args, 3);
+    }
+
     void renderEntity(Engine::RenderEntityRequest *request, Engine::renderEntity_t renderEntityOriginal) {
         // if (!isMario(request->entityHandle)) return;
 
@@ -124,7 +137,10 @@ namespace HaloCE::Mod::Mario::MarioModel {
         }
     }
 
+    uint64_t marioModelLastUpdatedTick = 0;
+
     void addHandlers(Spark::ModId modId) {
+
         Spark::UpdateWorldBones::addHandler(modId, +[](void*, auto next, uint32_t entityHandle) {
             auto rec = Engine::getEntityRecord(entityHandle);
             if (!rec) return next(entityHandle);
@@ -134,6 +150,7 @@ namespace HaloCE::Mod::Mario::MarioModel {
             next(entityHandle);
 
             if (isMario(entity)) {
+                marioModelLastUpdatedTick = GetTickCount64();
                 marioHandle = entityHandle;
                 updatePose(entityHandle, entity);
             } else if (entityHandle == Engine::getPlayerHeldWeaponHandle()) {
@@ -145,6 +162,14 @@ namespace HaloCE::Mod::Mario::MarioModel {
                 LOG("Entity Handle: " << entityHandle << ", Tag: " << tag->getResourcePath());
             }
             
+        }, nullptr);
+
+        Spark::UpdateAllEntities::addHandler(modId, +[](void*, auto next) {
+            next();
+            auto now = GetTickCount64();
+            if (marioModelLastUpdatedTick != 0 && now - marioModelLastUpdatedTick > 50) {
+                Engine::Scripting::submit("(object_create_anew mario_model)");
+            }
         }, nullptr);
     }
 
