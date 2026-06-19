@@ -13,7 +13,7 @@ namespace Mod::Mario::LevelEdit {
 // ── Data layer (always compiled) ──────────────────────────────────────────────
 
 LevelEdits* getLevelEdits(LevelEditContext& context) {
-    return Index::lookup(context.levelName);
+    return Index::lookup(context.bspSignature);
 }
 
 // ── Editor state ──────────────────────────────────────────────────────────────
@@ -29,7 +29,7 @@ static EditorState s_state;
 void setContext(LevelEditContext context) {
 #ifdef ENABLE_LEVEL_EDITOR
     s_state.currentContext = std::move(context);
-    s_state.currentEdits   = Index::lookup(s_state.currentContext.levelName);
+    s_state.currentEdits   = Index::lookup(s_state.currentContext.bspSignature);
     s_state.selectedIdx    = -1;
 #else
     (void)context;
@@ -38,7 +38,7 @@ void setContext(LevelEditContext context) {
 
 void initHandlers(Spark::ModId modId) {
 #ifdef ENABLE_LEVEL_EDITOR
-    s_state.currentEdits = Index::lookup(s_state.currentContext.levelName);
+    s_state.currentEdits = Index::lookup(s_state.currentContext.bspSignature);
 
     using Bus = Spark::EventBus<void>;
     Spark::RenderBSPAlbedo::addHandler(modId, +[](void* ctx, Spark::RenderBSPAlbedo::Cursor next) {

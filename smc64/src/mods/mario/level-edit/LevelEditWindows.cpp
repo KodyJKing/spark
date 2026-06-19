@@ -11,6 +11,7 @@
 #include "spark/Spark.hpp"
 #include "engine/raycast.hpp"
 #include "engine/player.hpp"
+#include "engine/bsp/level_bsp.hpp"
 #include "math/Math.hpp"
 #include "math/OBBIntersect.hpp"
 #include <array>
@@ -205,14 +206,26 @@ static void renderEditWindow(EditorState& state) {
 static void renderManagerWindow(EditorState& state) {
     ImGui::Begin("OBB Manager");
 
+    uint64_t liveSig = Engine::getBSPSignature();
+    bool sigMismatch = liveSig != 0 && liveSig != state.currentContext.bspSignature;
+    ImGui::BeginDisabled(liveSig == 0);
+    if (ImGui::Button(sigMismatch ? "Open/Create edits for current BSP" : "Open/Create edits for this BSP") && liveSig != 0) {
+        state.currentContext.bspSignature = liveSig;
+        state.currentEdits = Index::openOrCreate(liveSig);
+        state.selectedIdx  = -1;
+    }
+    ImGui::EndDisabled();
+
     if (!state.currentEdits) {
-        ImGui::TextDisabled("No level loaded.");
+        ImGui::TextDisabled("No edits open.");
         ImGui::End();
         return;
     }
 
+    ImGui::Separator();
+
     auto& obbs = state.currentEdits->orientedBoundingBoxes;
-    ImGui::Text("Level: %s   OBBs: %zu", state.currentContext.levelName.c_str(), obbs.size());
+    ImGui::Text("BSP: 0x%016llX   OBBs: %zu", (unsigned long long)state.currentContext.bspSignature, obbs.size());
     ImGui::Separator();
 
     ImGui::BeginChild("##list", ImVec2(0, 180), true);
@@ -272,7 +285,7 @@ void renderUI(EditorState& state) {
         state.editorOpen = !state.editorOpen;
         if (state.editorOpen) {
             // Refresh in case the level changed since last open.
-            state.currentEdits = Index::lookup(state.currentContext.levelName);
+            state.currentEdits = Index::lookup(state.currentContext.bspSignature);
         } else {
             state.editorInputEnabled = false;
         }

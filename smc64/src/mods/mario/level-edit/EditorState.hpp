@@ -22,7 +22,7 @@ inline const ImVec4 kAxisBg[3] = {
 struct EditorState {
     bool             editorOpen         = false;
     bool             editorInputEnabled = false; // Tab-toggled; suppresses game input
-    LevelEditContext currentContext     = { "a50", 0 };
+    LevelEditContext currentContext     = {};
     LevelEdits*      currentEdits       = nullptr;
     int              selectedIdx        = -1;
 };

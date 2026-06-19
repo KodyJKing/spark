@@ -9,14 +9,11 @@ namespace Mod::Mario::LevelEdit {
 
 void copyLevelEditsToClipboard(EditorState& state) {
     if (!state.currentEdits) return;
-    const std::string& name = state.currentContext.levelName;
-    if (name.empty()) return;
 
     std::ostringstream f;
 
-    auto& obbs = state.currentEdits->orientedBoundingBoxes;
-    std::string NS = name;
-    if (!NS.empty()) NS[0] = (char)toupper((unsigned char)NS[0]);
+    auto& obbs    = state.currentEdits->orientedBoundingBoxes;
+    uint64_t sig  = state.currentContext.bspSignature;
 
     // Format a float literal that always has a decimal point so "90f" never appears.
     auto flt = [](float v) -> std::string {
@@ -32,20 +29,21 @@ void copyLevelEditsToClipboard(EditorState& state) {
         return s;
     };
 
-    f << "#pragma once\n";
-    f << "#include \"../MarioLevelEdit.hpp\"\n\n";
-    f << "namespace Mod::Mario::LevelEdit::" << NS << "Edits {\n";
-    f << "    inline LevelEdits s_edits = {\n";
-    f << "        .orientedBoundingBoxes = {\n";
+    // Emit a single map entry ready to paste into level-edits/index.hpp.
+    char sigBuf[32];
+    snprintf(sigBuf, sizeof(sigBuf), "0x%016llXULL", (unsigned long long)sig);
+
+    f << "// BSP 0x" << sigBuf << "\n";
+    f << "{ " << sigBuf << ", LevelEdits {\n";
+    f << "    .orientedBoundingBoxes = {\n";
     for (const auto& obb : obbs) {
-        f << "            { "
+        f << "        { "
           << "{ " << flt(obb.center.x)      << "f, " << flt(obb.center.y)      << "f, " << flt(obb.center.z)      << "f }, "
           << "{ " << flt(obb.halfExtents.x) << "f, " << flt(obb.halfExtents.y) << "f, " << flt(obb.halfExtents.z) << "f }, "
           << "{ " << flt(obb.orientation.x) << "f, " << flt(obb.orientation.y) << "f, " << flt(obb.orientation.z) << "f } },\n";
     }
-    f << "        }\n";
-    f << "    };\n";
-    f << "}\n";
+    f << "    }\n";
+    f << "}},\n";
 
     ImGui::SetClipboardText(f.str().c_str());
 }

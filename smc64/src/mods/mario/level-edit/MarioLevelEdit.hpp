@@ -1,11 +1,11 @@
 #pragma once
 
-#include <string>
 #include <vector>
 #include <cstdint>
 
 #include "math/Vectors.hpp"
 #include "spark/mod/ModId.hpp"
+#include "libsm64.h"
 
 /**
  * This module gives us means for tweaking levels to resolve some edge cases for Mario's movement and interactions within the levels.
@@ -27,8 +27,7 @@ namespace Mod::Mario::LevelEdit {
     };
 
     struct LevelEditContext {
-        std::string levelName;
-        uint64_t bspSignature;
+        uint64_t bspSignature = 0;
     };
 
     // Returns a pointer to the static LevelEdits for this context, or nullptr.
@@ -46,4 +45,9 @@ namespace Mod::Mario::LevelEdit {
     // indicating that game input should be suppressed.
     bool isInputSuppressed();
 
+    // Get a vector of static surfaces to add the the given BSP.
+    std::vector<SM64Surface> getStaticSurfaces(uint64_t bspSignature);
+
+    // Get a vector of static surfaces to add to the current BSP.
+    std::vector<SM64Surface> getStaticSurfaces();
 }
