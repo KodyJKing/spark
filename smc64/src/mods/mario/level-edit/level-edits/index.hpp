@@ -9,13 +9,20 @@ namespace Mod::Mario::LevelEdit::Index {
     // Engine::getBSPSignature(), and add an entry here.
     inline std::unordered_map<uint64_t, LevelEdits> s_allEdits = {
         
-        // BSP 0x0x5B4FEA6A0330002AULL
+        // Keyes:
         { 0x5B4FEA6A0330002AULL, LevelEdits {
             .orientedBoundingBoxes = {
+                // Platform under coolant leak drop so Mario doesn't get blocked by OOB protection.
                 { { 53.3375f, -90.9193f, -84.5287f }, { 7.16046f, 5.90961f, 0.5f }, { -0.f, -0.f, 90.f } },
             }
         }},
-
+        { 0x6C8D75E7AE85FFA4ULL, LevelEdits {
+            // Keep Mario out of covenant ship columns.
+            .orientedBoundingBoxes = {
+                { { -7.07616f, 10.0843f, -70.0366f }, { 0.438821f, 0.458264f, 1.76945f }, { 0.f, 0.f, 90.f } },
+                { { -16.0532f, 10.0843f, -70.0366f }, { 0.438821f, 0.458264f, 1.76945f }, { 0.f, 0.f, 90.f } },
+            }
+        }},
     };
 
     // Returns a mutable pointer to the LevelEdits for the given BSP signature,
