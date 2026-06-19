@@ -8,7 +8,7 @@
 #include "Coordinates.hpp"
 #include "spark/hook/Hooks.hpp"
 
-// #define DEBUG_MARIO_MODEL 1
+#define DEBUG_MARIO_MODEL 1
 
 #ifdef DEBUG_MARIO_MODEL
 #include <iostream>

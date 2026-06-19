@@ -6,9 +6,18 @@
 
 - Bugs and Stability:
     - Audit all raw memory accesses. Replace with safe wrappers in non-performance critical code.
+    - [Blocker] Fix Mario getting kick from throwing grenades while holding shotgun.
+    - [Blocker] Fix Mario thinking the coolant drop in Keyes is OOB.
+        - Add a plane under the map.
+    - [Blocker] Fix ghost entity colliders getting left behind.
+
+- Performance:
+    - [Major] Optimize BSP loading transitions.
 
 - Testing:
     - [Blocker] Do a full playthrough on the release build.
+    - [Blocker] Test every map for problem triangles and delete them.
+        - Pay special attention to Covenant hallways and columns.
 
 - Gameplay:
     - Movement:
@@ -25,7 +34,6 @@
                     - Allow placement of planes, boxes, capsules.
                     - Allow deletion of unwanted faces from Halo's BSP.
                     - Level tweak exporter.
-                - Fix Mario getting stuck behind backfacing sliver triangles in Covenant hallways.
         
     - Combat:
         - Melee

@@ -14,12 +14,28 @@ namespace {
 
     #define KEY(index, signature)  ((int64_t)(index) ^ static_cast<int64_t>(signature))
 
-    // Todo: Combine with BSP Signature.
     std::unordered_set<int64_t> bannedPlanes = {
         // Keyes:
-        KEY(0x89D, 0x5B4FEA6A0330002A),
-        KEY(0xBAE, 0x5B4FEA6A0330002A),
-        KEY(0xBAD, 0x5B4FEA6A0330002A),
+        KEY(0x089D, 0x5B4FEA6A0330002A),
+        KEY(0x0BAE, 0x5B4FEA6A0330002A),
+        KEY(0x0BAD, 0x5B4FEA6A0330002A),
+        KEY(0x089F, 0x5B4FEA6A0330002A),
+
+        KEY(0x16CF, 0x6C8D75E7AE85FFA4),
+        KEY(0x0FDC, 0x6C8D75E7AE85FFA4),
+        KEY(0x16C5, 0x6C8D75E7AE85FFA4),
+
+        KEY(0x170A, 0xB1ED63741BEDD972),
+        KEY(0x1890, 0xB1ED63741BEDD972),
+        KEY(0x0E9C, 0xB1ED63741BEDD972),
+        KEY(0x0F7A, 0xB1ED63741BEDD972),
+        KEY(0x0F5F, 0xB1ED63741BEDD972),
+        KEY(0x0F6B, 0xB1ED63741BEDD972),
+        KEY(0x0F68, 0xB1ED63741BEDD972),
+        KEY(0x0F5E, 0xB1ED63741BEDD972),
+        KEY(0x0F84, 0xB1ED63741BEDD972),
+
+        KEY(0x05A1, 0x3C40AA6F51DF3165),
     };
 
     bool isPlaneBanned(int32_t planeIndex) {

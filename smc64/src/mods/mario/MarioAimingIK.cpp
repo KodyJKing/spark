@@ -37,16 +37,10 @@ namespace HaloCE::Mod::Mario::MarioAimingIK {
         return true;
     }
 
-    static uint32_t playerWeaponHandle() {
-        auto playerEntity = Engine::getPlayerEntity();
-        if (!playerEntity) return 0xFFFFFFFF;
-        return playerEntity->childHandle;
-    }
-
     static void ikToWeapon() {
         if (marioArmsBusy()) return;
 
-        auto weaponHandle = playerWeaponHandle();
+        auto weaponHandle = Engine::getPlayerHeldWeaponHandle();
         if (weaponHandle == 0xFFFFFFFF) return;
         auto rec = Engine::getEntityRecord(weaponHandle);
         if (!rec) return;
