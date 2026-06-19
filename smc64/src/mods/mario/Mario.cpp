@@ -39,6 +39,14 @@
 #include "MarioAimingIK.hpp"
 #include "MarioWeaponKick.hpp"
 
+#define DEBUG_MARIO 1
+
+#ifdef DEBUG_MARIO
+    #define LOG(x) std::cout << "[Mario] " << x << std::endl;
+#else
+    #define LOG(x) ;
+#endif
+
 namespace HaloCE::Mod::Mario {
 
     // Guards the geometry buffers and full update() body against concurrent free().
@@ -143,6 +151,7 @@ namespace HaloCE::Mod::Mario {
 
     void deinitMario() {
         if (marioId >= 0) {
+            std::lock_guard<std::mutex> sm64Lock(MarioAudio::sm64Mutex());
             sm64_mario_delete(marioId);
             marioId = -1;
         }
@@ -323,11 +332,16 @@ namespace HaloCE::Mod::Mario {
         
         faceLookDirection(Engine::getPlayerCameraPointer()->fwd);
 
-        if (marioInControl()) {
-            std::lock_guard<std::mutex> sm64Lock(MarioAudio::sm64Mutex());
-            sm64_mario_tick(marioId, &marioInputs, &marioState, &marioGeometry);
-        }
 
+        {
+            std::lock_guard<std::mutex> sm64Lock(MarioAudio::sm64Mutex());
+            if (marioInControl()) {
+                LOG("Mario tick start");
+                sm64_mario_tick(marioId, &marioInputs, &marioState, &marioGeometry);
+                LOG("Mario tick end");
+            }
+        }
+        
         MarioBSPChunk::maintain();
         MarioAudio::update();
 

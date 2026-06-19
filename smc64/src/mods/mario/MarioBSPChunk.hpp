@@ -30,4 +30,6 @@ namespace HaloCE::Mod::Mario::MarioBSPChunk {
     // Draw the currently loaded static surfaces as wireframe triangles (debug only).
     void debugRender();
 
+    // Used to determine if it is safe to tick Mario.
+    bool hasValidLoadedChunk();
 }

@@ -5,6 +5,7 @@
 #include <Windows.h>
 #include <TlHelp32.h>
 #include <DbgHelp.h>
+#include <Psapi.h>
 #include <cstdio>
 #include <iostream>
 #include <fstream>
@@ -14,6 +15,7 @@
 #include <string>
 
 #pragma comment(lib, "dbghelp.lib")
+#pragma comment(lib, "psapi.lib")
 
 namespace Spark::CrashHandler {
 
@@ -87,28 +89,37 @@ static void printStackTrace(CONTEXT* ctx) {
         DWORD64 disp64 = 0;
         DWORD   disp32 = 0;
 
+        // Always resolve module-relative address (e.g. sm64.dll+0xA206)
+        char modRel[MAX_PATH + 32];
+        HMODULE hMod = nullptr;
+        if (GetModuleHandleExA(
+                GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+                GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                reinterpret_cast<LPCSTR>(pc), &hMod) && hMod) {
+            char modName[MAX_PATH];
+            if (!GetModuleBaseNameA(process, hMod, modName, sizeof(modName)))
+                snprintf(modName, sizeof(modName), "0x%llX", (unsigned long long)hMod);
+            snprintf(modRel, sizeof(modRel), "%s+0x%llX",
+                     modName, (unsigned long long)(pc - (DWORD64)hMod));
+        } else {
+            snprintf(modRel, sizeof(modRel), "??");
+        }
+
         if (SymFromAddr(process, pc, &disp64, sym)) {
             if (SymGetLineFromAddr64(process, pc, &disp32, &line))
-                printf("  #%-2d  0x%016llX  %s+0x%llX  (%s:%lu)\n",
+                printf("  #%-2d  0x%016llX  %-28s  %s+0x%llX  (%s:%lu)\n",
                        i, (unsigned long long)pc,
+                       modRel,
                        sym->Name, (unsigned long long)disp64,
                        line.FileName, (unsigned long)line.LineNumber);
             else
-                printf("  #%-2d  0x%016llX  %s+0x%llX\n",
+                printf("  #%-2d  0x%016llX  %-28s  %s+0x%llX\n",
                        i, (unsigned long long)pc,
+                       modRel,
                        sym->Name, (unsigned long long)disp64);
         } else {
-            // No symbol — at least show module+offset
-            IMAGEHLP_MODULE64 mod{};
-            mod.SizeOfStruct = sizeof(mod);
-            if (SymGetModuleInfo64(process, pc, &mod))
-                printf("  #%-2d  0x%016llX  %s+0x%llX\n",
-                       i, (unsigned long long)pc,
-                       mod.ModuleName,
-                       (unsigned long long)(pc - mod.BaseOfImage));
-            else
-                printf("  #%-2d  0x%016llX  <unknown>\n",
-                       i, (unsigned long long)pc);
+            printf("  #%-2d  0x%016llX  %s\n",
+                   i, (unsigned long long)pc, modRel);
         }
     }
     fflush(stdout);
