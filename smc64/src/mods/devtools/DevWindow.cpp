@@ -102,6 +102,18 @@ namespace Mod::DevTools {
         ImGui::Checkbox("Invincibility", &Mod::DevTools::invincibility);
         ImGui::Checkbox("Everyone Invincible", &Mod::DevTools::noDamageToAnyone);
 
+        if (ImGui::Button("Save")) {
+            Engine::Scripting::submit("(game_save_totally_unsafe)");
+        }
+
+        if (ImGui::Button("Inf Clip On")) {
+            Engine::Scripting::submit("cheat_bottomless_clip 1");
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Inf Clip Off")) {
+            Engine::Scripting::submit("cheat_bottomless_clip 0");
+        }
+
         if (ImGui::CollapsingHeader("Tools")) {
             renderTranslateMapAddress();
             renderInterpretU32();

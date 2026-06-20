@@ -13,12 +13,14 @@
 
 #include "decomp/surface_terrains.h"
 
-// #define DEBUG_DYNAMIC_GEOMETRY 1
+#define DEBUG_DYNAMIC_GEOMETRY 1
 
 #ifdef DEBUG_DYNAMIC_GEOMETRY
     #include "spark/overlay/ESP.hpp"
     #include <iostream>
-    #define LOG(x) std::cout << "[DynamicGeometry] " << x << std::endl;
+    #define ISO_TIME_STRING std::chrono::system_clock::to_time_t(std::chrono::system_clock::now())
+    #define LOG_TIME "[" << ISO_TIME_STRING << "] "
+    #define LOG(x) std::cout << "[DynamicGeometry] " << LOG_TIME << x << std::endl;
 #else
     #define LOG(x) ;
 #endif

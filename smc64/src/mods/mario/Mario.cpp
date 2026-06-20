@@ -39,7 +39,7 @@
 #include "MarioAimingIK.hpp"
 #include "MarioWeaponKick.hpp"
 
-#define DEBUG_MARIO 1
+// #define DEBUG_MARIO 1
 
 #ifdef DEBUG_MARIO
     #define LOG(x) std::cout << "[Mario] " << x << std::endl;
@@ -332,6 +332,7 @@ namespace HaloCE::Mod::Mario {
         
         faceLookDirection(Engine::getPlayerCameraPointer()->fwd);
 
+        MarioBSPChunk::maintain();
 
         {
             std::lock_guard<std::mutex> sm64Lock(MarioAudio::sm64Mutex());
@@ -342,7 +343,6 @@ namespace HaloCE::Mod::Mario {
             }
         }
         
-        MarioBSPChunk::maintain();
         MarioAudio::update();
 
         updateMarioPose(marioGeometry);

@@ -72,6 +72,10 @@ Vec3 Vec3::projectToCone(Vec3 coneDirection, float coneAngle) {
     return dirNorm * cosAngle + rejectionNorm * sinf(coneAngle);
 }
 
+Vec3i Vec3::toVec3i() {
+    return Vec3i{ static_cast<int32_t>(x), static_cast<int32_t>(y), static_cast<int32_t>(z) };
+}
+
 Vec3 Vec3::randomGaussian(float stddev) {
     return Vec3{
         Math::randomGaussian(0.0f, stddev),

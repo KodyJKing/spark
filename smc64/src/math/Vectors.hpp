@@ -2,6 +2,8 @@
 
 #include <string>
 
+struct Vec3i;
+
 struct Vec3 {
     float x, y, z;
 
@@ -32,6 +34,8 @@ struct Vec3 {
     static Vec3 lerp( Vec3& a, Vec3& b, float t );
     Vec3 lerp( Vec3& other, float t );
     Vec3 projectToCone(Vec3 coneDirection, float coneAngle);
+
+    Vec3i toVec3i();
 
     static Vec3 randomGaussian(float stddev);
     static Vec3 randomUnitVector();
@@ -91,6 +95,8 @@ struct Vec3i {
     Vec3i& operator-=( const Vec3i& other );
     Vec3i& operator*=( int32_t scalar );
     Vec3i& operator/=( int32_t scalar );
+
+    bool operator==( const Vec3i& other ) const { return x == other.x && y == other.y && z == other.z; }
 
     float length();
 

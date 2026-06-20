@@ -5,10 +5,21 @@
     - Create a fork of LibSM64 that exposes bone transforms.
     - [Major] Fix `SpawnProjectile` misnomer (should be `SpawnObject`).
     - [Major] Fix namespace naming inconsistencies in Mario mod. (should match DevTools mod)
+    - [Major] Rename Entity to Object to agree with Halo's naming conventions.
+        - Source
+        - Ghidra
+        - Cheat Engine
+        - Documentation
 
 - Bugs and Stability:
     - Audit all raw memory accesses. Replace with safe wrappers in non-performance critical code.
     - [Blocker] Fix ghost entity colliders getting left behind.
+    - [Blocker] Fix Mario getting stuck in hallway panels and columns on Covenant ship levels.
+        - Truth and Reconciliation
+        - Keyes
+    - [Blocker] Fix Mario falling through lifts:
+        - The Library
+        - The Maw
 
 - Performance:
     - [Major] Optimize BSP loading transitions.
