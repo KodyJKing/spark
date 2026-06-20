@@ -124,13 +124,13 @@ namespace HaloCE::Mod::Mario::MarioModel {
         if (renderedHandle != playerHandle) return;
         
         uint32_t weaponHandle = Engine::getPlayerHeldWeaponHandle();
-        if (weaponHandle != NULL_HANDLE) {
+        if (weaponHandle != NULL_HANDLE && Engine::entityValid(weaponHandle)) {
             Engine::RenderEntityRequest childRequest = *request;
             childRequest.entityHandle = weaponHandle;
             renderEntityOriginal(&childRequest);
         }
 
-        if (marioHandle != NULL_HANDLE) {
+        if (marioHandle != NULL_HANDLE && Engine::entityValid(marioHandle)) {
             Engine::RenderEntityRequest marioRequest = *request;
             marioRequest.entityHandle = marioHandle;
             renderEntityOriginal(&marioRequest);

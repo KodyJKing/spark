@@ -5,6 +5,7 @@
 #include "BSPConversion.hpp"
 #include "MarioBSPChunk.hpp"
 #include "Mario.hpp"
+#include "functions/MoveElevatorSurfaceObject.hpp"
 
 #include <unordered_map>
 #include <unordered_set>
@@ -151,9 +152,18 @@ namespace HaloCE::Mod::Mario::DynamicGeometry {
         });
     }
 
-    void updateObjectTransform(Engine::Entity* entity) {
+    bool isElevatorEntity(Engine::Entity* entity) {
+        auto tag = entity->tag();
+        if (!tag) return false;
+        const char* path = tag->getResourcePath();
+        if (!path) return false;
+        return strstr(path, "elevator") != nullptr || strstr(path, "lift") != nullptr;
+    }
+
+    void updateObjectTransform(Engine::Entity* entity, SM64MarioState& marioState) {
         if (!entitiesWithGeometry.contains(entity)) return;
-        
+
+        bool isElevator = isElevatorEntity(entity);
         auto boneCount = entity->worldBones.count();
 
         for (size_t boneIndex = 0; boneIndex < boneCount; ++boneIndex) {
@@ -162,7 +172,12 @@ namespace HaloCE::Mod::Mario::DynamicGeometry {
 
             SM64ObjectTransform transform;
             getTransform(entity, boneIndex, transform);
-            sm64_surface_object_move(it->second.surfaceObjectId, &transform);
+
+            if (isElevator) {
+                moveElevatorSurfaceObject(it->second.surfaceObjectId, transform, marioState);
+            } else {
+                sm64_surface_object_move(it->second.surfaceObjectId, &transform);
+            }
         }
     }
 
@@ -214,7 +229,7 @@ namespace HaloCE::Mod::Mario::DynamicGeometry {
                 bool isRegistered = std::any_of(objectMap.begin(), objectMap.end(),
                     [entity](const auto& kv) { return kv.first.entity == entity; });
                 if (isRegistered) {
-                    updateObjectTransform(entity);
+                    updateObjectTransform(entity, marioState);
                 } else {
                     allocateDynamicGeometryForEntity(entity);
                 }
