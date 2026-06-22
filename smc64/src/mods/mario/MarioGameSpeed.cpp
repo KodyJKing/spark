@@ -1,0 +1,52 @@
+#include "MarioGameSpeed.hpp"
+
+#include "MarioAudio.hpp"
+#include "MarioState.hpp"
+#include "engine/halo1.hpp"
+
+#include <cstdio>
+#include <Windows.h>
+#include <Xinput.h>
+
+namespace HaloCE::Mod::Mario {
+
+    float smoothedGameSpeed = 1.0f;
+    float gamespeed = 1.0f;
+
+    void setGameSpeed(float speed) {
+        // if (gamespeed == speed) return;
+        gamespeed = speed;
+        char buffer[64];
+        snprintf(buffer, sizeof(buffer), "game_speed_value %.2f", speed);
+        Engine::Scripting::submit(buffer);
+        MarioAudio::setGameSpeed(speed);
+    }
+
+    bool bulletTimeButtonDown() {
+        // X button or left control.
+        XINPUT_STATE state = {0};
+        XInputGetState(0, &state);
+        if (state.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_UP) return true;
+        return GetAsyncKeyState(VK_CONTROL) & 0x8000;
+    }
+
+    void updateGameSpeed(Engine::Entity& player) {
+        bool airborne = marioAirborne();
+        bool hasSheilds = player.shield > 0;
+        bool canSlowdown = airborne && hasSheilds;
+        bool slowDown = canSlowdown && bulletTimeButtonDown();
+        if (slowDown) {
+            player.shield -= 0.05f;
+            gamespeed = 0.25f;
+        } else {
+            gamespeed = 1.0f;
+        }
+
+        // Smoothly interpolate the game speed to avoid abrupt changes.
+        float smoothingFactor = 0.4f; // Adjust this for faster/slower smoothing
+        smoothedGameSpeed += (gamespeed - smoothedGameSpeed) * smoothingFactor;
+
+        setGameSpeed(smoothedGameSpeed);
+    }
+
+}

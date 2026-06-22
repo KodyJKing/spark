@@ -3,7 +3,7 @@
 param(
     [string]$watchPath,
     [string]$command,
-    [string]$extensions = ".cpp, .hpp, .c, .h, .ps1, .bat, .rc",
+    [string]$extensions = ".cpp, .hpp, .c, .h, .ps1, .bat, .rc, .def",
     [string]$ignorePaths = "bin, obj, .git, cheat-engine"
 )
 

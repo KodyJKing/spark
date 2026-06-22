@@ -1,0 +1,176 @@
+#include "Mario.hpp"
+#include "MarioModel.hpp"
+#include "MarioSkeleton.hpp"
+#include "MarioWeaponOffset.hpp"
+#include "MarioAimingIK.hpp"
+#include <string>
+#include "decomp/sm64.h"
+#include "Coordinates.hpp"
+#include "spark/hook/Hooks.hpp"
+
+// #define DEBUG_MARIO_MODEL 1
+
+#ifdef DEBUG_MARIO_MODEL
+#include <iostream>
+#define LOG(x) std::cout << x << std::endl;
+#else
+#define LOG(x)
+#endif
+
+namespace HaloCE::Mod::Mario::MarioModel {
+    const char* marioTagPath = "smc64\\mario\\mario";
+
+    bool isMario(Engine::Entity* entity) {
+        if (!entity) return false;
+        return entity->fromResourcePath(marioTagPath);
+    }
+
+    bool isMario(uint32_t entityHandle) {
+        auto rec = Engine::getEntityRecord( entityHandle );
+        if (!rec) return false;
+        auto entity = rec->entity();
+        if (!entity) return false;
+        return isMario(entity);
+    }
+
+    void updateMarioPosition(Engine::Entity* marioEntity, Vec3 newPos) {
+        if (!marioEntity) return;
+
+        marioEntity->pos = newPos;
+        
+        // Filthy hack to work around the fact that we're bypassing Halo's entity movement bookkeeping.
+        // I suspect this is updating things like cluster and wake/sleep state.
+        Engine::Scripting::submit("(objects_attach (player0) \"\" mario_model \"\")");
+        Engine::Scripting::submit("(objects_detach (player0) mario_model)");
+    }
+
+    void updatePose( uint32_t entityHandle, Engine::Entity* marioEntity) {
+        if (!marioEntity) return;
+
+        // For now, just set all world bone transforms to identity rotation. Keep translation and scale.
+        auto worldBones = marioEntity->worldBones.get(marioEntity, 0);
+        if (!worldBones) return;
+
+        updateMarioPosition(marioEntity, marioPose[0].pos);
+        Vec3 marioVelocity = *(Vec3*)&marioState.velocity[0];
+        marioEntity->vel = Coordinates::marioToHalo(marioVelocity);
+
+        auto boneCount = marioEntity->worldBones.count();
+        for (int i = 0; i < boneCount; i++) {
+            auto& bone = worldBones[i];
+            bone.w = marioPose[i].w;
+            bone.x = marioPose[i].x;
+            bone.y = marioPose[i].y;
+            bone.z = marioPose[i].z;
+            bone.pos = marioPose[i].pos;
+        }
+    }
+
+    void updateWeaponPose( uint32_t weaponHandle ) {
+        auto rec = Engine::getEntityRecord( weaponHandle );
+        if (!rec) return;
+        auto weaponEntity = rec->entity();
+        if (!weaponEntity) return;
+
+        auto weaponBones = weaponEntity->worldBones.get(weaponEntity, 0);
+        if (!weaponBones) return;
+
+        auto leftHandBone = getMarioBoneByName("left_hand");
+
+        auto weaponRootBone = &weaponBones[0];
+        auto rootBoneInitial = weaponRootBone[0];
+        
+        MarioWeaponOffset::Offset off;
+        MarioWeaponOffset::getWeaponOffset(weaponHandle, off);
+        weaponRootBone->pos = leftHandBone.transformPoint(off);
+        if (MarioAimingIK::marioArmsBusy()) {
+            weaponRootBone->x = leftHandBone.x;
+            weaponRootBone->y = leftHandBone.y;
+            weaponRootBone->z = leftHandBone.z;
+        }
+
+        auto initialInverse = Engine::inverseWorldTransform(rootBoneInitial);
+        auto relativeTransform = Engine::multiplyWorldTransforms(
+            *weaponRootBone,
+            initialInverse
+        );
+        auto boneCount = weaponEntity->worldBones.count();
+        for (int i = 1; i < boneCount; i++) {
+            auto& bone = weaponBones[i];
+            bone = Engine::multiplyWorldTransforms(relativeTransform, bone);
+        }
+    }
+
+    uint32_t marioHandle  = 0xFFFFFFFF;
+
+    uint32_t spawnMarioModel(Vec3 position) {
+        auto tag = Engine::findTag(marioTagPath, "weap");
+        if (!tag) return NULL_HANDLE;
+
+        Engine::ProjectileSpawnArgs args{};
+        args.projectileTagId    = tag->tagID;
+        args.ownerEntityHandle  = NULL_HANDLE;
+        args.spawnPosition      = position;
+
+        if (!Spark::SpawnProjectile::original) return NULL_HANDLE;
+        return Spark::SpawnProjectile::original(&args, 3);
+    }
+
+    void renderEntity(Engine::RenderEntityRequest *request, Engine::renderEntity_t renderEntityOriginal) {
+        // if (!isMario(request->entityHandle)) return;
+
+        auto renderedHandle = request->entityHandle;
+        auto playerHandle = Engine::getPlayerHandle();
+        if (renderedHandle != playerHandle) return;
+        
+        uint32_t weaponHandle = Engine::getPlayerHeldWeaponHandle();
+        if (weaponHandle != NULL_HANDLE && Engine::entityValid(weaponHandle)) {
+            Engine::RenderEntityRequest childRequest = *request;
+            childRequest.entityHandle = weaponHandle;
+            renderEntityOriginal(&childRequest);
+        }
+
+        if (marioHandle != NULL_HANDLE && Engine::entityValid(marioHandle)) {
+            Engine::RenderEntityRequest marioRequest = *request;
+            marioRequest.entityHandle = marioHandle;
+            renderEntityOriginal(&marioRequest);
+        }
+    }
+
+    uint64_t marioModelLastUpdatedTick = 0;
+
+    void addHandlers(Spark::ModId modId) {
+
+        Spark::UpdateWorldBones::addHandler(modId, +[](void*, auto next, uint32_t entityHandle) {
+            auto rec = Engine::getEntityRecord(entityHandle);
+            if (!rec) return next(entityHandle);
+            auto entity = rec->entity();
+            if (!entity) return next(entityHandle);
+
+            next(entityHandle);
+
+            if (isMario(entity)) {
+                marioModelLastUpdatedTick = GetTickCount64();
+                marioHandle = entityHandle;
+                updatePose(entityHandle, entity);
+            } else if (entityHandle == Engine::getPlayerHeldWeaponHandle()) {
+                updateWeaponPose(entityHandle);
+
+                // Print tag info for the entity.
+                auto entity = Engine::getEntityPointer(entityHandle);
+                auto tag = Engine::getTag(entity->tagID);
+                LOG("Entity Handle: " << entityHandle << ", Tag: " << tag->getResourcePath());
+            }
+            
+        }, nullptr);
+
+        Spark::UpdateAllEntities::addHandler(modId, +[](void*, auto next) {
+            next();
+            auto now = GetTickCount64();
+            if (marioModelLastUpdatedTick != 0 && now - marioModelLastUpdatedTick > 50) {
+                Engine::Scripting::submit("(object_create_anew mario_model)");
+            }
+        }, nullptr);
+    }
+
+}

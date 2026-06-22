@@ -1,4 +1,5 @@
 #include "Vectors.hpp"
+#include "Math.hpp"
 
 ////////////////////////////////////////
 // Vec3
@@ -52,6 +53,81 @@ Vec3 Vec3::lerp( Vec3& a, Vec3& b, float t ) {
 
 Vec3 Vec3::lerp( Vec3& b, float t ) {
     return *this + (b - *this) * t;
+}
+
+Vec3 Vec3::projectToCone(Vec3 coneDirection, float coneAngle) {
+    Vec3 dirNorm = coneDirection.normalize();
+    Vec3 thisNorm = this->normalize();
+
+    float cosAngle = cosf(coneAngle);
+    float dot = thisNorm.dot(dirNorm);
+
+    if (dot > cosAngle) {
+        // Already within the cone
+        return *this;
+    }
+
+    Vec3 rejection = thisNorm - dirNorm * dot;
+    Vec3 rejectionNorm = rejection.normalize();
+    return dirNorm * cosAngle + rejectionNorm * sinf(coneAngle);
+}
+
+Vec3i Vec3::toVec3i() {
+    return Vec3i{ static_cast<int32_t>(x), static_cast<int32_t>(y), static_cast<int32_t>(z) };
+}
+
+Vec3 Vec3::randomGaussian(float stddev) {
+    return Vec3{
+        Math::randomGaussian(0.0f, stddev),
+        Math::randomGaussian(0.0f, stddev),
+        Math::randomGaussian(0.0f, stddev)
+    };
+}
+
+Vec3 Vec3::randomUnitVector() {
+    float z = Math::lerp(-1.0f, 1.0f, static_cast<float>(rand()) / RAND_MAX);
+    float theta = Math::lerp(0.0f, 2.0f * 3.14159265f, static_cast<float>(rand()) / RAND_MAX);
+    float r = sqrtf(1 - z * z);
+    return Vec3{ r * cosf(theta), r * sinf(theta), z };
+}
+
+Vec3 Vec3::orthonormalize(Vec3 xCol, Vec3 zCol) {
+    float dot = zCol.dot(xCol);
+    if (fabsf(dot) > 0.99f) {
+        zCol = { 0.f, 1.f, 0.f };
+        dot  = zCol.dot(xCol);
+    }
+    return (zCol - xCol * dot).normalize();
+}
+
+// Closed-form inverse of eulerDegreesToAxes() in OBBIntersect.hpp.
+// Given: R = Ry(y) * Rx(x) * Rz(z)  (YXZ intrinsic)
+//   col2 (Z col) gives:  zCol.y = -sx,  zCol.x = sy*cx,  zCol.z = cy*cx
+//   col0 (X col) gives:  xCol.y = cx*sz
+//   col1 (Y col) = zCol × xCol  gives:  yCol.y = cx*cz
+Vec3 Vec3::orientationToEuler_YXZ(Vec3 xCol, Vec3 zCol) {
+    constexpr float RAD2DEG = 180.0f / 3.14159265f;
+    Vec3 yCol = zCol.cross(xCol);
+    return {
+         asinf(-zCol.y)           * RAD2DEG,   // pitch (x)
+         atan2f(zCol.x, zCol.z)   * RAD2DEG,   // yaw   (y)
+         atan2f(xCol.y, yCol.y)   * RAD2DEG,   // roll  (z)
+    };
+}
+
+////////////////////////////////////////
+// Matrix3
+
+Matrix3 Matrix3::fromEulerYXZ(Vec3 eulerDeg) {
+    constexpr float DEG2RAD = 3.14159265358979323846f / 180.0f;
+    float cy = cosf(eulerDeg.y * DEG2RAD), sy = sinf(eulerDeg.y * DEG2RAD); // yaw
+    float cx = cosf(eulerDeg.x * DEG2RAD), sx = sinf(eulerDeg.x * DEG2RAD); // pitch
+    float cz = cosf(eulerDeg.z * DEG2RAD), sz = sinf(eulerDeg.z * DEG2RAD); // roll
+    Matrix3 m;
+    m.columns.x = {  cy*cz + sy*sx*sz,   cx*sz,  -sy*cz + cy*sx*sz }; // local +X
+    m.columns.y = { -cy*sz + sy*sx*cz,   cx*cz,   sy*sz + cy*sx*cz }; // local +Y
+    m.columns.z = {  sy*cx,             -sx,       cy*cx             }; // local +Z
+    return m;
 }
 
 ////////////////////////////////////////
@@ -318,6 +394,22 @@ Vec3 Camera::project(Vec3 p) {
     y = (1 - y) * height / 2;
     
     return Vec3{ x, y, z };
+}
+
+Ray Camera::mouseRay(float sx, float sy) {
+    // Invert project(): reconstruct the view-space direction at unit depth (z=1).
+    float t = tanf(fov / 2);
+    float xLocal, yLocal;
+    if (verticalFov) {
+        xLocal = (1.f - 2.f * sx / width)  * t * (width / height);
+        yLocal = (1.f - 2.f * sy / height) * t;
+    } else {
+        xLocal = (1.f - 2.f * sx / width)  * t;
+        yLocal = (1.f - 2.f * sy / height) * t * (height / width);
+    }
+    Vec3 l   = left();
+    Vec3 dir = (fwd + l * xLocal + up * yLocal).normalize();
+    return Ray{ pos, dir };
 }
 
 

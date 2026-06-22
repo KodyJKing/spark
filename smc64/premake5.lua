@@ -46,11 +46,15 @@ project "smc64"
 
     filter "configurations:Debug"
         runtime "Debug"
+        optimize "Off"
+        editandcontinue "Off"
+        flags { "NoIncrementalLink" }
+        buildoptions { "/JMC-" }
 
         --  Turn symbols off when you're using Cheat Engine as part of your workflow. 
         --  Cheat Engine will keep .pdb files open and prevent the linker from writing to them.
-        -- symbols "On"
-        symbols "Off"
+        symbols "Full"
+        -- symbols "Off"
   
     filter "configurations:Release"
         runtime "Release"

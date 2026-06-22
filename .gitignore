@@ -16,3 +16,12 @@ vendor/*/obj/
 scripts/user
 paired_sensors.txt
 cheat-engine/data
+
+reversing/binary-ninja/*.bndb
+reversing/cheat-engine/traces
+reversing/ghidra/*.gpr
+reversing/ghidra/*.lock
+reversing/ghidra/*.lock~
+reversing/ghidra/*.zip
+reversing/ghidra/Halo MCC.rep/**
+reversing/ghidra_restic

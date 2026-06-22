@@ -2,6 +2,8 @@
 
 #include <string>
 
+struct Vec3i;
+
 struct Vec3 {
     float x, y, z;
 
@@ -31,6 +33,54 @@ struct Vec3 {
 
     static Vec3 lerp( Vec3& a, Vec3& b, float t );
     Vec3 lerp( Vec3& other, float t );
+    Vec3 projectToCone(Vec3 coneDirection, float coneAngle);
+
+    Vec3i toVec3i();
+
+    static Vec3 randomGaussian(float stddev);
+    static Vec3 randomUnitVector();
+
+    // Given the X and Z column vectors of a rotation matrix (i.e. local +X and +Z axes),
+    // returns the YXZ intrinsic Euler angles in degrees that reproduce that orientation.
+    // Inverse of Matrix3::fromEulerYXZ().
+    static Vec3 orientationToEuler_YXZ(Vec3 xCol, Vec3 zCol);
+
+    // Gram-Schmidt: returns a new zCol that is orthogonal to xCol and normalized.
+    // If zCol is nearly parallel to xCol (|dot| > 0.99), falls back to world +Y.
+    static Vec3 orthonormalize(Vec3 xCol, Vec3 zCol);
+
+    static Vec3 getTangent(Vec3 normal, Vec3 reference) {
+        Vec3 tangent = normal.cross(reference);
+        if (tangent.lengthSquared() < 1e-6f)
+            tangent = normal.cross(Vec3{ 0.f, 1.f, 0.f });
+        if (tangent.lengthSquared() < 1e-6f)
+            tangent = normal.cross(Vec3{ 1.f, 0.f, 0.f });
+        return tangent.normalize();
+    }
+
+    static Vec3 up() {
+        return Vec3{ 0.f, 0.f, 1.f };
+    }
+
+    static Vec3 down() {
+        return Vec3{ 0.f, 0.f, -1.f };
+    }
+    
+    static Vec3 right() {
+        return Vec3{ 0.f, 1.f, 0.f };
+    }
+
+    static Vec3 left() {
+        return Vec3{ 0.f, -1.f, 0.f };
+    }
+    
+    static Vec3 forward() {
+        return Vec3{ 1.f, 0.f, 0.f };
+    }
+
+    static Vec3 back() {
+        return Vec3{ -1.f, 0.f, 0.f };
+    }
 };
 
 struct Vec3i {
@@ -45,6 +95,8 @@ struct Vec3i {
     Vec3i& operator-=( const Vec3i& other );
     Vec3i& operator*=( int32_t scalar );
     Vec3i& operator/=( int32_t scalar );
+
+    bool operator==( const Vec3i& other ) const { return x == other.x && y == other.y && z == other.z; }
 
     float length();
 
@@ -65,6 +117,20 @@ struct Vec4 {
     Vec4& operator/=( float scalar );
 
     float dot( const Vec4& other );
+};
+
+struct Matrix3 {
+    union {
+        float m[9]; // Column-major order
+        struct {
+            Vec3 x, y, z; 
+        } columns;
+    };
+
+    // Convert YXZ intrinsic Euler angles (degrees) to a rotation matrix.
+    // Column layout: columns.x = local +X, columns.y = local +Y, columns.z = local +Z.
+    // Rotation order: Ry(yaw) * Rx(pitch) * Rz(roll).
+    static Matrix3 fromEulerYXZ(Vec3 eulerDeg);
 };
 
 struct Matrix4 {
@@ -117,12 +183,34 @@ struct Quaternion {
     Quaternion pow( float exponent );
 };
 
+struct Ray {
+    Vec3 origin;
+    Vec3 direction; // should be normalized
+};
+
+// Returns the closest point on an infinite axis (axisOrigin + t·axisDir) to a ray.
+// Returns axisOrigin when the axis and ray are nearly parallel (degenerate).
+// Typical gizmo usage: call each frame with the mouse ray, project the delta
+// onto axisDir to get the signed translation amount.
+inline Vec3 closestPointOnAxisToRay(const Ray& r, Vec3 axisOrigin, Vec3 axisDir) {
+    Vec3  w   = axisOrigin - r.origin;
+    float b   = axisDir.dot(r.direction);
+    Vec3  rd  = r.direction; // non-const copy — Vec3::dot is not const-qualified
+    float den = 1.f - b * b;
+    if (fabsf(den) < 1e-6f) return axisOrigin;
+    float t   = (b * rd.dot(w) - axisDir.dot(w)) / den;
+    return axisOrigin + axisDir * t;
+}
+
 struct Camera {
     Vec3 pos, fwd, up;
     float fov, width, height;
     bool verticalFov;
     Vec3 left();
     Vec3 project(Vec3 p);
+    // Unproject a screen-space pixel (sx, sy) to a world-space ray from the camera.
+    // Exact inverse of project() at unit depth. direction is normalized.
+    Ray  mouseRay(float sx, float sy);
 };
 
 Vec3 orientationToEulerAngles(Vec3 fwd, Vec3 up);

@@ -16,6 +16,9 @@ public class Keyboard {
     public static void PressKillKey() {
         keybd_event(KILL_KEY, 0, 0, UIntPtr.Zero);
         keybd_event(KILL_KEY, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+
+        // Sleep for a short duration to ensure the key press is registered.
+        System.Threading.Thread.Sleep(200);
     }
 }
 "@

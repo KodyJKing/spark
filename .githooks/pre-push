@@ -1,0 +1,2 @@
+#!/bin/sh
+restic backup reversing/ghidra
