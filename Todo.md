@@ -22,11 +22,8 @@
     - [Blocker] Fix ghost entity colliders getting left behind.
     - [Blocker] Fix Mario getting stuck in hallway panels and columns on Covenant ship levels.
         - Truth and Reconciliation
-        - Keyes
-    - [Blocker] Fix Mario falling through lifts:
-        - The Library
-            - Verify Maw fix is executing on Library lifts. If it's not, then we may not need to implement additional fixes for the Library lifts.
-        x The Maw
+        x Keyes
+    - [Blocker] Fix third person camera jitter.
 
 - Performance:
     - [Major] Optimize BSP loading transitions.
