@@ -27,7 +27,9 @@ namespace Engine {
         uint16_t field28_0x34;
         char padding_0x36[2];
         uint32_t entityHandle;
-        char padding_0x3c[20]; // This has been confirmed to exist via Ghidra auto-fill.
+        char padding_0x3c[2]; // This has been confirmed to exist via Ghidra auto-fill.
+        int16_t boneIndex;
+        char padding_0x3e[16]; // This has been confirmed to exist via Ghidra auto-fill.
 
         char safetyPadding[0x10]; // This has not been confirmed to exist. For safety, we allocate a little extra.
     };

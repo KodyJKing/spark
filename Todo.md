@@ -61,7 +61,7 @@
     - Animation:
         - Inverse kinematics:
             - Arm IK:
-                - Smooth out arm IK transition from busy to not busy.
+                - [Major] Smooth out arm IK transition from busy to not busy.
                 - Implement pole targets so Mario's elbows bend naturally.
             - Torso IK:
                 - Try out making Mario lean slightly as he aims up and down.

@@ -151,6 +151,8 @@ namespace Spark::Overlay {
         WNDPROC originalWndProc = nullptr;
 
         LRESULT CALLBACK hkWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+            auto& io = ImGui::GetIO();
+            io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
             auto result = ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam);
 
             bool blockMessage = false;

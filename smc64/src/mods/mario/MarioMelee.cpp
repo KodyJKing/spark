@@ -77,7 +77,7 @@ namespace HaloCE::Mod::Mario::MarioMelee {
         return pos + forward * kFootOffset;
     }
 
-    static void dealDamage(uint32_t targetHandle, Vec3 hitPos, Vec3 hitDir = { 0.f, 0.f, -1.f }) {
+    static void dealDamage(uint32_t targetHandle, Vec3 hitPos, Vec3 hitDir = { 0.f, 0.f, -1.f }, int16_t boneIndex = 0) {
         if (!Spark::DamageEntity::original) return;
         auto* tag = getDamageTag();
         if (!tag) return;
@@ -95,7 +95,7 @@ namespace HaloCE::Mod::Mario::MarioMelee {
         ev.hitDirection        = hitDir;
         ev.baseDamage          = kMeleeDamage;
         ev.damageMultiplier    = 1.0f;
-        Spark::DamageEntity::original(&ev, targetHandle, 0, 0, -1, 0);
+        Spark::DamageEntity::original(&ev, targetHandle, 0, 0, boneIndex, 0);
 
         auto* soundTag = getBipedImpactSoundTag();
         if (soundTag) {
@@ -162,7 +162,9 @@ namespace HaloCE::Mod::Mario::MarioMelee {
                 auto cat = hitEntity->entityCategory;
                 if (cat != Engine::EntityCategory_Biped && cat != Engine::EntityCategory_Vehicle) continue;
 
-                // dealDamage(handle, result.pos, displacement.normalize());
+                // Log the bone index
+                LOG("Bone index: " << result.boneIndex);
+
                 dealDamage(handle, result.pos, result.normal.normalize() * -1.0f);
                 sCooldown[f] = kCooldownTicks;
             }
