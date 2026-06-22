@@ -23,7 +23,6 @@
     - [Blocker] Fix Mario getting stuck in hallway panels and columns on Covenant ship levels.
         - Truth and Reconciliation
         x Keyes
-    - [Blocker] Fix third person camera jitter.
 
 - Performance:
     - [Major] Optimize BSP loading transitions.
@@ -82,7 +81,7 @@
 
 - Usability:
     - Keybinds:
-        - [Blocker] Implement remappable keybinds.
-        - [Blocker] Reverse MCC's keybinds so we can hook into those too.
-        - [Blocker] Address some keys being detected when window is not focused.
+        - [Critical] Implement remappable keybinds.
+        - [Critical] Reverse MCC's keybinds so we can hook into those too.
+        - [Critical] Address some keys being detected when window is not focused.
 

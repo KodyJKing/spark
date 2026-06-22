@@ -8,10 +8,6 @@
 namespace HaloCE::Mod::Mario::MarioCamera {
 
     static bool     active               = false;
-    static Vec3     cameraPosition       = {0, 0, 0};
-    static Vec3     cameraVelocity       = {0, 0, 0};
-    static uint32_t framesSinceLastUpdate = 0;
-    static uint32_t lastTickInterval      = 2;
     static float    camDistanceScale      = 1.0f;
 
     static constexpr float CAM_BACK        = -1.2f;
@@ -23,18 +19,10 @@ namespace HaloCE::Mod::Mario::MarioCamera {
 
 
     static Vec3 getCameraPosition() {
-        uint32_t effectiveInterval = lastTickInterval;
-        if (HaloMCC::isPauseMenuOpen() || effectiveInterval == 0) 
-            effectiveInterval = 1;
-
-        // Extrapolate camera on non-update frames. Without this, the camera jitters terribly.
-        float dt = (framesSinceLastUpdate) / (float) effectiveInterval;
-        if (dt > 1.0f) dt = 1.0f; // Don't extrapolate too far, to avoid going through walls.
-        
         auto camera = Engine::getPlayerCameraPointer();
         if (!camera) return Vec3{0, 0, 0};
 
-        Vec3 marioPos = cameraPosition + cameraVelocity * dt;
+        Vec3 marioPos = camera->pos - Vec3{0,0,0.5f};
         Vec3 right    = camera->fwd.cross(camera->up);
 
         // Cast a ray from Mario's head height toward the desired camera position.
@@ -69,15 +57,10 @@ namespace HaloCE::Mod::Mario::MarioCamera {
             + (camera->fwd * CAM_BACK + right * CAM_RIGHT) * camDistanceScale 
             + right * CAM_RIGHT_FIXED
             + Vec3{0, 0, CAM_UP};
-        framesSinceLastUpdate++;
         return result;
     }
 
     void onUpdate(Vec3 marioWorldPos) {
-        cameraVelocity  = marioWorldPos - cameraPosition;
-        cameraPosition  = marioWorldPos;
-        lastTickInterval = framesSinceLastUpdate;
-        framesSinceLastUpdate = 0;
         active = true;
     }
 
