@@ -11,6 +11,12 @@
         - Cheat Engine
         - Documentation
 
+- Tooling
+    - Track tags and assets in git.
+        - Store diffs relative to vanilla tag values.
+        - Export tag data to XML for human readable diffs.
+    - [Major] Save manager for better testing inner loop.
+
 - Bugs and Stability:
     - Audit all raw memory accesses. Replace with safe wrappers in non-performance critical code.
     - [Blocker] Fix ghost entity colliders getting left behind.
@@ -19,7 +25,8 @@
         - Keyes
     - [Blocker] Fix Mario falling through lifts:
         - The Library
-        - The Maw
+            - Verify Maw fix is executing on Library lifts. If it's not, then we may not need to implement additional fixes for the Library lifts.
+        x The Maw
 
 - Performance:
     - [Major] Optimize BSP loading transitions.
@@ -82,7 +89,3 @@
         - [Blocker] Reverse MCC's keybinds so we can hook into those too.
         - [Blocker] Address some keys being detected when window is not focused.
 
-- Tooling
-    - Track tags and assets in git.
-        - Store diffs relative to vanilla tag values.
-        - Export tag data to XML for human readable diffs.

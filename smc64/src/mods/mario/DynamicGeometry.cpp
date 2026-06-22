@@ -14,7 +14,7 @@
 
 #include "decomp/surface_terrains.h"
 
-#define DEBUG_DYNAMIC_GEOMETRY 1
+// #define DEBUG_DYNAMIC_GEOMETRY 1
 
 #ifdef DEBUG_DYNAMIC_GEOMETRY
     #include "spark/overlay/ESP.hpp"
@@ -29,10 +29,30 @@ namespace HaloCE::Mod::Mario::DynamicGeometry {
 
     static std::mutex s_updateMutex;
 
-    // float allocateRange = 10.0f;
-    // float deallocateRange = 20.0f;
-    float allocateRange = 8.0f;
-    float deallocateRange = 10.0f;
+    bool isElevatorTag(Engine::Tag* tag) {
+        if (!tag) return false;
+        const char* path = tag->getResourcePath();
+        if (!path) return false;
+        return strstr(path, "elevator") != nullptr 
+            || strstr(path, "platform") != nullptr
+            || strstr(path, "lift") != nullptr;
+    }
+
+    bool isElevatorEntity(Engine::Entity* entity) {
+        auto tag = entity->tag();
+        if (!tag) return false;
+        return isElevatorTag(tag);
+    }
+
+    float getAllocateRange(Engine::Tag* entityTag) {
+        if (isElevatorTag(entityTag)) return 100.0f;
+        return 8.0f;
+    }
+
+    float getDeallocateRange(Engine::Tag* entityTag) {
+        if (isElevatorTag(entityTag)) return 200.0f;
+        return 10.0f;
+    }
 
     struct BoneEntry {
         uint32_t surfaceObjectId;
@@ -152,14 +172,6 @@ namespace HaloCE::Mod::Mario::DynamicGeometry {
         });
     }
 
-    bool isElevatorEntity(Engine::Entity* entity) {
-        auto tag = entity->tag();
-        if (!tag) return false;
-        const char* path = tag->getResourcePath();
-        if (!path) return false;
-        return strstr(path, "elevator") != nullptr || strstr(path, "lift") != nullptr;
-    }
-
     void updateObjectTransform(Engine::Entity* entity, SM64MarioState& marioState) {
         if (!entitiesWithGeometry.contains(entity)) return;
 
@@ -222,6 +234,10 @@ namespace HaloCE::Mod::Mario::DynamicGeometry {
             if (!entity) return;
 
             if (!shouldCreateGeometryFor(entity)) return;
+
+            auto tag = entity->tag();
+            float allocateRange = getAllocateRange(tag);
+            float deallocateRange = getDeallocateRange(tag);
             
             Vec3 entityPos = getEntityPosition(entity);
             float distance = (entityPos - marioWorldPos).lengthSquared();
