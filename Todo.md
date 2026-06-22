@@ -23,6 +23,7 @@
     - [Blocker] Fix Mario getting stuck in hallway panels and columns on Covenant ship levels.
         - Truth and Reconciliation
         x Keyes
+    - [Blocker] Fix Mario getting stuck in c_field_generator's.
 
 - Performance:
     - [Major] Optimize BSP loading transitions.

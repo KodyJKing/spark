@@ -4,7 +4,7 @@
 #include "MarioState.hpp"
 
 #include <unordered_map>
-namespace HaloCE::Mod::ThirdPersonFix {
+namespace Mod::Mario::ThirdPersonFix {
 
     std::unordered_map<std::string, float> spreadValues = {
         {"weapons\\shotgun\\pellet", 3.0f},

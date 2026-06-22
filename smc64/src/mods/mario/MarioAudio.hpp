@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <mutex>
 
-namespace HaloCE::Mod::Mario::MarioAudio {
+namespace Mod::Mario::MarioAudio {
     void init(const uint8_t* rom);
     void update();
     void free();

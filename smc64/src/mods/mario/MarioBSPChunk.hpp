@@ -2,7 +2,7 @@
 
 #include "math/Vectors.hpp"
 
-namespace HaloCE::Mod::Mario::MarioBSPChunk {
+namespace Mod::Mario::MarioBSPChunk {
 
     // Hysteresis: only reload static geometry once Mario passes the loaded chunk's
     // boundary by this many mario units. Tunable for testing.

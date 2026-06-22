@@ -8,7 +8,7 @@
 #include "engine/halo1.hpp"
 #include "Coordinates.hpp"
 
-namespace HaloCE::Mod::Mario {
+namespace Mod::Mario {
 
     void dumpMarioGeometry() {
         struct SM64MarioInputs marioInputs = {0};

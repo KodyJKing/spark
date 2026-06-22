@@ -18,7 +18,7 @@
 #include <cmath>
 #include <algorithm>
 
-#define DEBUG_MARIO_MELEE 1
+// #define DEBUG_MARIO_MELEE 1
 
 #ifdef DEBUG_MARIO_MELEE
     #include <iostream>
@@ -27,7 +27,7 @@
     #define LOG(x) ;
 #endif
 
-namespace HaloCE::Mod::Mario::MarioMelee {
+namespace Mod::Mario::MarioMelee {
 
     // ── Tunable constants ──────────────────────────────────────────────────────
     static constexpr float kFistRadius              = 0.05f;  // world units (debug marker only)
@@ -37,6 +37,7 @@ namespace HaloCE::Mod::Mario::MarioMelee {
     static constexpr float kMeleeDamage             = 0.01f;
     static constexpr int   kCooldownTicks           = 15;     // ~0.5 s at 30 fps, per limb
     static constexpr float kMeleeShieldRegen        = 0.2f;   // shield regen per melee hit
+    static constexpr float kLimbSweepMultiplier     = 1.5f;   // multiplier for limb sweep distance
     
     static const char * kDamageTagPath = "weapons\\frag grenade\\explosion";
     static const char * kBipedImpactSoundTagPath = "sound\\sfx\\impulse\\melee\\melee_impact_fleshy";
@@ -146,7 +147,7 @@ namespace HaloCE::Mod::Mario::MarioMelee {
                 if (sCooldown[f] > 0) continue;
 
                 Vec3 origin       = sPrevPos[f];
-                Vec3 displacement = currPos[f] - origin;
+                Vec3 displacement = (currPos[f] - origin) * kLimbSweepMultiplier;
                 if (displacement.dot(displacement) < 1e-8f) continue; // limb didn't move
 
                 Engine::RaycastResult result{};

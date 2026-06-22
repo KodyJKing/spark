@@ -47,7 +47,7 @@
     #define LOG(x) ;
 #endif
 
-namespace HaloCE::Mod::Mario {
+namespace Mod::Mario {
 
     // Guards the geometry buffers and full update() body against concurrent free().
     static std::mutex s_updateMutex;

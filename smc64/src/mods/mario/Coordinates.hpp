@@ -1,7 +1,7 @@
 #pragma once
 #include "math/Vectors.hpp"
 
-namespace HaloCE::Mod::Coordinates {
+namespace Mod::Mario::Coordinates {
     extern const float scaleFactor;
     extern const float invScaleFactor;
 

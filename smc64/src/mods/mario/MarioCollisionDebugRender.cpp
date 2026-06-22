@@ -10,7 +10,7 @@
 #include "Mario.hpp"
 #include "Coordinates.hpp"
 
-namespace HaloCE::Mod::Mario {
+namespace Mod::Mario {
 
 #ifdef DEBUG_MARIO_COLLISION
 
@@ -268,4 +268,4 @@ namespace CollisionDebugRender {
 
 #endif // DEBUG_MARIO_COLLISION
 
-} // namespace HaloCE::Mod::Mario
+} // namespace Mod::Mario

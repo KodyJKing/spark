@@ -4,7 +4,7 @@
 #include "engine/halo1.hpp"
 #include "stdint.h"
 
-namespace HaloCE::Mod::Mario::MarioModel {
+namespace Mod::Mario::MarioModel {
     void renderEntity(Engine::RenderEntityRequest* request, Engine::renderEntity_t renderEntityOriginal);
 
     void addHandlers(Spark::ModId modId);

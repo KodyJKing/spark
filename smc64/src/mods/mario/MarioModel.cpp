@@ -17,7 +17,7 @@
 #define LOG(x)
 #endif
 
-namespace HaloCE::Mod::Mario::MarioModel {
+namespace Mod::Mario::MarioModel {
     const char* marioTagPath = "smc64\\mario\\mario";
 
     bool isMario(Engine::Entity* entity) {

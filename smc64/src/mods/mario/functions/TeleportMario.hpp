@@ -1,5 +1,5 @@
 #pragma once
 
-namespace HaloCE::Mod::Mario {
+namespace Mod::Mario {
     void teleportMario(const Vec3& haloPosition);
 }

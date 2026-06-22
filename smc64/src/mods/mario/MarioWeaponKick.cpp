@@ -9,7 +9,7 @@
 #include <string>
 #include <unordered_map>
 
-namespace HaloCE::Mod::Mario::MarioWeaponKick {
+namespace Mod::Mario::MarioWeaponKick {
 
     // ── Config ─────────────────────────────────────────────────────────────────
 

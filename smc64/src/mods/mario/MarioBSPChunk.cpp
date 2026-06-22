@@ -24,7 +24,7 @@
     #define LOG(x) ;
 #endif
 
-namespace HaloCE::Mod::Mario::MarioBSPChunk {
+namespace Mod::Mario::MarioBSPChunk {
 
     // Mario's chunk is the frame all of sm64's coords (static surfaces, dynamic objects,
     // marioState.position) are expressed in. We allow Mario's local position to drift up
@@ -40,7 +40,7 @@ namespace HaloCE::Mod::Mario::MarioBSPChunk {
     Vec3i getLoadedChunk() { return marioChunk; }
 
     static void uploadFor(Vec3i chunk) {
-        auto surfaces = HaloCE::Mod::BSPConversion::haloGeometryToMarioForChunk(chunk, 1);
+        auto surfaces = Mod::Mario::BSPConversion::haloGeometryToMarioForChunk(chunk, 1);
 
         auto levelEditSurfaces = ::Mod::Mario::LevelEdit::getStaticSurfaces(chunk);
         surfaces.insert(surfaces.end(), levelEditSurfaces.begin(), levelEditSurfaces.end());
@@ -75,7 +75,7 @@ namespace HaloCE::Mod::Mario::MarioBSPChunk {
         Vec3i oldChunk = marioChunk;
         marioChunk     = newChunk;
         uploadFor(marioChunk);
-        HaloCE::Mod::Mario::DynamicGeometry::onLoadedChunkChanged(oldChunk, newChunk);
+        Mod::Mario::DynamicGeometry::onLoadedChunkChanged(oldChunk, newChunk);
     }
 
     void checkMovement() {

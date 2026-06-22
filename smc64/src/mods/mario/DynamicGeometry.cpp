@@ -25,7 +25,7 @@
 #else
     #define LOG(x) ;
 #endif
-namespace HaloCE::Mod::Mario::DynamicGeometry {
+namespace Mod::Mario::DynamicGeometry {
 
     static std::mutex s_updateMutex;
 
@@ -98,7 +98,7 @@ namespace HaloCE::Mod::Mario::DynamicGeometry {
             auto bsp = node->collisionBsps.get<Engine::CollisionBSP>(bspIndex);
             if (bsp == nullptr) continue;
 
-            auto bspSurfaces = HaloCE::Mod::BSPConversion::convertBSP(bsp, SURFACE_NOT_SLIPPERY);
+            auto bspSurfaces = Mod::Mario::BSPConversion::convertBSP(bsp, SURFACE_NOT_SLIPPERY);
             surfaces.insert(surfaces.end(), bspSurfaces.begin(), bspSurfaces.end());
         }
         

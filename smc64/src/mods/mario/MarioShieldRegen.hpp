@@ -2,7 +2,7 @@
 
 #include "engine/halo1.hpp"
 
-namespace HaloCE::Mod::Mario {
+namespace Mod::Mario {
     void regenerateShield(Engine::Entity &player, float amount, bool allowOvershield);
 
     void updateShieldRegen(Engine::Entity& player);

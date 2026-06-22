@@ -6,7 +6,7 @@
 #include "math/Vectors.hpp"
 #include "engine/halo1.hpp"
 
-namespace HaloCE::Mod::Mario {
+namespace Mod::Mario {
     extern std::vector<Engine::WorldTransform> marioPose;
 
     void updateMarioPose(SM64MarioGeometryBuffers &marioGeometry);

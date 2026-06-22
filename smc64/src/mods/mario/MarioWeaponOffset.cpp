@@ -13,7 +13,7 @@
 
 // #define MARIO_WEAPON_OFFSET_UI 1
 
-namespace HaloCE::Mod::Mario::MarioWeaponOffset {
+namespace Mod::Mario::MarioWeaponOffset {
 
     std::unordered_map<std::string, Offset> offsetMap = {
         { "weapons\\pistol\\pistol", { 0.0450f, -0.0010f, 0.0120f } },

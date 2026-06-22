@@ -5,7 +5,7 @@
 #include "decomp/audio_defines.h"
 #include "libsm64.h"
 
-namespace HaloCE::Mod::Mario {
+namespace Mod::Mario {
 
     static uint32_t prevAction = 0;
 

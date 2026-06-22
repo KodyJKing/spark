@@ -45,7 +45,7 @@ namespace {
 }
 #endif // BAN_PLANES
 
-namespace HaloCE::Mod::BSPConversion {
+namespace Mod::Mario::BSPConversion {
 
     std::vector<SM64Surface> convertBSP(Engine::CollisionBSP* bsp, uint16_t defaultSurfaceType) {
         std::vector<SM64Surface> result;

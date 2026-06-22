@@ -8,7 +8,7 @@
 #include "Coordinates.hpp"
 #include "MarioState.hpp"
 
-namespace HaloCE::Mod::Mario {
+namespace Mod::Mario {
 
     struct Indices {
         int32_t i1 = -1;

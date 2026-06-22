@@ -5,7 +5,7 @@
 #include "level-edit/MarioLevelEdit.hpp"
 #include "MarioBSPChunk.hpp"
 
-namespace HaloCE::Mod::Mario {
+namespace Mod::Mario {
     bool enableMario = true;
     bool possessMario = true;
 

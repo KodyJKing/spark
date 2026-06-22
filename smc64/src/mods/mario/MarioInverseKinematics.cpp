@@ -1,6 +1,6 @@
 #include "MarioInverseKinematics.hpp"
 
-namespace HaloCE::Mod::Mario::InverseKinematics {
+namespace Mod::Mario::InverseKinematics {
 
     void inferBoneLengths(IKRequest& request) {
         for (size_t i = 0; i < request.bones.size() - 1; i++) {

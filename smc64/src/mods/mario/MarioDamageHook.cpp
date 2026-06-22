@@ -8,7 +8,7 @@
 #include "Coordinates.hpp"
 #include "MarioShieldRegen.hpp"
 
-namespace HaloCE::Mod::Mario::MarioDamageHook {
+namespace Mod::Mario::MarioDamageHook {
 
     void registerHandlers(Spark::ModId modId) {
         Spark::DamageEntity::addHandler(modId, +[](void* /*ctx*/, auto next, Engine::DamageEvent* event, uint32_t entityHandle, uint16_t p2, uint16_t p3, int16_t hitBoneIndex, uint64_t p5) {

@@ -1,6 +1,6 @@
 #pragma once
 
-namespace HaloCE::Mod::Mario::MarioMelee {
+namespace Mod::Mario::MarioMelee {
     // Called once per game tick (from Mario::update(), after updateMarioPose).
     void tick();
 

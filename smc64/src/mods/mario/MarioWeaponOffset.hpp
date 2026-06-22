@@ -5,7 +5,7 @@
 #include <string>
 #include <unordered_map>
 
-namespace HaloCE::Mod::Mario::MarioWeaponOffset {
+namespace Mod::Mario::MarioWeaponOffset {
 
     // Position offset expressed in the left-hand bone's local coordinate frame.
     //   x = along hand X (typically forward / grip axis)

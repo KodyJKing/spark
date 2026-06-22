@@ -5,7 +5,7 @@
 #include "MarioSkeleton.hpp"
 #include "engine/halo1.hpp"
 
-namespace HaloCE::Mod::Mario::InverseKinematics {
+namespace Mod::Mario::InverseKinematics {
     struct IKBone {
         Engine::WorldTransform initialTransform;
         float length = -1.0f;

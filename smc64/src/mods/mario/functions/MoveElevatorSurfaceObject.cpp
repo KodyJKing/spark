@@ -1,6 +1,6 @@
 #include "../MarioState.hpp"
 
-namespace HaloCE::Mod::Mario {
+namespace Mod::Mario {
 
     void moveElevatorSurfaceObject(
         uint32_t surfaceObjectId,

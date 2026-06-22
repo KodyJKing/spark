@@ -2,6 +2,6 @@
 
 #include "spark/mod/ModId.hpp"
 
-namespace HaloCE::Mod::Mario::MarioPickingFix {
+namespace Mod::Mario::MarioPickingFix {
     void registerHandlers(Spark::ModId modId);
 }
