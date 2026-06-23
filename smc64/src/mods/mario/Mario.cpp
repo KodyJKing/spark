@@ -37,6 +37,7 @@
 #include "MarioMelee.hpp"
 #include "MarioWeaponOffset.hpp"
 #include "MarioAimingIK.hpp"
+#include "MarioChiefPose.hpp"
 #include "MarioWeaponKick.hpp"
 
 // #define DEBUG_MARIO 1
@@ -291,7 +292,9 @@ namespace Mod::Mario {
 
         updateGameSpeed(*player);
         updateShieldRegen(*player);
-        Engine::Scripting::submit("object_set_scale (player0) 0.5 1");
+        Engine::Scripting::submit("object_set_scale (player0) 0.4 1");
+        // Engine::Scripting::submit("object_set_scale (player0) 0.5 1");
+        // Engine::Scripting::submit("object_set_scale (player0) 1 1");
 
         MarioCamera::onUpdate(marioWorldPosition());
 
@@ -346,8 +349,12 @@ namespace Mod::Mario {
         MarioAudio::update();
 
         updateMarioPose(marioGeometry);
-        MarioAimingIK::apply();
-        MarioMelee::tick();
+        if (marioInControl()) {
+            MarioAimingIK::apply();
+            MarioMelee::tick();
+        } else {
+            MarioChiefPose::updatePose();
+        }
 
         bool inForbiddenState = false
             || (marioState.action == ACT_START_SLEEPING)

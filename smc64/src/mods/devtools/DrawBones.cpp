@@ -7,7 +7,7 @@ namespace Mod::DevTools {
         Camera &camera = ESP::camera;
 
         auto boneCount = entity->worldBones.count();
-        Engine::WorldTransform* worldBones = entity->worldBones.get( entity, 0 );
+        Engine::Transform* worldBones = entity->worldBones.get( entity, 0 );
 
         for ( uint16_t i = 0; i < boneCount; i++ ) {
             auto& bone = worldBones[i];

@@ -107,7 +107,7 @@ namespace Mod::Mario::DynamicGeometry {
 
     void getTransform(Engine::Entity* entity, size_t boneIndex, SM64ObjectTransform& transform) {
         if (entity->worldBones.count() == 0) return;
-        Engine::WorldTransform* bone = entity->worldBones.get(entity, boneIndex);
+        Engine::Transform* bone = entity->worldBones.get(entity, boneIndex);
 
         Vec3 marioSpacePos = Coordinates::haloToMario(bone->pos);
         Vec3 chunkOrigin = Coordinates::marioChunkOrigin(MarioBSPChunk::getLoadedChunk());
@@ -204,7 +204,7 @@ namespace Mod::Mario::DynamicGeometry {
 
     Vec3 getEntityPosition(Engine::Entity* entity) {
         if (entity->worldBones.count() == 0) return entity->pos;
-        Engine::WorldTransform* bone = entity->worldBones.get(entity, 0);
+        Engine::Transform* bone = entity->worldBones.get(entity, 0);
         return bone ? bone->pos : entity->pos;
     }
 

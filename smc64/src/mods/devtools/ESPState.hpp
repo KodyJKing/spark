@@ -9,7 +9,7 @@ namespace Mod::DevTools {
         float maxDistance = 20.0f;
         float maxBSPVertexDistance = 5.0f;
         struct Filter {
-            bool biped      = true;
+            bool biped      = false;
             bool vehicle    = false;
             bool weapon     = false;
             bool projectile = false;

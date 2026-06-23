@@ -1,6 +1,6 @@
 #include "math.hpp"
 namespace Engine {
-    Engine::WorldTransform inverseWorldTransform(Engine::WorldTransform& wt) {
+    Engine::Transform inverseTransform(Engine::Transform& wt) {
         // Invert rotation (transpose)
         Vec3 x = Vec3{wt.x.x, wt.y.x, wt.z.x};
         Vec3 y = Vec3{wt.x.y, wt.y.y, wt.z.y};
@@ -12,14 +12,14 @@ namespace Engine {
         // Invert translation
         Vec3 invTranslation = (x * wt.pos.x + y * wt.pos.y + z * wt.pos.z) * -invScale;
 
-        return WorldTransform{
+        return Transform{
             invScale,
             x, y, z,
             invTranslation
         };
     }
 
-    Engine::WorldTransform multiplyWorldTransforms(Engine::WorldTransform& a, Engine::WorldTransform& b) {
+    Engine::Transform multiplyTransforms(Engine::Transform& a, Engine::Transform& b) {
         // Combine rotations
         Vec3 x = a.x * a.w * b.x.x + a.y * b.w * b.x.y + a.z * b.w * b.x.z;
         Vec3 y = a.x * b.w * b.y.x + a.y * b.w * b.y.y + a.z * b.w * b.y.z;
@@ -31,14 +31,14 @@ namespace Engine {
         // Combine translations
         Vec3 pos = a.x * (b.pos.x * w) + a.y * (b.pos.y * w) + a.z * (b.pos.z * w) + a.pos;
 
-        return WorldTransform{
+        return Transform{
             w,
             x, y, z,
             pos
         };
     }
 
-    void orthonormalize(Engine::WorldTransform &wt) {
+    void orthonormalize(Engine::Transform &wt) {
         Vec3 x = wt.x.normalize();
 
         Vec3 y = wt.z.cross(x).normalize();

@@ -89,15 +89,15 @@ namespace Mod::Mario::MarioModel {
             weaponRootBone->z = leftHandBone.z;
         }
 
-        auto initialInverse = Engine::inverseWorldTransform(rootBoneInitial);
-        auto relativeTransform = Engine::multiplyWorldTransforms(
+        auto initialInverse = Engine::inverseTransform(rootBoneInitial);
+        auto relativeTransform = Engine::multiplyTransforms(
             *weaponRootBone,
             initialInverse
         );
         auto boneCount = weaponEntity->worldBones.count();
         for (int i = 1; i < boneCount; i++) {
             auto& bone = weaponBones[i];
-            bone = Engine::multiplyWorldTransforms(relativeTransform, bone);
+            bone = Engine::multiplyTransforms(relativeTransform, bone);
         }
     }
 
