@@ -99,6 +99,9 @@ namespace Mod::Mario::MarioDamageHook {
                         return;
                     }
                 }
+
+                // sm64_play_sound_global(SOUND_OBJ_STOMPED);
+                // sm64_play_sound_global(SOUND_OBJ_ENEMY_DEATH_HIGH);
             }
             
             next(event, entityHandle, p2, p3, hitBoneIndex, p5);
