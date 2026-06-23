@@ -28,7 +28,8 @@ namespace Mod::Mario {
         // rather than being snapped to the exact floor height.
         if (floorAfter > floorBefore) {
             float delta = floorAfter - floorBefore;
-            float newY  = marioState.position[1] + delta;
+            float marioY = marioState.position[1];
+            float newY = marioY < floorAfter ? floorAfter : marioY + delta;
             sm64_set_mario_position(marioId, mx, newY, mz);
             marioState.position[1] = newY; // keep local Y in sync for subsequent bones
         }
