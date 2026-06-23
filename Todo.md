@@ -23,6 +23,10 @@
     - [Blocker] Fix Mario getting stuck in hallway panels and columns on Covenant ship levels.
         - Truth and Reconciliation
         x Keyes
+    - [Blocker] Fix Mario getting stuck in c_field_generator's.
+    - [Major] Fix Mario pushing enemies OOB. Should either not push or should be bi-directional.
+    - [Major] Create a user facing recovery system for when Mario gets stuck.
+    - [Minor] Fix Mario visually sinking into fast elevators (seems to be caused by a 1-frame delay in the object transforms).
 
 - Performance:
     - [Major] Optimize BSP loading transitions.
@@ -35,7 +39,8 @@
 - Gameplay:
     - Movement:
         - Fix wall kicks for near-vertical walls.
-            - Place a vertical wall between Mario and a wall when he is airborne and close.
+            - Fork LibSM64 to make wall detection more forgiving.
+            - OR hack: Place a vertical wall between Mario and a wall when he is airborne and close.
         - Implement ridable jackal shield. (rideable as koopa shell)
         - Collision:
             - Entity collision:
@@ -51,10 +56,9 @@
     - Combat:
         - Melee
             x Implement melee and shell damage interactions.
-            - Customized melee hurtboxes per unit type.
-            - Align hurtboxes with unit's orientation (use bone orientation or Entity::fwd/up)
-            - Implement less naive rules for when a hand/foot hitbox is live. Should be based off of Mario's animation state.
+            - Implement less naive rules for deciding when a hand/foot hitbox is live. Should be based off of Mario's animation state OR velocity.
             - Try out relative speed scaled melee damage.
+            - Implement goomba squish mechanic for Grunts.
 
 
 - Presentation:
@@ -69,7 +73,9 @@
             - Bias Mario's look direction towards the direction the camera is facing.
             - Lean Mario's head sideways towards weapon when he is firing/ADSing.
         - Look into blending Mario's animation with Chief's.
-        - Drive Mario pose from Chief's in cutscenes and vehicles.
+        - Drive Mario pose from Chief's 
+            - in cutscenes 
+            x and vehicles.
     
     - Third person camera:
         - Render a false projectile exiting the player's barrel.

@@ -7,7 +7,7 @@
 #include "engine/halo1.hpp"
 #include "decomp/sm64.h"
 
-namespace HaloCE::Mod::Mario::MarioAimingIK {
+namespace Mod::Mario::MarioAimingIK {
 
     static bool marioRightArmBusy() {
         if (marioState.action == ACT_IDLE) return false;

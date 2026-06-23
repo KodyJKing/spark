@@ -20,4 +20,5 @@
 namespace Engine {
     bool isCameraLoaded();
     bool isGameLoaded();
+    float gameVolume();
 }

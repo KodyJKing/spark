@@ -1,7 +1,7 @@
 #include "Coordinates.hpp"
 #include <cmath>
 
-namespace HaloCE::Mod::Coordinates {
+namespace Mod::Mario::Coordinates {
 
     struct MarioCoords {
         Vec3 local;

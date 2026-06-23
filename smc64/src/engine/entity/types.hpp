@@ -50,8 +50,8 @@ namespace Engine {
         uint32_t childHandle; 
         uint32_t parentHandle;
         char pad_00DC[204];
-        ChildArrayHeader<Transform> bones;
-        ChildArrayHeader<WorldTransform> worldBones;
+        ChildArrayHeader<QuatTransform> bones;
+        ChildArrayHeader<Transform> worldBones;
         char pad_01B0[80];
         uint32_t projectileParentHandle; 
         float heat; 
@@ -83,8 +83,8 @@ namespace Engine {
         bool fromResourcePath( const char* str );
 
         uint16_t boneCount();
-        Transform* getBoneTransforms() { return bones.get( this, 0 ); }
-        std::vector<Transform> copyBoneTransforms();
+        QuatTransform* getBoneTransforms() { return bones.get( this, 0 ); }
+        std::vector<QuatTransform> copyBoneTransforms();
     };
     static_assert( offsetof(Entity, animId) == 0x8C );
     static_assert( offsetof(Entity, animFrame) == 0x8E );

@@ -7,7 +7,7 @@
 #include "math/Vectors.hpp"
 #include "spark/mod/ModId.hpp"
 
-namespace HaloCE::Mod::Mario {
+namespace Mod::Mario {
     
     void init(Spark::ModId modId);
     void free();

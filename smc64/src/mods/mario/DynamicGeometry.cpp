@@ -25,7 +25,7 @@
 #else
     #define LOG(x) ;
 #endif
-namespace HaloCE::Mod::Mario::DynamicGeometry {
+namespace Mod::Mario::DynamicGeometry {
 
     static std::mutex s_updateMutex;
 
@@ -98,7 +98,7 @@ namespace HaloCE::Mod::Mario::DynamicGeometry {
             auto bsp = node->collisionBsps.get<Engine::CollisionBSP>(bspIndex);
             if (bsp == nullptr) continue;
 
-            auto bspSurfaces = HaloCE::Mod::BSPConversion::convertBSP(bsp, SURFACE_NOT_SLIPPERY);
+            auto bspSurfaces = Mod::Mario::BSPConversion::convertBSP(bsp, SURFACE_NOT_SLIPPERY);
             surfaces.insert(surfaces.end(), bspSurfaces.begin(), bspSurfaces.end());
         }
         
@@ -107,7 +107,7 @@ namespace HaloCE::Mod::Mario::DynamicGeometry {
 
     void getTransform(Engine::Entity* entity, size_t boneIndex, SM64ObjectTransform& transform) {
         if (entity->worldBones.count() == 0) return;
-        Engine::WorldTransform* bone = entity->worldBones.get(entity, boneIndex);
+        Engine::Transform* bone = entity->worldBones.get(entity, boneIndex);
 
         Vec3 marioSpacePos = Coordinates::haloToMario(bone->pos);
         Vec3 chunkOrigin = Coordinates::marioChunkOrigin(MarioBSPChunk::getLoadedChunk());
@@ -204,7 +204,7 @@ namespace HaloCE::Mod::Mario::DynamicGeometry {
 
     Vec3 getEntityPosition(Engine::Entity* entity) {
         if (entity->worldBones.count() == 0) return entity->pos;
-        Engine::WorldTransform* bone = entity->worldBones.get(entity, 0);
+        Engine::Transform* bone = entity->worldBones.get(entity, 0);
         return bone ? bone->pos : entity->pos;
     }
 

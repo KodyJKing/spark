@@ -5,7 +5,7 @@
 #include "engine/halo1.hpp"
 #include "Coordinates.hpp"
 
-namespace HaloCE::Mod::Mario {
+namespace Mod::Mario {
     
     void updateXboxControls(SM64MarioInputs& inputs) {
 

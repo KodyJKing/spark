@@ -818,6 +818,33 @@ halo1.dll+BE615D: F3 0F 59 3D 6B 99 D6 00  - mulss xmm7,[halo1.dll+194FAD0]
       <Description>"Scans"</Description>
       <Options moAlwaysHideChildren="1" moManualExpandCollapse="1"/>
       <GroupHeader>1</GroupHeader>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>111</ID>
+          <Description>"Game Volume"</Description>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>107</ID>
+              <Description>"No description"</Description>
+              <VariableType>Float</VariableType>
+              <Address>halo1.dll+1C54490</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>109</ID>
+              <Description>"No description"</Description>
+              <VariableType>Float</VariableType>
+              <Address>halo1.dll+2B05C5C</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>110</ID>
+              <Description>"No description"</Description>
+              <VariableType>Float</VariableType>
+              <Address>"MCC-Win64-Shipping.exe"+3CF2114</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
     </CheatEntry>
   </CheatEntries>
   <CheatCodes>
@@ -4831,6 +4858,31 @@ halo1.dll+BE615D: F3 0F 59 3D 6B 99 D6 00  - mulss xmm7,[halo1.dll+194FAD0]
     <CodeEntry GroupHeader="1">
       <Description/>
     </CodeEntry>
+    <CodeEntry>
+      <Description>call renderPlayerModel</Description>
+      <AddressString>halo1.dll+B4930A</AddressString>
+      <Before>
+        <Byte>CE</Byte>
+        <Byte>49</Byte>
+        <Byte>0F</Byte>
+        <Byte>45</Byte>
+        <Byte>D3</Byte>
+      </Before>
+      <Actual>
+        <Byte>E8</Byte>
+        <Byte>51</Byte>
+        <Byte>FC</Byte>
+        <Byte>FF</Byte>
+        <Byte>FF</Byte>
+      </Actual>
+      <After>
+        <Byte>45</Byte>
+        <Byte>33</Byte>
+        <Byte>DB</Byte>
+        <Byte>41</Byte>
+        <Byte>BF</Byte>
+      </After>
+    </CodeEntry>
   </CheatCodes>
   <UserdefinedSymbols/>
   <Structures StructVersion="2">
@@ -7716,6 +7768,11 @@ halo1.dll+BE615D: F3 0F 59 3D 6B 99 D6 00  - mulss xmm7,[halo1.dll+194FAD0]
       <Address>"halo1.dll"+B48CD0</Address>
       <Header>void renderEntityModel(uint32_t entityHandle)
 </Header>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+B4930A</Address>
+      <Comment>render player model in vehicle
+</Comment>
     </DisassemblerComment>
     <DisassemblerComment>
       <Address>"halo1.dll"+B49602</Address>

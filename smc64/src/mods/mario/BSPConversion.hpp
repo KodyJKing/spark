@@ -6,7 +6,7 @@
 #include "engine/halo1.hpp"
 #include "math/Vectors.hpp"
 
-namespace HaloCE::Mod::BSPConversion {
+namespace Mod::Mario::BSPConversion {
 
     // Convert a Halo CE CollisionBSP to an array of SM64Surface.
     // Vertices are converted to mario space and stored as-is (no chunk translation).

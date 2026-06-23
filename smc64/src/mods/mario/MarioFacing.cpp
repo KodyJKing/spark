@@ -7,7 +7,7 @@
 
 #include <cmath>
 
-namespace HaloCE::Mod::Mario {
+namespace Mod::Mario {
 
     bool shouldAlignToLook() {
         if (marioInputs.stickX != 0 || marioInputs.stickY != 0) return false;

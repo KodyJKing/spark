@@ -16,8 +16,8 @@ namespace Engine {
         return resourcePath && strncmp( resourcePath, str, 1024 ) == 0;
     }
 
-    std::vector<Transform> Entity::copyBoneTransforms() {
-        std::vector<Transform> result;
+    std::vector<QuatTransform> Entity::copyBoneTransforms() {
+        std::vector<QuatTransform> result;
         auto boneCount = this->bones.count();
         if ( !boneCount ) return result;
         auto bones = this->getBoneTransforms();

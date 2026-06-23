@@ -5,17 +5,17 @@
 #include "MarioSkeleton.hpp"
 #include "engine/halo1.hpp"
 
-namespace HaloCE::Mod::Mario::InverseKinematics {
+namespace Mod::Mario::InverseKinematics {
     struct IKBone {
-        Engine::WorldTransform initialTransform;
+        Engine::Transform initialTransform;
         float length = -1.0f;
         Vec3 pivotOffset = Vec3{ 0.0f, 0.0f, 0.0f };
-        Engine::WorldTransform currentTransform;
+        Engine::Transform currentTransform;
     };
 
     struct IKRequest {
         std::vector<IKBone> bones;
-        Engine::WorldTransform targetTransform;
+        Engine::Transform targetTransform;
         bool enforceRotation = false;
     };
 
@@ -26,7 +26,7 @@ namespace HaloCE::Mod::Mario::InverseKinematics {
             LeftArm,
             RightArm,
         } limb;
-        Engine::WorldTransform targetTransform;
+        Engine::Transform targetTransform;
         bool enforceRotation = false;
     };
 

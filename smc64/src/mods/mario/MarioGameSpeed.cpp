@@ -8,7 +8,7 @@
 #include <Windows.h>
 #include <Xinput.h>
 
-namespace HaloCE::Mod::Mario {
+namespace Mod::Mario {
 
     float smoothedGameSpeed = 1.0f;
     float gamespeed = 1.0f;

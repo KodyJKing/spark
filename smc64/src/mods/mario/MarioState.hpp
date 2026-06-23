@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <cstddef>
 
-namespace HaloCE::Mod::Mario {
+namespace Mod::Mario {
     extern bool enableMario;
     extern bool possessMario;
 

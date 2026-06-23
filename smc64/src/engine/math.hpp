@@ -3,15 +3,15 @@
 #include "math/Vectors.hpp"
 
 namespace Engine {
-    // Used for relative bone transforms.
-    struct Transform {
+    // Commonly used for relative bone transforms.
+    struct QuatTransform {
         Quaternion rotation;
         Vec3 translation;
         float scale;
     };
 
-    // Used for world sppace bone transforms.
-    struct WorldTransform {
+    // Commonly used for world space bone transforms.
+    struct Transform {
         float w; // (scale)
         Vec3 x, y, z, pos; // (forward, left, up, translation)
 
@@ -24,9 +24,19 @@ namespace Engine {
         Vec3 transformPoint(Vec3 p) {
             return x * p.x + y * p.y + z * p.z + pos;
         }
+
+        static constexpr Transform identity() {
+            return Transform{
+                1.0f, 
+                Vec3{1.0f, 0.0f, 0.0f}, 
+                Vec3{0.0f, 1.0f, 0.0f}, 
+                Vec3{0.0f, 0.0f, 1.0f}, 
+                Vec3{0.0f, 0.0f, 0.0f}
+            };
+        }
     };
 
-    Engine::WorldTransform inverseWorldTransform(Engine::WorldTransform &wt);
-    Engine::WorldTransform multiplyWorldTransforms(Engine::WorldTransform & a, Engine::WorldTransform & b);
-    void orthonormalize(Engine::WorldTransform &wt);
+    Engine::Transform inverseTransform(Engine::Transform &wt);
+    Engine::Transform multiplyTransforms(Engine::Transform & a, Engine::Transform & b);
+    void orthonormalize(Engine::Transform &wt);
 }

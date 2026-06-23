@@ -2,6 +2,6 @@
 
 #include "spark/mod/ModId.hpp"
 
-namespace HaloCE::Mod::ThirdPersonFix {
+namespace Mod::Mario::ThirdPersonFix {
     void registerHandlers(Spark::ModId modId);
 }

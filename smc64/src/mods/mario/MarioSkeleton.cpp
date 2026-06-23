@@ -8,7 +8,7 @@
 #include "Coordinates.hpp"
 #include "MarioState.hpp"
 
-namespace HaloCE::Mod::Mario {
+namespace Mod::Mario {
 
     struct Indices {
         int32_t i1 = -1;
@@ -43,7 +43,7 @@ namespace HaloCE::Mod::Mario {
         {"right_thigh", {2086}, {2074}, {2101}},
     };
 
-    std::vector<Engine::WorldTransform> marioPose = {
+    std::vector<Engine::Transform> marioPose = {
         {0}, // Pelvis
         {0}, // Chest
         {0}, // Head
@@ -86,7 +86,7 @@ namespace HaloCE::Mod::Mario {
         return sum / (float)count;
     }
 
-    Engine::WorldTransform getBoneBasis(const MarioBone& bone, SM64MarioGeometryBuffers& marioGeometry) {
+    Engine::Transform getBoneBasis(const MarioBone& bone, SM64MarioGeometryBuffers& marioGeometry) {
         Vec3 pos = getBonePosition(bone.base, marioGeometry);
         Vec3 fwd = getBonePosition(bone.fwd, marioGeometry);
         Vec3 up = getBonePosition(bone.up, marioGeometry);
@@ -98,7 +98,7 @@ namespace HaloCE::Mod::Mario {
         nUp = nRight.cross(nFwd).normalize();
 
         float w = 3.0f / 4.0f;
-        return Engine::WorldTransform{ w, nFwd, nRight * -1.0f, nUp, pos };
+        return Engine::Transform{ w, nFwd, nRight * -1.0f, nUp, pos };
     }
 
     void updateMarioPose(SM64MarioGeometryBuffers& marioGeometry) {
@@ -139,7 +139,7 @@ namespace HaloCE::Mod::Mario {
                 ESP::drawLine(start, start + n.normalize() * axisLength, color);
             };
 
-            Engine::WorldTransform basis = getBoneBasis(bone, marioGeometry);
+            Engine::Transform basis = getBoneBasis(bone, marioGeometry);
             drawNormal(basis.pos, basis.x, IM_COL32(255, 0, 0, 255)); // Red = forward
             drawNormal(basis.pos, basis.y, IM_COL32(0, 255, 0, 255)); // Green = right
             drawNormal(basis.pos, basis.z, IM_COL32(0, 0, 255, 255)); // Blue = up
@@ -182,7 +182,7 @@ namespace HaloCE::Mod::Mario {
         }
     }
 
-    Engine::WorldTransform* getMarioBonePointerByName(const char* name) {
+    Engine::Transform* getMarioBonePointerByName(const char* name) {
         for (size_t i = 0; i < marioBones.size(); i++) {
             if (strcmp(marioBones[i].name, name) == 0) {
                 return &marioPose[i];
@@ -191,7 +191,7 @@ namespace HaloCE::Mod::Mario {
         return nullptr;
     }
 
-    Engine::WorldTransform getMarioBoneByName(const char* name) {
+    Engine::Transform getMarioBoneByName(const char* name) {
         return *getMarioBonePointerByName(name);
     }
 }

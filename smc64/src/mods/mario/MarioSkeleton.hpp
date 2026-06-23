@@ -6,12 +6,12 @@
 #include "math/Vectors.hpp"
 #include "engine/halo1.hpp"
 
-namespace HaloCE::Mod::Mario {
-    extern std::vector<Engine::WorldTransform> marioPose;
+namespace Mod::Mario {
+    extern std::vector<Engine::Transform> marioPose;
 
     void updateMarioPose(SM64MarioGeometryBuffers &marioGeometry);
     void drawMarioBones(SM64MarioGeometryBuffers& marioGeometry);
     void dumpSkeleton(SM64MarioGeometryBuffers &marioGeometry, Vec3 marioPos, FILE *file);
-    Engine::WorldTransform getMarioBoneByName(const char *name);
-    Engine::WorldTransform* getMarioBonePointerByName(const char* name);
+    Engine::Transform getMarioBoneByName(const char *name);
+    Engine::Transform* getMarioBonePointerByName(const char* name);
 }

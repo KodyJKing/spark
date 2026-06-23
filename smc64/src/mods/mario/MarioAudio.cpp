@@ -1,4 +1,5 @@
 #include "MarioAudio.hpp"
+#include "engine/halo1.hpp"
 
 #include "libsm64.h"
 
@@ -14,7 +15,7 @@
 
 #define ENABLE_MARIO_AUDIO 1
 
-namespace HaloCE::Mod::Mario::MarioAudio {
+namespace Mod::Mario::MarioAudio {
 
 // SM64 audio output format
 static constexpr UINT32 SAMPLE_RATE      = 32000;
@@ -200,6 +201,11 @@ void update() {
     {
         std::lock_guard<std::mutex> lock(s_state->tickMutex);
         s_state->tickPending = true;
+
+        float volume = Engine::gameVolume();
+        if (volume < 0.f) volume = 0.f;
+        if (volume > 1.f) volume = 1.f;
+        s_state->source->SetVolume(volume);
     }
     s_state->tickCv.notify_one();
     #endif
@@ -245,4 +251,4 @@ void free() {
     #endif
 }
 
-} // namespace HaloCE::Mod::Mario::MarioAudio
+} // namespace Mod::Mario::MarioAudio

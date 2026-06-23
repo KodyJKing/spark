@@ -1,6 +1,6 @@
 #pragma once
 
-namespace HaloCE::Mod::Mario::MarioAimingIK {
+namespace Mod::Mario::MarioAimingIK {
     // Returns true when Mario's arms are occupied (attacking, facing away, etc.).
     // Used by MarioModel::updateWeaponPose to determine orientation copying.
     bool marioArmsBusy();

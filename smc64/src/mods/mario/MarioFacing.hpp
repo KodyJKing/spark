@@ -3,6 +3,6 @@
 #include "math/Vectors.hpp"
 #include "spark/mod/ModId.hpp"
 
-namespace HaloCE::Mod::Mario {
+namespace Mod::Mario {
     void faceLookDirection(Vec3 lookDirection);
 }

@@ -5,7 +5,7 @@
 #include "MarioState.hpp"
 #include <iostream>
 
-namespace HaloCE::Mod::Mario::MarioCamera {
+namespace Mod::Mario::MarioCamera {
 
     static bool     active               = false;
     static float    camDistanceScale      = 1.0f;

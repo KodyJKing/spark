@@ -14,10 +14,11 @@
 #include "Coordinates.hpp"
 #include "DynamicGeometry.hpp"
 #include "MarioCollisionDebugRender.hpp"
+#include "MarioChiefPose.hpp"
 
 // #define DEBUG_MARIO_GEOMETRY 1
 
-namespace HaloCE::Mod::Mario {
+namespace Mod::Mario {
 
     int32_t highlightTriangleIndex = -1;
 
@@ -116,6 +117,7 @@ namespace HaloCE::Mod::Mario {
         MarioMelee::debugRender();
         DynamicGeometry::debugRender();
         MarioBSPChunk::debugRender();
+        MarioChiefPose::render();
 
         marioDebugWindow();
 

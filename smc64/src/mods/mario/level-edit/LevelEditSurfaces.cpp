@@ -21,8 +21,8 @@ static void addTriangle(std::vector<SM64Surface>& out,
 
     const Vec3* verts[3] = { &a, &b, &c };
     for (int i = 0; i < 3; ++i) {
-        Vec3 world = HaloCE::Mod::Coordinates::haloToMario(*verts[i]);
-        Vec3 local = HaloCE::Mod::Coordinates::marioWorldToLocal(world, chunk);
+        Vec3 world = Coordinates::haloToMario(*verts[i]);
+        Vec3 local = Coordinates::marioWorldToLocal(world, chunk);
         s.vertices[i][0] = (int32_t)local.x;
         s.vertices[i][1] = (int32_t)local.y;
         s.vertices[i][2] = (int32_t)local.z;

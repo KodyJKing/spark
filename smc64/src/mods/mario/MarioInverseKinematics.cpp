@@ -1,6 +1,6 @@
 #include "MarioInverseKinematics.hpp"
 
-namespace HaloCE::Mod::Mario::InverseKinematics {
+namespace Mod::Mario::InverseKinematics {
 
     void inferBoneLengths(IKRequest& request) {
         for (size_t i = 0; i < request.bones.size() - 1; i++) {
@@ -109,7 +109,7 @@ namespace HaloCE::Mod::Mario::InverseKinematics {
 
         IKRequest ikRequest;
         for (int i = 0; i < (int)boneNames.size(); i++) {
-            Engine::WorldTransform initialTransform = getMarioBoneByName(boneNames[i]);
+            Engine::Transform initialTransform = getMarioBoneByName(boneNames[i]);
             float length = i == 2 ? 0.05f : -1.0f;
             Vec3 pivotOffset = pivotOffsets[i];
             ikRequest.bones.push_back({ initialTransform, length, pivotOffset });
@@ -123,7 +123,7 @@ namespace HaloCE::Mod::Mario::InverseKinematics {
         for (size_t i = 0; i < ikRequest.bones.size(); i++) {
             const auto& ikBone = ikRequest.bones[i];
             const char* boneName = boneNames[i];
-            Engine::WorldTransform* marioBone = getMarioBonePointerByName(boneName);
+            Engine::Transform* marioBone = getMarioBonePointerByName(boneName);
             if (marioBone) {
                 *marioBone = ikBone.currentTransform;
             }
