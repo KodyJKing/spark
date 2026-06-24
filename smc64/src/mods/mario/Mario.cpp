@@ -39,6 +39,7 @@
 #include "MarioAimingIK.hpp"
 #include "MarioChiefPose.hpp"
 #include "MarioWeaponKick.hpp"
+#include "AdrenalineSystem.hpp"
 
 // #define DEBUG_MARIO 1
 
@@ -197,6 +198,7 @@ namespace Mod::Mario {
         MarioCamera::registerHandlers(modId);
         MarioWeaponOffset::registerHandlers(modId);
         MarioWeaponKick::registerHandlers(modId);
+        // AdrenalineSystem::registerHandlers(modId);
         #endif
     }
 

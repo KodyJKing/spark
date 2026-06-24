@@ -29,7 +29,7 @@ struct Hook {
     static void install(uintptr_t dllBase) {
         base = dllBase;
         void* target = (void*)(base + Offset);
-        MH_CreateHook(target, (void*)&detour, (void**)&original);
+        MH_CreateHook(target, (void*)&dispatch, (void**)&original);
         MH_EnableHook(target);
     }
 
@@ -42,15 +42,15 @@ struct Hook {
         base = 0;
     }
 
+    static Ret dispatch(Args... args) {
+        UnloadLock ulock;
+        return bus.dispatch(terminalShim, &original, args...);
+    }
+
 private:
     // Passes &original (an object pointer) as ctx — avoids fn-ptr → void* cast.
     static Ret terminalShim(void* ctx, Args... args) {
         return (*static_cast<Fn*>(ctx))(args...);
-    }
-
-    static Ret detour(Args... args) {
-        UnloadLock ulock;
-        return bus.dispatch(terminalShim, &original, args...);
     }
 };
 
