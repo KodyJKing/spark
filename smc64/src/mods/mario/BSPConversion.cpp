@@ -1,4 +1,5 @@
 #include <vector>
+#include <unordered_set>
 #include "engine/halo1.hpp"
 #include "Coordinates.hpp"
 #include "decomp/surface_terrains.h"
@@ -9,8 +10,6 @@
 #ifdef BAN_PLANES
 // Experimental collision improvement by hand banning certain problem plane-indices.
 namespace {
-    #include <unordered_set>
-
     #define KEY(index, signature)  ((int64_t)(index) ^ static_cast<int64_t>(signature))
 
     std::unordered_set<int64_t> bannedPlanes = {

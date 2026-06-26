@@ -10,7 +10,6 @@
         - Ghidra
         - Cheat Engine
         - Documentation
-    - Fix intelisense freaking out since using the new LibSM64 fork.
 
 - Tooling
     - Track tags and assets in git.
