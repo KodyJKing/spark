@@ -3,6 +3,7 @@
 #include "engine/halo1.hpp"
 #include "./Coordinates.hpp"
 #include "BSPConversion.hpp"
+#include "ModelSwap.hpp"
 #include "MarioBSPChunk.hpp"
 #include "Mario.hpp"
 #include "functions/MoveElevatorSurfaceObject.hpp"
@@ -79,6 +80,12 @@ namespace Mod::Mario::DynamicGeometry {
     std::unordered_set<Engine::Entity*> entitiesWithGeometry;
 
     std::vector<SM64Surface> convertCollisionBSPToSM64Surfaces(Engine::Entity* entity, size_t boneIndex) {
+        if (ModelSwap::hasModelSwapFor(entity, boneIndex)) {
+            std::vector<SM64Surface> surfaces;
+            ModelSwap::getModelSwapSurfacesFor(entity, boneIndex, surfaces);
+            return surfaces;
+        }
+
         auto entityTag = entity->tag();
         if (entityTag == nullptr) return {};
         auto collisionTag = getCollisionGeometryTag(entityTag);
