@@ -96,7 +96,8 @@ namespace Mod::Mario::MarioMelee {
         ev.hitDirection        = hitDir;
         ev.baseDamage          = kMeleeDamage;
         ev.damageMultiplier    = 1.0f;
-        Spark::DamageEntity::original(&ev, targetHandle, 0, 0, boneIndex, 0);
+        // Spark::DamageEntity::original(&ev, targetHandle, 0, 0, boneIndex, 0);
+        Spark::DamageEntity::dispatch(&ev, targetHandle, 0, 0, boneIndex, 0);
 
         auto* soundTag = getBipedImpactSoundTag();
         if (soundTag) {

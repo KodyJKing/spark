@@ -6,6 +6,7 @@
 #include "halomcc/HaloMCC.hpp"
 #include "Licenses.hpp"
 #include "spark/overlay/ESP.hpp"
+#include "spark/overlay/Gizmos.hpp"
 #include "utils/UnloadLock.hpp"
 #include "math/Math.hpp"
 #include "version.h"
@@ -134,6 +135,7 @@ namespace Spark::Overlay {
                 Overlay::ESP::updateCamera();
                 Overlay::ESP::beginESPWindow("__ESP");
                 Spark::onRenderDebugWorld.dispatch(Spark::noopTerminal, nullptr);
+                Overlay::Gizmos::render();
                 Overlay::ESP::endESPWindow();
             }
 

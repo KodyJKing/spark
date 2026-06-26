@@ -8,6 +8,6 @@ if ($IDE -ne "vs2022") {
 }
 
 & "./scripts/kill_injected_instances.ps1"
-# & "./scripts/vendor/premake/premake5.exe" $IDE
+& "./scripts/build_libsm64.ps1"
 & "premake5.exe" $IDE
 & "MSBuild.exe" "smc64.sln" "/t:Build" "/p:Configuration=$Config" "/p:Platform=Win64"

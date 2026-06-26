@@ -20,13 +20,12 @@
 - Bugs and Stability:
     - Audit all raw memory accesses. Replace with safe wrappers in non-performance critical code.
     - [Blocker] Fix ghost entity colliders getting left behind.
-    - [Blocker] Fix Mario getting stuck in hallway panels and columns on Covenant ship levels.
-        - Truth and Reconciliation
-        x Keyes
     - [Blocker] Fix Mario getting stuck in c_field_generator's.
     - [Major] Fix Mario pushing enemies OOB. Should either not push or should be bi-directional.
     - [Major] Create a user facing recovery system for when Mario gets stuck.
     - [Minor] Fix Mario visually sinking into fast elevators (seems to be caused by a 1-frame delay in the object transforms).
+    - [Blocker] Fix Mario clipping through one sided surfaces (eg: grill on right side of hallway at start of Keyes).
+    - [Minor] Fix Mario spazzing out near problem triangles in Covenant hallways.
 
 - Performance:
     - [Major] Optimize BSP loading transitions.

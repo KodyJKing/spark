@@ -152,11 +152,17 @@ namespace Mod::Mario::MarioBSPChunk {
             ESP::drawLine(v1, v2, color);
             ESP::drawLine(v2, v0, color);
 
+            
             Vec3 normal = (v2 - v0).cross(v1 - v0).normalize();
             Vec3 center = (v0 + v1 + v2) / 3.0f;
             Vec3 normalEnd = center + normal * 0.025f;
-            ESP::drawLine(center, normalEnd, IM_COL32(255, 0, 0, 255));
-            ESP::drawPoint(center, IM_COL32(255, 0, 0, 255));
+            
+            const float wallThreshold = 0.2f;
+            bool isWall = abs(normal.z) < wallThreshold;
+            auto color = isWall ? IM_COL32(255, 0, 0, 255) : IM_COL32(0, 255, 0, 255);
+            
+            ESP::drawLine(center, normalEnd, color);
+            ESP::drawPoint(center, color);
         }
     }
     #endif // DEBUG_BSP_CHUNK

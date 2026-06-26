@@ -8,6 +8,15 @@ namespace Mod::Mario::LevelEdit::Index {
     // To add a new level: run the game on that level, read the signature from
     // Engine::getBSPSignature(), and add an entry here.
     inline std::unordered_map<uint64_t, LevelEdits> s_allEdits = {
+        // Truth and Reconciliation
+        { 0xBE7D47F74FA95FA9ULL, LevelEdits {
+            .orientedBoundingBoxes = {
+                { { -16.0604f, 10.1049f, -20.2722f }, { 0.48826f, 0.450034f, 2.02474f }, { 0.f, 1.24471e-08f, 90.f } },
+                { { -7.05784f, 10.1049f, -20.2722f }, { 0.48826f, 0.450034f, 2.02474f }, { 0.f, 0.f, 90.f } },
+            }
+        }},
+
+
         // Keyes:
         { 0x5B4FEA6A0330002AULL, LevelEdits {
             .orientedBoundingBoxes = {
