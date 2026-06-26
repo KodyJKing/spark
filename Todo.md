@@ -10,6 +10,7 @@
         - Ghidra
         - Cheat Engine
         - Documentation
+    - Fix intelisense freaking out since using the new LibSM64 fork.
 
 - Tooling
     - Track tags and assets in git.
@@ -26,6 +27,8 @@
     - [Minor] Fix Mario visually sinking into fast elevators (seems to be caused by a 1-frame delay in the object transforms).
     - [Blocker] Fix Mario clipping through one sided surfaces (eg: grill on right side of hallway at start of Keyes).
     - [Minor] Fix Mario spazzing out near problem triangles in Covenant hallways.
+    - [Major] Fix camera jitter when Mario is walking into walls. (caused by Cheif's collision being used to determine camera position)
+    - [Minor] Fix Mario's lighting not updating when he is in a vehicle. (caused by model's velocity not updating, I think)
 
 - Performance:
     - [Major] Optimize BSP loading transitions.

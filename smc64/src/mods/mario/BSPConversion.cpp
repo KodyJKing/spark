@@ -1,9 +1,8 @@
-#include "libsm64.h"
-#include "decomp/surface_terrains.h"
+#include <vector>
 #include "engine/halo1.hpp"
 #include "Coordinates.hpp"
-
-#include <vector>
+#include "decomp/surface_terrains.h"
+#include "libsm64.h"
 
 #define BAN_PLANES 1
 
@@ -44,6 +43,8 @@ namespace {
     }
 }
 #endif // BAN_PLANES
+
+#define TWO_SIDED_MARGIN 10.0f
 
 namespace Mod::Mario::BSPConversion {
 
@@ -241,8 +242,11 @@ namespace Mod::Mario::BSPConversion {
                     std::swap(mPtrs[1], mPtrs[2]);
                 }
 
+                bool hangable = -normal.z > 0.5f;
+                uint16_t surfaceType = hangable ? SURFACE_HANGABLE : SURFACE_WALL_MISC;
+
                 SM64Surface sm64Surface;
-                sm64Surface.type    = SURFACE_WALL_MISC;
+                sm64Surface.type    = surfaceType;
                 sm64Surface.force   = 0;
                 sm64Surface.terrain = 0x0000;
 
@@ -256,6 +260,25 @@ namespace Mod::Mario::BSPConversion {
                 }
 
                 result.push_back(sm64Surface);
+
+                if (surface->bits.twoSided) {
+                    // Create a second triangle with the opposite winding order.
+                    SM64Surface sm64Surface2;
+                    sm64Surface2.type    = surfaceType;
+                    sm64Surface2.force   = 0;
+                    sm64Surface2.terrain = 0x0000;
+
+                    for (int k = 0; k < 3; k++) {
+                        Vec3 local = { mPtrs[2-k]->x - chunkOriginMario.x - normal.x * TWO_SIDED_MARGIN,
+                                       mPtrs[2-k]->y - chunkOriginMario.y - normal.y * TWO_SIDED_MARGIN,
+                                       mPtrs[2-k]->z - chunkOriginMario.z - normal.z * TWO_SIDED_MARGIN };
+                        sm64Surface2.vertices[k][0] = (int32_t) local.x;
+                        sm64Surface2.vertices[k][1] = (int32_t) local.y;
+                        sm64Surface2.vertices[k][2] = (int32_t) local.z;
+                    }
+
+                    result.push_back(sm64Surface2);
+                }
             }
         }
 

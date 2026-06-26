@@ -8,6 +8,7 @@
 #include "engine/entity/entity_list.hpp"
 #include "engine/raycast.hpp"
 #include "spark/hook/Hooks.hpp"
+#include "spark/overlay/Gizmos.hpp"
 
 #include "decomp/sm64.h"
 
@@ -19,7 +20,7 @@
 #include <algorithm>
 
 // #define DEBUG_MARIO_MELEE 1
-
+//
 #ifdef DEBUG_MARIO_MELEE
     #include <iostream>
     #define LOG(x) std::cout << "[MarioMelee] " << x << std::endl;
@@ -37,7 +38,7 @@ namespace Mod::Mario::MarioMelee {
     static constexpr float kMeleeDamage             = 0.01f;
     static constexpr int   kCooldownTicks           = 15;     // ~0.5 s at 30 fps, per limb
     static constexpr float kMeleeShieldRegen        = 0.2f;   // shield regen per melee hit
-    static constexpr float kLimbSweepMultiplier     = 1.5f;   // multiplier for limb sweep distance
+    static constexpr float kLimbSweepMultiplier     = 2.0f;   // multiplier for limb sweep distance
     
     static const char * kDamageTagPath = "weapons\\frag grenade\\explosion";
     static const char * kBipedImpactSoundTagPath = "sound\\sfx\\impulse\\melee\\melee_impact_fleshy";
@@ -153,6 +154,11 @@ namespace Mod::Mario::MarioMelee {
 
                 Engine::RaycastResult result{};
                 Engine::raycast(ENGINE_RAYCAST_PROJECTILE_FLAGS, &origin, &displacement, sourceHandle, &result);
+
+                #ifdef DEBUG_MARIO_MELEE
+                Vec3 endPos = origin + displacement;
+                Spark::Overlay::Gizmos::drawLine(origin, endPos, 0xFF00FFFF, 20);
+                #endif
 
                 if (result.hitType != Engine::HitType_Entity) continue;
 

@@ -52,13 +52,28 @@ namespace Mod::Mario::DynamicGeometry::ModelSwap {
     typedef std::unordered_map<ModelSwapKey, ModelSwapEntry, ModelSwapKeyHash> ModelSwapMap;
 
     #define MARIO_HEIGHT 160.0f
+    #define H MARIO_HEIGHT
 
     ModelSwapMap modelSwapMap = {
         {
             { "scenery\\c_storage\\c_storage", 0 },
             {
                 ModelSwapType::AABB,
-                { { 0.0f, 0.0f, 0.0f }, { MARIO_HEIGHT * 0.5f, MARIO_HEIGHT, MARIO_HEIGHT } }
+                { { 0.0f, 0.0f, 0.0f }, { H * 0.5f, H, H } }
+            }
+        },
+        {
+            { "scenery\\c_uplink\\c_uplink", 0 },
+            {
+                ModelSwapType::AABB,
+                { { 0.0f, H * -0.7f, 0.0f }, { H * 0.5f, H, H } }
+            }
+        },
+        {
+            { "scenery\\c_field_generator\\c_field_generator", 0 },
+            {
+                ModelSwapType::AABB,
+                { { 0.0f, H, 0.0f }, { H * 0.75f, H * 0.8f, H * 0.25F } }
             }
         }
     };

@@ -30,7 +30,17 @@ namespace Engine {
         uint32_t isFlipped:1;
         
         uint32_t firstEdgeIndex; // Index into the BSPEdge array
-        uint8_t flags;
+
+        union {
+            uint8_t flags;
+            struct {
+                uint8_t twoSided:1;
+                uint8_t invisible:1;
+                uint8_t climbable:1;
+                uint8_t breakable:5;
+            } bits;
+        };
+        
         uint8_t breakableSurface;
         uint16_t material;
     };

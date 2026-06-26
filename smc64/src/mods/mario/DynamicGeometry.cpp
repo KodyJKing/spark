@@ -105,7 +105,8 @@ namespace Mod::Mario::DynamicGeometry {
             auto bsp = node->collisionBsps.get<Engine::CollisionBSP>(bspIndex);
             if (bsp == nullptr) continue;
 
-            auto bspSurfaces = Mod::Mario::BSPConversion::convertBSP(bsp, SURFACE_NOT_SLIPPERY);
+            // auto bspSurfaces = Mod::Mario::BSPConversion::convertBSP(bsp, SURFACE_NOT_SLIPPERY);
+            auto bspSurfaces = Mod::Mario::BSPConversion::convertBSP(bsp, SURFACE_HANGABLE);
             surfaces.insert(surfaces.end(), bspSurfaces.begin(), bspSurfaces.end());
         }
         

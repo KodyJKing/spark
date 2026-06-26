@@ -43,6 +43,8 @@
 #include "MarioChiefPose.hpp"
 #include "MarioWeaponKick.hpp"
 #include "AdrenalineSystem.hpp"
+#include "functions/MarioToCheif.hpp"
+#include "functions/CheifToMario.hpp"
 
 // #define DEBUG_MARIO 1
 
@@ -269,25 +271,6 @@ namespace Mod::Mario {
         #endif
     }
 
-    void marioToCheif() {
-        auto player = Engine::getPlayerEntity();
-        if (player && player->worldBones.count() > 0) {
-            auto bones = player->worldBones.get(player, 0);
-            auto pos = bones[0].pos;
-            
-            Vec3 marioWorldPos = Coordinates::haloToMario(pos);
-            Vec3i targetChunk  = Coordinates::marioChunkForPosition(marioWorldPos);
-            if (targetChunk.x != marioChunk.x ||
-                targetChunk.y != marioChunk.y ||
-                targetChunk.z != marioChunk.z) {
-                MarioBSPChunk::reloadFor(targetChunk);
-            }
-            Vec3 local = Coordinates::marioWorldToLocal(marioWorldPos, marioChunk);
-            sm64_set_mario_position(marioId, local.x, local.y, local.z);
-            sm64_mario_heal(marioId, 0xFF);
-        }
-    }
-
     void dumpMarioGeometry();
 
     Vec3 marioWorldPositionMario() {
@@ -331,8 +314,6 @@ namespace Mod::Mario {
         updateGameSpeed(*player);
         updateShieldRegen(*player);
         Engine::Scripting::submit("object_set_scale (player0) 0.4 1");
-        // Engine::Scripting::submit("object_set_scale (player0) 0.5 1");
-        // Engine::Scripting::submit("object_set_scale (player0) 1 1");
 
         MarioCamera::onUpdate(marioWorldPosition());
 
@@ -359,9 +340,7 @@ namespace Mod::Mario {
 
         if (marioInControl()) {
             // std::cout << "Mario in control this tick" << std::endl;
-            Vec3 marioWorldPos = marioWorldPosition();
-            player->pos = marioWorldPos;
-            player->vel = marioWorldVelocity();
+            cheifToMario(player);
             Mario::updateInput(marioInputs, marioState, Engine::getPlayerCameraPointer());
         } else {
             // std::cout << "Chief in control this tick" << std::endl;

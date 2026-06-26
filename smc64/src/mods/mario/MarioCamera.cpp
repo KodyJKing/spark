@@ -4,6 +4,13 @@
 #include "halomcc/HaloMCC.hpp"
 #include "MarioState.hpp"
 #include <iostream>
+#include "functions/CheifToMario.hpp"
+
+// #define DEBUG_MARIO_CAMERA 1
+//
+#ifdef DEBUG_MARIO_CAMERA
+#include "spark/overlay/Gizmos.hpp"
+#endif
 
 namespace Mod::Mario::MarioCamera {
 
@@ -15,7 +22,9 @@ namespace Mod::Mario::MarioCamera {
     static constexpr float CAM_RIGHT_FIXED =  0.125f;
     static constexpr float CAM_UP          =  0.25f;
     static constexpr float CAM_WALL_MARGIN =  0.1f;
-    static constexpr float CAM_EXTEND_RATE =  0.06f; // per frame; ~1 s to full extension at 60 fps
+    static constexpr float CAM_RAY_START_DIST = 0.3f;
+    // static constexpr float CAM_EXTEND_RATE =  0.06f; // per frame; ~1 s to full extension at 60 fps
+    static constexpr float CAM_EXTEND_RATE =  0.6f; // per frame; ~1 s to full extension at 60 fps
 
 
     static Vec3 getCameraPosition() {
@@ -27,8 +36,8 @@ namespace Mod::Mario::MarioCamera {
 
         // Cast a ray from Mario's head height toward the desired camera position.
         // This lets us detect walls and pull the camera in to prevent clipping.
-        Vec3 rayOrigin = marioPos + Vec3{0, 0, CAM_UP};
         Vec3 rayDisp   = camera->fwd * CAM_BACK + right * CAM_RIGHT;
+        Vec3 rayOrigin = marioPos + Vec3{0, 0, CAM_UP} + rayDisp.normalize() * CAM_RAY_START_DIST;
         float rayLen   = rayDisp.length();
 
         float targetScale = 1.0f;
@@ -92,10 +101,28 @@ namespace Mod::Mario::MarioCamera {
 
         // Override camera position with Mario's interpolated position.
         Spark::UpdateCamera::addHandler(modId, +[](void* /*ctx*/, auto next, float unknown) {
+            auto player = Engine::getPlayerEntity();
+            if (!player || !Memory::isAllocated(player)) {
+                next(unknown);
+                return;
+            }
+
+            // Make sure cheif is at Mario's location before the camera update, so that the camera is positioned correctly.
+            if (active && marioInControl()) {
+                cheifToMario(player);
+            }
+
             next(unknown);
             if (!active || !marioInControl()) return;
             auto camera = Engine::getPlayerCameraPointer();
             if (!camera || !Memory::isAllocated(camera)) return;
+
+            #ifdef DEBUG_MARIO_CAMERA
+            auto playerPos = player->pos;
+            auto cameraPos = camera->pos;
+            Spark::Overlay::Gizmos::drawLine(playerPos, cameraPos, 0xFF00FFFF, 1);
+            #endif
+
             camera->pos = getCameraPosition();
         }, nullptr, 10);
     }
