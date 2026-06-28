@@ -7,6 +7,7 @@
 #include "decomp/sm64.h"
 #include "Coordinates.hpp"
 #include "spark/hook/Hooks.hpp"
+#include "functions/CheifToMario.hpp"
 
 // #define DEBUG_MARIO_MODEL 1
 
@@ -146,6 +147,14 @@ namespace Mod::Mario::MarioModel {
             if (!rec) return next(entityHandle);
             auto entity = rec->entity();
             if (!entity) return next(entityHandle);
+
+            // ! Fix for camera jitter when Mario is somewhere Cheif cannot be.
+            // Note: May be cleaner to hook entity collision and disable it for Chief when Mario is in control.
+            auto playerHandle = Engine::getPlayerHandle();
+            if (entityHandle == playerHandle && !Engine::isPlayerInVehicle()) {
+                // Correct for Chief being pushed out of place by collision.
+                cheifToMario(entity);
+            }
 
             next(entityHandle);
 

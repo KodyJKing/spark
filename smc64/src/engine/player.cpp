@@ -84,4 +84,10 @@ namespace Engine {
             ;
     }
 
+    bool isPlayerInVehicle() {
+        auto entity = getPlayerEntity();
+        if (!entity) return false;
+        return entity->vehicleHandle != NULL_HANDLE && entity->parentHandle != NULL_HANDLE;
+    }
+
 }

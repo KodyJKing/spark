@@ -46,4 +46,5 @@ namespace Engine {
     std::optional<Vec3> getPlayerPosition();
     bool isPlayerHandle( uint32_t entityHandle );
     bool isPlayerControlled( EntityRecord* rec );
+    bool isPlayerInVehicle();
 }
