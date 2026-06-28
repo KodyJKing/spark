@@ -18,6 +18,7 @@
 namespace Mod::Mario::DynamicGeometry::ModelSwap {
 
     enum ModelSwapType {
+        Empty,
         AABB,
         Surfaces
     };
@@ -75,6 +76,14 @@ namespace Mod::Mario::DynamicGeometry::ModelSwap {
                 ModelSwapType::AABB,
                 { { 0.0f, H, 0.0f }, { H * 0.75f, H * 0.8f, H * 0.25F } }
             }
+        },
+        {
+            { "vehicles\\warthog\\warthog", 8 },
+            { ModelSwapType::Empty, {} }
+        },
+        {
+            { "vehicles\\warthog\\warthog", 13 },
+            { ModelSwapType::Empty, {} }
         }
     };
 
@@ -157,6 +166,8 @@ namespace Mod::Mario::DynamicGeometry::ModelSwap {
             outSurfaces.insert(outSurfaces.end(), surfaces.begin(), surfaces.end());
         } else if (entry.type == ModelSwapType::Surfaces) {
             outSurfaces.insert(outSurfaces.end(), entry.surfaces.begin(), entry.surfaces.end());
+        } else if (entry.type == ModelSwapType::Empty) {
+            // Do nothing, empty model swap
         }
     }
 

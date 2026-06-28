@@ -1,5 +1,6 @@
 #include "Gizmos.hpp"
 
+#include "spark/Spark.hpp"
 #include "ESP.hpp"
 #include "math/Math.hpp"
 
@@ -39,16 +40,19 @@ namespace Spark::Overlay::Gizmos {
     }
 
     void drawLine(Vec3& start, Vec3& end, ImU32 color, uint32_t durationFrames) {
+        if (!Spark::showDebugOverlay) return;
         std::lock_guard<std::mutex> lock(s_mutex);
         s_gizmos.push_back(Gizmo{ GizmoType::Line, start, end, std::string{}, color, durationFrames, durationFrames });
     }
 
     void drawPoint(Vec3& position, ImU32 color, uint32_t durationFrames) {
+        if (!Spark::showDebugOverlay) return;
         std::lock_guard<std::mutex> lock(s_mutex);
         s_gizmos.push_back(Gizmo{ GizmoType::Point, position, Vec3{}, std::string{}, color, durationFrames, durationFrames });
     }
 
     void drawText(Vec3& center, std::string text, ImU32 color, uint32_t durationFrames) {
+        if (!Spark::showDebugOverlay) return;
         std::lock_guard<std::mutex> lock(s_mutex);
         s_gizmos.push_back(Gizmo{ GizmoType::Text, center, Vec3{}, std::move(text), color, durationFrames, durationFrames });
     }
