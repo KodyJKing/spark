@@ -95,23 +95,21 @@ namespace Mod::Mario {
 
     // libsm64 debug callbacks report positions in Mario-local space (relative to
     // the active chunk). Convert to Halo world space before queueing gizmos.
-    // Persist a few frames to bridge the tick/render rate mismatch.
-    static constexpr uint32_t kDebugGizmoFrames = 200;
 
-    void debugLine(float x1, float y1, float z1, float x2, float y2, float z2, uint32_t colorRGBA) {
+    void debugLine(float x1, float y1, float z1, float x2, float y2, float z2, uint32_t colorRGBA, uint32_t durationFrames) {
         Vec3 start = Coordinates::marioLocalToHaloWorld(Vec3{ x1, y1, z1 }, marioChunk);
         Vec3 end   = Coordinates::marioLocalToHaloWorld(Vec3{ x2, y2, z2 }, marioChunk);
-        Spark::Overlay::Gizmos::drawLine(start, end, marioColorToImU32(colorRGBA), kDebugGizmoFrames);
+        Spark::Overlay::Gizmos::drawLine(start, end, marioColorToImU32(colorRGBA), durationFrames);
     }
 
-    void debugPoint(float x, float y, float z, uint32_t colorRGBA) {
+    void debugPoint(float x, float y, float z, uint32_t colorRGBA, uint32_t durationFrames) {
         Vec3 pos = Coordinates::marioLocalToHaloWorld(Vec3{ x, y, z }, marioChunk);
-        Spark::Overlay::Gizmos::drawPoint(pos, marioColorToImU32(colorRGBA), kDebugGizmoFrames);
+        Spark::Overlay::Gizmos::drawPoint(pos, marioColorToImU32(colorRGBA), durationFrames);
     }
 
-    void debugWorldText(float x, float y, float z, uint32_t colorRGBA, const char *text) {
+    void debugWorldText(float x, float y, float z, uint32_t colorRGBA, const char *text, uint32_t durationFrames) {
         Vec3 pos = Coordinates::marioLocalToHaloWorld(Vec3{ x, y, z }, marioChunk);
-        Spark::Overlay::Gizmos::drawText(pos, text ? text : "", marioColorToImU32(colorRGBA), kDebugGizmoFrames);
+        Spark::Overlay::Gizmos::drawText(pos, text ? text : "", marioColorToImU32(colorRGBA), durationFrames);
     }
 
     void createSpawnPlatform(const Vec3& localPos) {
