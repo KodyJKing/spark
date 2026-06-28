@@ -1,0 +1,237 @@
+#include "MarioGoombaStomp.hpp"
+
+#include "MarioState.hpp"
+#include "MarioShieldRegen.hpp"
+#include "Mario.hpp"
+#include "Coordinates.hpp"
+#include "engine/halo1.hpp"
+#include "engine/entity/entity_list.hpp"
+#include "spark/hook/Hooks.hpp"
+#include "decomp/sm64.h"
+#include "decomp/audio_defines.h"
+#include "libsm64.h"
+
+#include <unordered_map>
+#include <cmath>
+
+namespace Mod::Mario::GoombaStomp {
+
+    // ── Tunable constants ──────────────────────────────────────────────────────
+    static constexpr uint32_t kStompAnimTicks   = 15;       // ticks for squash animation (~0.5s at 30 fps)
+    static constexpr float    kStompDamage      = 0.5f;    // damage fraction per stomp
+    static constexpr float    kStompBounceY     = 30.0f;   // upward velocity in Mario units after a stomp
+    static constexpr float    kStompWindowAbove = 0.25f;    // Halo units: window above enemy top where stomp still triggers
+    static constexpr float    kSquashMin        = 0.01f;    // minimum vertical scale at stomp moment
+    static constexpr float    kStompShieldRegenAmount = 0.2f; // fraction of shield regenerated per stomp
+    static constexpr float    kGroundPoundRadiusBoost = 0.25f; // additional horizontal radius when ground-pounding
+
+    struct StompEvent {
+        uint32_t animationTimer; // Counts down to 0.
+    };
+
+    // Maps entity handles to their corresponding stomp events.
+    static std::unordered_map<uint32_t, StompEvent> stompEvents;
+
+    // ── Helpers ────────────────────────────────────────────────────────────────
+
+    static float shoulderHeight(Engine::Entity* /*entity*/) {
+        // Only Grunts can be stomped for now, so no need to generalize yet.
+        return 0.25f; // Halo units
+    }
+
+    static float horizontalRadius(Engine::Entity* /*entity*/) {
+        // Only Grunts can be stomped for now, so no need to generalize yet.
+        return 0.3f; // Halo units
+    }
+
+    static float horizontalBoost() {
+        if (marioState.action == ACT_GROUND_POUND) {
+            return kGroundPoundRadiusBoost; // boost horizontal radius when ground-pounding
+        }
+        return 0.0f;
+    }
+
+    static bool canStompInAction(uint32_t action) {
+        // Only allow stomps in freefall or jump actions.
+        switch (action) {
+            case ACT_FREEFALL:
+            case ACT_JUMP:
+            case ACT_DOUBLE_JUMP:
+            case ACT_TRIPLE_JUMP:
+            case ACT_LONG_JUMP:
+            case ACT_WALL_KICK_AIR:
+            case ACT_SIDE_FLIP:
+            case ACT_GROUND_POUND:
+            case ACT_BACKFLIP:
+            case ACT_FORWARD_ROLLOUT:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    static bool canStomp(Engine::Entity* entity, uint32_t entityHandle) {
+        if (!canStompInAction(marioState.action)) return false;
+        if (entity->entityCategory != Engine::EntityCategory_Biped) return false;
+        if (entity->health <= 0.0f) return false;
+        if (entityHandle == Engine::getPlayerHandle()) return false;
+        // Don't re-stomp while the squash animation is still playing.
+        if (stompEvents.count(entityHandle)) return false;
+        return true;
+    }
+
+    static bool shouldBounce() {
+        return marioState.action != ACT_GROUND_POUND;
+    }
+
+    static Engine::Tag* getDamageTag() {
+        return Engine::findTag("weapons\\frag grenade\\explosion", "jpt!");
+    }
+
+    static void dealStompDamage(uint32_t entityHandle, Vec3 hitPos) {
+        if (!Spark::DamageEntity::original) return;
+        auto* tag = getDamageTag();
+        if (!tag) return;
+
+        Engine::DamageEvent ev{};
+        ev.damageTypeTagHandle = tag->tagID;
+        ev.flags               = 0x1; // single-entity target
+        ev.interactorHandle    = NULL_HANDLE;
+        ev.attackerHandle      = Engine::getPlayerHandle();
+        ev.sourceTypeIndex     = (uint16_t)-1;
+        ev.hitPosition         = hitPos;
+        ev.hitDirection        = Vec3{ 0.0f, 0.0f, -1.0f }; // downward
+        ev.baseDamage          = kStompDamage;
+        ev.damageMultiplier    = 1.0f;
+        Spark::DamageEntity::dispatch(&ev, entityHandle, 0, 0, -1, 0);
+
+        bool fatal = false;
+        if (auto* entity = Engine::getEntityPointer(entityHandle)) {
+            fatal = entity->health <= 0.0f;
+        }
+
+        if (fatal) {
+            // Play a sound effect for the stomp kill.
+            sm64_play_sound_global(SOUND_OBJ_ENEMY_DEATH_HIGH);
+        }
+    }
+
+    // ── Stomp detection ────────────────────────────────────────────────────────
+
+    static void checkForStomps() {
+        if (!enableMario || !possessMario || marioId < 0) return;
+
+        // Mario must be moving downward (Mario Y == Halo Z, i.e. vertical).
+        if (marioState.velocity[1] >= 0.0f) return;
+
+        Vec3 marioHaloPos = marioWorldPosition();
+
+        Engine::foreachEntityRecordIndexed([&](Engine::EntityRecord* rec, uint16_t index) {
+            uint32_t handle = ((uint32_t)rec->id << 16) | index;
+
+            auto* entity = rec->entity();
+            if (!entity) return;
+            if (!canStomp(entity, handle)) return;
+
+            float topZ    = entity->pos.z + shoulderHeight(entity);
+            float hRadius = horizontalRadius(entity);
+
+            // Mario must be somewhere between the entity base and just above its top.
+            if (marioHaloPos.z < entity->pos.z) return;
+            if (marioHaloPos.z > topZ + kStompWindowAbove) return;
+
+            // Check horizontal proximity (Halo XY plane).
+            float dx = marioHaloPos.x - entity->pos.x;
+            float dy = marioHaloPos.y - entity->pos.y;
+            float hBoost = horizontalBoost();
+            hRadius += hBoost;
+            if (dx * dx + dy * dy > hRadius * hRadius) return;
+
+            // ── Stomp detected! ────────────────────────────────────────────────
+            stompEvents[handle] = { kStompAnimTicks };
+
+            sm64_play_sound_global(SOUND_OBJ_STOMPED);
+
+            auto player = Engine::getPlayerEntity();
+            regenerateShield(*player, kStompShieldRegenAmount, false);
+
+            // Bounce Mario upward, preserving horizontal velocity.
+            if (shouldBounce()) {
+                if (marioInputs.buttonA) {
+                    sm64_set_mario_action(marioId, ACT_DOUBLE_JUMP);
+                } else {
+                    sm64_set_mario_action(marioId, ACT_FREEFALL);
+                    sm64_set_mario_velocity(marioId,
+                        marioState.velocity[0],
+                        kStompBounceY,
+                        marioState.velocity[2]);
+                }
+
+            }
+        });
+    }
+
+    // ── Squash animation ───────────────────────────────────────────────────────
+
+    static void applySquashToBones(uint32_t entityHandle) {
+        auto it = stompEvents.find(entityHandle);
+        if (it == stompEvents.end()) return;
+
+        auto& ev = it->second;
+
+        if (ev.animationTimer == 0) {
+            dealStompDamage(entityHandle, Engine::getEntityPointer(entityHandle)->pos);
+            stompEvents.erase(it);
+            return;
+        }
+
+        auto* entity = Engine::getEntityPointer(entityHandle);
+        if (!entity) {
+            stompEvents.erase(it);
+            return;
+        }
+
+        auto boneCount = entity->worldBones.count();
+        auto* bones    = entity->worldBones.get(entity, 0);
+        if (boneCount == 0 || !bones) {
+            ev.animationTimer--;
+            return;
+        }
+
+        float t     = 1.0f - (float)ev.animationTimer / (float)kStompAnimTicks;
+        // float scale = kSquashMin + (1.0f - kSquashMin) * t;
+        // float scale = 1.0f * (1.0f - t) + kSquashMin * t; // linear interpolation from 1.0 to kSquashMin
+        float scale = kSquashMin;
+
+        float entityZ = entity->pos.z;
+        for (size_t i = 0; i < boneCount; i++) {
+            auto& bone = bones[i];
+            float dz   = bone.pos.z - entityZ;
+            bone.pos.z = entityZ + dz * scale;
+            bone.x.z  *= scale;
+            bone.y.z  *= scale;
+            bone.z.z  *= scale;
+        }
+
+        ev.animationTimer--;
+    }
+
+    // ── Init ───────────────────────────────────────────────────────────────────
+
+    /**
+     * Hooks UpdateAllEntities to handle checking for stomp conditions.
+     * Hooks UpdateWorldBones to animate vertical squash effect.
+     */
+    void init(Spark::ModId modId) {
+        Spark::UpdateAllEntities::addHandler(modId, +[](void*, auto next) {
+            next();
+            checkForStomps();
+        }, nullptr);
+
+        Spark::UpdateWorldBones::addHandler(modId, +[](void*, auto next, uint32_t entityHandle) {
+            next(entityHandle);
+            applySquashToBones(entityHandle);
+        }, nullptr);
+    }
+
+}

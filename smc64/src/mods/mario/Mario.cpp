@@ -43,6 +43,7 @@
 #include "MarioChiefPose.hpp"
 #include "MarioWeaponKick.hpp"
 #include "AdrenalineSystem.hpp"
+#include "MarioGoombaStomp.hpp"
 #include "functions/MarioToCheif.hpp"
 #include "functions/CheifToMario.hpp"
 
@@ -236,6 +237,7 @@ namespace Mod::Mario {
         MarioCamera::registerHandlers(modId);
         MarioWeaponOffset::registerHandlers(modId);
         MarioWeaponKick::registerHandlers(modId);
+        GoombaStomp::init(modId);
         // AdrenalineSystem::registerHandlers(modId);
         #endif
     }
