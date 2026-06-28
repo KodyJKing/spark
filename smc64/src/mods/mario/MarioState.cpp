@@ -44,6 +44,8 @@ namespace Mod::Mario {
 
         if (marioId < 0) return false;
 
+        if (Engine::isPlayerInputDisabled()) return false;
+
         return enableMario && possessMario && !::Mod::Mario::LevelEdit::isInputSuppressed() && MarioBSPChunk::hasValidLoadedChunk();
     }
 
