@@ -8,10 +8,20 @@
 #include <Windows.h>
 #include <Xinput.h>
 
+#include "decomp/sm64.h"
+
 namespace Mod::Mario {
 
     float smoothedGameSpeed = 1.0f;
     float gamespeed = 1.0f;
+
+    float shieldCostMultiplier() {
+        if (marioState.action == ACT_CRAZY_BOX_BOUNCE) {
+            return 0.0f;
+        }
+        
+        return 1.0f;
+    }
 
     void setGameSpeed(float speed) {
         // if (gamespeed == speed) return;
@@ -36,7 +46,7 @@ namespace Mod::Mario {
         bool canSlowdown = airborne && hasSheilds;
         bool slowDown = canSlowdown && bulletTimeButtonDown();
         if (slowDown) {
-            player.shield -= 0.05f;
+            player.shield -= 0.05f * shieldCostMultiplier();
             gamespeed = 0.25f;
         } else {
             gamespeed = 1.0f;

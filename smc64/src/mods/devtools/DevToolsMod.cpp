@@ -9,6 +9,7 @@
 #include "mods/devtools/VectorProfiler.hpp"
 #include "engine/halo1.hpp"
 #include "FreezeEntity.hpp"
+#include "BoneHookTest.hpp"
 #include <cstdio>
 #include <string>
 
@@ -78,6 +79,7 @@ void DevToolsMod::init() {
     }, nullptr);
 
     Mod::DevTools::FreezeEntity::init(modId_);
+    // Mod::DevTools::BoneHookTest::init(modId_);
 }
 
 void DevToolsMod::free() {

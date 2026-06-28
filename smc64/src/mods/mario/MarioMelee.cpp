@@ -52,6 +52,7 @@ namespace Mod::Mario::MarioMelee {
 
     // ── Helpers ────────────────────────────────────────────────────────────────
     static bool isMeleeAction() {
+        if (marioState.action == ACT_CRAZY_BOX_BOUNCE) return true;
         return (marioState.action & ACT_FLAG_ATTACKING) != 0;
     }
 

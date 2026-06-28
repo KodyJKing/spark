@@ -267,10 +267,12 @@ namespace Mod::Mario::BSPConversion {
                     sm64Surface2.force   = 0;
                     sm64Surface2.terrain = 0x0000;
 
+                    Vec3 marioNormal = Coordinates::haloToMario(normal).normalize();
+
                     for (int k = 0; k < 3; k++) {
-                        Vec3 local = { mPtrs[2-k]->x - chunkOriginMario.x - normal.x * TWO_SIDED_MARGIN,
-                                       mPtrs[2-k]->y - chunkOriginMario.y - normal.y * TWO_SIDED_MARGIN,
-                                       mPtrs[2-k]->z - chunkOriginMario.z - normal.z * TWO_SIDED_MARGIN };
+                        Vec3 local = { mPtrs[2-k]->x - chunkOriginMario.x - marioNormal.x * TWO_SIDED_MARGIN,
+                                       mPtrs[2-k]->y - chunkOriginMario.y - marioNormal.y * TWO_SIDED_MARGIN,
+                                       mPtrs[2-k]->z - chunkOriginMario.z - marioNormal.z * TWO_SIDED_MARGIN };
                         sm64Surface2.vertices[k][0] = (int32_t) local.x;
                         sm64Surface2.vertices[k][1] = (int32_t) local.y;
                         sm64Surface2.vertices[k][2] = (int32_t) local.z;

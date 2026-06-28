@@ -328,7 +328,10 @@ namespace Mod::Mario {
         }
 
         if (GetAsyncKeyState(VK_NUMPAD1) & 1) {
-            sm64_set_mario_action_arg(marioId, ACT_RIDING_SHELL_GROUND, 0);
+            // sm64_set_mario_action_arg(marioId, ACT_RIDING_SHELL_GROUND, 0);
+            sm64_set_mario_action_arg(marioId, ACT_CRAZY_BOX_BOUNCE, 0);
+            // sm64_set_mario_state(marioId, marioState.flags | MARIO_WING_CAP);
+            // sm64_set_mario_action(marioId, ACT_FLYING_TRIPLE_JUMP);
         }
 
         if (marioId < 0 || !enableMario) {

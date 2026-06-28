@@ -22,9 +22,9 @@ namespace Mod::Mario::MarioCamera {
     static constexpr float CAM_RIGHT_FIXED =  0.125f;
     static constexpr float CAM_UP          =  0.25f;
     static constexpr float CAM_WALL_MARGIN =  0.1f;
-    static constexpr float CAM_RAY_START_DIST = 0.3f;
-    // static constexpr float CAM_EXTEND_RATE =  0.06f; // per frame; ~1 s to full extension at 60 fps
-    static constexpr float CAM_EXTEND_RATE =  0.6f; // per frame; ~1 s to full extension at 60 fps
+    // static constexpr float CAM_RAY_START_DIST = 0.3f;
+    static constexpr float CAM_RAY_START_DIST = 0.0f;
+    static constexpr float CAM_EXTEND_RATE =  0.06f; // per frame; ~1 s to full extension at 60 fps
 
 
     static Vec3 getCameraPosition() {
