@@ -41,7 +41,7 @@
         - Fix wall kicks for near-vertical walls.
             - Fork LibSM64 to make wall detection more forgiving.
             - OR hack: Place a vertical wall between Mario and a wall when he is airborne and close.
-        - Implement ridable jackal shield. (rideable as koopa shell)
+        - Rocket/grenade jumps should trigger flight when cap is active.
         - Collision:
             - Entity collision:
                 - Support collision with bipeds.
@@ -52,13 +52,23 @@
                     - Allow placement of planes, boxes, capsules.
                     - Allow deletion of unwanted faces from Halo's BSP.
                     - Level tweak exporter.
-        
     - Combat:
         - Melee
             x Implement melee and shell damage interactions.
             - Implement less naive rules for deciding when a hand/foot hitbox is live. Should be based off of Mario's animation state OR velocity.
             - Try out relative speed scaled melee damage.
-            - Implement goomba squish mechanic for Grunts.
+    - Items:
+        - Coins, placed on level and dropped for certain kills.
+            - Add coin counter to HUD.
+            - Experiment with coin uses:
+                - Health recovery?
+                - Consume for special moves/abilities?
+                    - Crazy box jump?
+        - Ridable jackal shield. Dropped when ground pounding a jackal. Rideable as koopa shell.
+        - Add hard to reach power ups near enemy encounters. Reward players for agressive movement.
+        - Add optional obstacle sections to levels with 
+    - Side levels:
+        - Add paintings to access side levels.
 
 
 - Presentation:
@@ -72,7 +82,6 @@
         - Head:
             - Bias Mario's look direction towards the direction the camera is facing.
             - Lean Mario's head sideways towards weapon when he is firing/ADSing.
-        - Look into blending Mario's animation with Chief's.
         - Drive Mario pose from Chief's 
             - in cutscenes 
             x and vehicles.

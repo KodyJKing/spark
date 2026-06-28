@@ -5,6 +5,7 @@
 #include "MarioState.hpp"
 #include <iostream>
 #include "functions/CheifToMario.hpp"
+#include "decomp/sm64.h"
 
 // #define DEBUG_MARIO_CAMERA 1
 //
@@ -26,6 +27,17 @@ namespace Mod::Mario::MarioCamera {
     static constexpr float CAM_RAY_START_DIST = 0.0f;
     static constexpr float CAM_EXTEND_RATE =  0.06f; // per frame; ~1 s to full extension at 60 fps
 
+    static bool isHanging() {
+        return (marioState.action & ACT_FLAG_HANGING) != 0;
+    }
+
+    static float cameraUp() {
+        static float result = CAM_UP;
+        result = isHanging() ? 0.0f : CAM_UP;
+        static float resultSmoothed = result;
+        resultSmoothed = resultSmoothed * 0.9f + result * 0.1f;
+        return resultSmoothed;
+    }
 
     static Vec3 getCameraPosition() {
         auto camera = Engine::getPlayerCameraPointer();
@@ -37,7 +49,7 @@ namespace Mod::Mario::MarioCamera {
         // Cast a ray from Mario's head height toward the desired camera position.
         // This lets us detect walls and pull the camera in to prevent clipping.
         Vec3 rayDisp   = camera->fwd * CAM_BACK + right * CAM_RIGHT;
-        Vec3 rayOrigin = marioPos + Vec3{0, 0, CAM_UP} + rayDisp.normalize() * CAM_RAY_START_DIST;
+        Vec3 rayOrigin = marioPos + Vec3{0, 0, cameraUp()} + rayDisp.normalize() * CAM_RAY_START_DIST;
         float rayLen   = rayDisp.length();
 
         float targetScale = 1.0f;
@@ -65,7 +77,7 @@ namespace Mod::Mario::MarioCamera {
         Vec3 result = marioPos
             + (camera->fwd * CAM_BACK + right * CAM_RIGHT) * camDistanceScale 
             + right * CAM_RIGHT_FIXED
-            + Vec3{0, 0, CAM_UP};
+            + Vec3{0, 0, cameraUp()};
         return result;
     }
 
