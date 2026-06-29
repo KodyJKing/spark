@@ -41,6 +41,11 @@ namespace Mod::Mario::Coordinates {
         return Vec3{ marioCoords[0] * invScaleFactor, marioCoords[2] * invScaleFactor, marioCoords[1] * invScaleFactor };
     }
 
+    Vec3 marioDirectionToHalo(const Vec3 &marioDirection) {
+        // Convert a direction vector from Super Mario 64 coordinates to Halo CE coordinates
+        return Vec3{ marioDirection.x, marioDirection.z, marioDirection.y };
+    }
+
     Vec3i marioChunkForPosition(const Vec3& marioWorldPos) {
         float inv = 1.0f / chunkExtent;
         return Vec3i{

@@ -16,7 +16,7 @@
 #include "MarioCollisionDebugRender.hpp"
 #include "MarioChiefPose.hpp"
 
-// #define DEBUG_MARIO_GEOMETRY 1
+#define DEBUG_MARIO_GEOMETRY 1
 
 namespace Mod::Mario {
 
@@ -111,7 +111,23 @@ namespace Mod::Mario {
         #endif // DEBUG_MARIO_COLLISION
 
         #ifdef DEBUG_MARIO_GEOMETRY
-        drawMarioBones(marioGeometry);
+        {
+            constexpr float AXIS_LENGTH = 30.0f;
+            for (int i = 0; i < SM64_MARIO_BONE_COUNT; i++) {
+                const SM64Matrix4f& m = marioBoneMatrices[i];
+                Vec3 origin = { m.m[3][0], m.m[3][1], m.m[3][2] };
+                Vec3 xEnd   = { origin.x + AXIS_LENGTH * m.m[0][0], origin.y + AXIS_LENGTH * m.m[0][1], origin.z + AXIS_LENGTH * m.m[0][2] };
+                Vec3 yEnd   = { origin.x + AXIS_LENGTH * m.m[1][0], origin.y + AXIS_LENGTH * m.m[1][1], origin.z + AXIS_LENGTH * m.m[1][2] };
+                Vec3 zEnd   = { origin.x + AXIS_LENGTH * m.m[2][0], origin.y + AXIS_LENGTH * m.m[2][1], origin.z + AXIS_LENGTH * m.m[2][2] };
+                Vec3 wOrigin = Coordinates::marioLocalToHaloWorld(origin, marioChunk);
+                Vec3 wXEnd   = Coordinates::marioLocalToHaloWorld(xEnd,   marioChunk);
+                Vec3 wYEnd   = Coordinates::marioLocalToHaloWorld(yEnd,   marioChunk);
+                Vec3 wZEnd   = Coordinates::marioLocalToHaloWorld(zEnd,   marioChunk);
+                Spark::Overlay::ESP::drawLine(wOrigin, wXEnd, IM_COL32(255,   0,   0, 255));
+                Spark::Overlay::ESP::drawLine(wOrigin, wYEnd, IM_COL32(  0, 255,   0, 255));
+                Spark::Overlay::ESP::drawLine(wOrigin, wZEnd, IM_COL32(  0,   0, 255, 255));
+            }
+        }
         #endif // DEBUG_MARIO_GEOMETRY
 
         MarioMelee::debugRender();

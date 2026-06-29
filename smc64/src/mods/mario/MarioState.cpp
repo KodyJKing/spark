@@ -17,6 +17,7 @@ namespace Mod::Mario {
     SM64MarioInputs marioInputs;
     SM64MarioState marioState;
     SM64MarioGeometryBuffers marioGeometry;
+    SM64Matrix4f marioBoneMatrices[SM64_MARIO_BONE_COUNT] = {};
 
     Vec3i marioChunk = { 0, 0, 0 };
 

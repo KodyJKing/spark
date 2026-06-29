@@ -65,7 +65,7 @@ namespace Mod::Mario::MarioMelee {
     }
 
     static Vec3 fistPosition(size_t fistIndex) {
-        auto boneName = (fistIndex == 0) ? "left_hand" : "right_hand";
+        auto boneName = (fistIndex == 0) ? "frame left_hand" : "frame right_hand";
         Engine::Transform bone = getMarioBoneByName(boneName);
         Vec3 pos = bone.pos;
         Vec3 forward = bone.x;
@@ -73,7 +73,7 @@ namespace Mod::Mario::MarioMelee {
     }
 
     static Vec3 footPosition(size_t footIndex) {
-        auto boneName = (footIndex == 0) ? "left_foot" : "right_foot";
+        auto boneName = (footIndex == 0) ? "frame left_foot" : "frame right_foot";
         Engine::Transform bone = getMarioBoneByName(boneName);
         Vec3 pos = bone.pos;
         Vec3 forward = bone.x;

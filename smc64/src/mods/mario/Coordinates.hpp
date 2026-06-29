@@ -16,6 +16,8 @@ namespace Mod::Mario::Coordinates {
     Vec3 marioToHalo(const Vec3& marioCoords);
     Vec3 marioToHalo(const int32_t* marioCoords);
 
+    Vec3 marioDirectionToHalo(const Vec3& marioDirection);
+
     // Chunk helpers. Chunk (0,0,0) is centered on the origin and spans
     // [-chunkHalfExtent, +chunkHalfExtent) along each axis.
     Vec3i marioChunkForPosition(const Vec3& marioWorldPos);

@@ -5,6 +5,7 @@
 #include "engine/halo1.hpp"
 #include "level-edit/MarioLevelEdit.hpp"
 #include "MarioChiefPose.hpp"
+#include "MarioPauseTab.hpp"
 #include "spark/events/TeleportPlayer.hpp"
 #include "functions/TeleportMario.hpp"
 
@@ -35,6 +36,11 @@ void MarioMod::init() {
 
     Spark::onRenderDebugWorld.addHandler(modId_, +[](void*, Bus::Cursor next) {
         Mod::Mario::debugRender();
+        next();
+    }, nullptr);
+
+    Spark::onRenderPauseMenuTabs.addHandler(modId_, +[](void*, Bus::Cursor next) {
+        Mod::Mario::renderPauseMenuTab();
         next();
     }, nullptr);
 

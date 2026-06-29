@@ -8,10 +8,7 @@
 
 namespace Mod::Mario {
     extern std::vector<Engine::Transform> marioPose;
-
-    void updateMarioPose(SM64MarioGeometryBuffers &marioGeometry);
-    void drawMarioBones(SM64MarioGeometryBuffers& marioGeometry);
-    void dumpSkeleton(SM64MarioGeometryBuffers &marioGeometry, Vec3 marioPos, FILE *file);
+    void updateMarioPose(SM64Matrix4f* marioBoneMatrices);
     Engine::Transform getMarioBoneByName(const char *name);
     Engine::Transform* getMarioBonePointerByName(const char* name);
 }

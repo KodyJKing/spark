@@ -15,7 +15,7 @@ namespace Mod::Mario::MarioAimingIK {
     }
 
     static Vec3 preferredArmDirection() {
-        auto chest = getMarioBoneByName("chest");
+        auto chest = getMarioBoneByName("frame chest");
         return (chest.z + chest.y * 0.7f).normalize() * -1.0f;
     }
 
@@ -52,9 +52,9 @@ namespace Mod::Mario::MarioAimingIK {
         auto camera = Engine::getPlayerCameraPointer();
         if (!camera) return;
 
-        auto chest    = getMarioBoneByName("chest");
-        auto rightArm = getMarioBoneByName("right_arm");
-
+        auto chest    = getMarioBoneByName("frame chest");
+        auto rightArm = getMarioBoneByName("frame right_arm");
+        
         auto fwd   = camera->fwd;
         auto right = weaponRootBone->y;
 

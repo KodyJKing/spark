@@ -76,7 +76,7 @@ namespace Mod::Mario::MarioModel {
         auto weaponBones = weaponEntity->worldBones.get(weaponEntity, 0);
         if (!weaponBones) return;
 
-        auto leftHandBone = getMarioBoneByName("left_hand");
+        auto leftHandBone = getMarioBoneByName("frame left_hand");
 
         auto weaponRootBone = &weaponBones[0];
         auto rootBoneInitial = weaponRootBone[0];

@@ -17,6 +17,7 @@ namespace Mod::Mario {
     extern SM64MarioInputs marioInputs;
     extern SM64MarioState marioState;
     extern SM64MarioGeometryBuffers marioGeometry;
+    extern SM64Matrix4f marioBoneMatrices[SM64_MARIO_BONE_COUNT];
 
     // Chunk that marioState.position is expressed relative to.
     // True world mario pos = Coordinates::marioChunkOrigin(marioChunk) + marioState.position.

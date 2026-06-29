@@ -92,14 +92,14 @@ namespace Mod::Mario::InverseKinematics {
         std::vector<const char*> boneNames;
         std::vector<Vec3> pivotOffsets;
         if (request.limb == MarioIKRequest::Limb::LeftArm) {
-            boneNames = { "left_arm", "left_forearm", "left_hand" };
+            boneNames = { "frame left_arm", "frame left_forearm", "frame left_hand" };
             pivotOffsets = {
                 Vec3{ 0.01f, 0.01f, 0.01f },
                 Vec3{ 0.01f, 0.01f, 0.01f },
                 Vec3{ 0.01f, 0.0f, 0.00f },
             };
         } else {
-            boneNames = { "right_arm", "right_forearm", "right_hand" };
+            boneNames = { "frame right_arm", "frame right_forearm", "frame right_hand" };
             pivotOffsets = {
                 Vec3{ 0.0f, -0.01f, 0.01f },
                 Vec3{ 0.0f, -0.01f, 0.01f },

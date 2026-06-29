@@ -361,14 +361,14 @@ namespace Mod::Mario {
             std::lock_guard<std::mutex> sm64Lock(MarioAudio::sm64Mutex());
             if (marioInControl()) {
                 LOG("Mario tick start");
-                sm64_mario_tick(marioId, &marioInputs, &marioState, &marioGeometry);
+                sm64_mario_tick(marioId, &marioInputs, &marioState, &marioGeometry, marioBoneMatrices);
                 LOG("Mario tick end");
             }
         }
         
         MarioAudio::update();
 
-        updateMarioPose(marioGeometry);
+        updateMarioPose(marioBoneMatrices);
         if (marioInControl()) {
             MarioAimingIK::apply();
             MarioMelee::tick();
