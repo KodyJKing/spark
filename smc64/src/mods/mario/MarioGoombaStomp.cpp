@@ -30,17 +30,20 @@ namespace Mod::Mario::GoombaStomp {
         uint32_t action; // The action to set Mario to after a stomp
         int32_t soundEffect; // The sound effect to play when a stomp occurs
         float bounceY; // The upward velocity in Mario units after a stomp
+        float damage; // The damage fraction inflicted by the stomp
         bool noAction;
         bool noBounce;
     };
 
-    StompEventType groundPound = { .soundEffect = SOUND_OBJ_STOMPED, .noAction = true, .noBounce = true, };
-    StompEventType regularStomp = { .action = ACT_FREEFALL, .soundEffect = SOUND_OBJ_STOMPED, .bounceY = kStompBounceY};
-    StompEventType twirlStomp = { .action = ACT_TWIRLING, .soundEffect = SOUND_MARIO_TWIRL_BOUNCE, .bounceY = kStompBounceY * 5.0f };
+    StompEventType groundPound = { .soundEffect = SOUND_OBJ_STOMPED, .damage = kStompDamage, .noAction = true, .noBounce = true, };
+    StompEventType regularStomp = { .action = ACT_FREEFALL, .soundEffect = SOUND_OBJ_STOMPED, .bounceY = kStompBounceY, .damage = kStompDamage };
+    StompEventType twirlStomp = { .action = ACT_TWIRLING, .soundEffect = SOUND_MARIO_TWIRL_BOUNCE, .bounceY = kStompBounceY * 5.0f, .damage = kStompDamage };
+    StompEventType friendlyStomp = { .action = ACT_TRIPLE_JUMP, .soundEffect = SOUND_OBJ_STOMPED, .bounceY = kStompBounceY * 3.0f, .damage = 0.0f };
 
     static std::unordered_map<std::string, StompEventType> postStompAction = {
         {"characters\\sentinel\\sentinel", twirlStomp},
         {"characters\\floodcarrier\\floodcarrier", twirlStomp},
+        {"characters\\marine_armored\\marine_armored", friendlyStomp},
     };
 
     StompEventType getStompEventType(const std::string& entityPath) {
@@ -56,6 +59,7 @@ namespace Mod::Mario::GoombaStomp {
 
     struct StompEvent {
         uint32_t animationTimer; // Counts down to 0.
+        StompEventType type; // The type of stomp event (regular, ground pound, twirl, etc.)
     };
 
     // Maps entity handles to their corresponding stomp events.
@@ -118,10 +122,12 @@ namespace Mod::Mario::GoombaStomp {
         return Engine::findTag("weapons\\frag grenade\\explosion", "jpt!");
     }
 
-    static void dealStompDamage(uint32_t entityHandle, Vec3 hitPos) {
+    static void dealStompDamage(uint32_t entityHandle, Vec3 hitPos, float amount) { 
         if (!Spark::DamageEntity::original) return;
         auto* tag = getDamageTag();
         if (!tag) return;
+
+        float multiplier = amount > 0.0f ? 1.0f : 0.0f;
 
         Engine::DamageEvent ev{};
         ev.damageTypeTagHandle = tag->tagID;
@@ -131,8 +137,8 @@ namespace Mod::Mario::GoombaStomp {
         ev.sourceTypeIndex     = (uint16_t)-1;
         ev.hitPosition         = hitPos;
         ev.hitDirection        = Vec3{ 0.0f, 0.0f, -1.0f }; // downward
-        ev.baseDamage          = kStompDamage;
-        ev.damageMultiplier    = 1.0f;
+        ev.baseDamage          = amount;
+        ev.damageMultiplier    = multiplier;
         Spark::DamageEntity::dispatch(&ev, entityHandle, 0, 0, -1, 0);
 
         bool fatal = false;
@@ -178,12 +184,12 @@ namespace Mod::Mario::GoombaStomp {
             if (dx * dx + dy * dy > hRadius * hRadius) return;
 
             // ── Stomp detected! ────────────────────────────────────────────────
-            stompEvents[handle] = { kStompAnimTicks };
-
+            auto stompType = getStompEventType(entity-> getTagResourcePath());
+            stompEvents[handle] = { kStompAnimTicks, stompType };
+            
             auto player = Engine::getPlayerEntity();
             regenerateShield(*player, kStompShieldRegenAmount, false);
 
-            auto stompType = getStompEventType(entity->getTagResourcePath());
             if (!stompType.noAction) {
                 sm64_set_mario_action(marioId, stompType.action);
             }
@@ -194,29 +200,6 @@ namespace Mod::Mario::GoombaStomp {
                     marioState.velocity[2]);
             }
             sm64_play_sound_global(stompType.soundEffect);
-
-            // std::string resourcePath = entity->getTagResourcePath();
-            // auto itAction = postStompAction.find(resourcePath);
-            // if (itAction != postStompAction.end()) {
-            //     sm64_set_mario_action(marioId, itAction->second);
-            //     sm64_set_mario_velocity(marioId,
-            //         marioState.velocity[0],
-            //         kStompBounceY,
-            //         marioState.velocity[2]);
-            // } else {
-            //     // Bounce Mario upward, preserving horizontal velocity.
-            //     if (shouldBounce()) {
-            //         if (marioInputs.buttonA) {
-            //             sm64_set_mario_action(marioId, ACT_DOUBLE_JUMP);
-            //         } else {
-            //             sm64_set_mario_action(marioId, ACT_FREEFALL);
-            //             sm64_set_mario_velocity(marioId,
-            //                 marioState.velocity[0],
-            //                 kStompBounceY,
-            //                 marioState.velocity[2]);
-            //         }
-            //     }
-            // }
             
         });
     }
@@ -230,7 +213,7 @@ namespace Mod::Mario::GoombaStomp {
         auto& ev = it->second;
 
         if (ev.animationTimer == 0) {
-            dealStompDamage(entityHandle, Engine::getEntityPointer(entityHandle)->pos);
+            dealStompDamage(entityHandle, Engine::getEntityPointer(entityHandle)->pos, ev.type.damage);
             stompEvents.erase(it);
             return;
         }
@@ -249,9 +232,15 @@ namespace Mod::Mario::GoombaStomp {
         }
 
         float t     = 1.0f - (float)ev.animationTimer / (float)kStompAnimTicks;
-        // float scale = kSquashMin + (1.0f - kSquashMin) * t;
+        float scale = kSquashMin + (1.0f - kSquashMin) * t;
         // float scale = 1.0f * (1.0f - t) + kSquashMin * t; // linear interpolation from 1.0 to kSquashMin
-        float scale = kSquashMin;
+        // float scale = kSquashMin;
+
+        const float minScale = 0.1f;
+        if (scale < minScale) scale = minScale;
+
+        float hScale = 1 / scale;
+        float hScaleRoot = sqrtf(hScale);
 
         float entityZ = entity->pos.z;
         for (size_t i = 0; i < boneCount; i++) {
@@ -261,6 +250,20 @@ namespace Mod::Mario::GoombaStomp {
             bone.x.z  *= scale;
             bone.y.z  *= scale;
             bone.z.z  *= scale;
+
+            float dx = bone.pos.x - entity->pos.x; 
+            bone.pos.x = entity->pos.x + dx * hScaleRoot;
+            bone.x.x  *= hScaleRoot;
+            bone.y.x  *= hScaleRoot;
+            bone.z.x  *= hScaleRoot;
+
+            float dy = bone.pos.y - entity->pos.y; 
+            bone.pos.y = entity->pos.y + dy * hScaleRoot;
+            bone.x.y  *= hScaleRoot;
+            bone.y.y  *= hScaleRoot;
+            bone.z.y  *= hScaleRoot;
+
+            // bone.w *= hScaleRoot;
         }
 
         ev.animationTimer--;

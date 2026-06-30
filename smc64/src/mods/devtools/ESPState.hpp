@@ -9,7 +9,7 @@ namespace Mod::DevTools {
         float maxDistance = 20.0f;
         float maxBSPVertexDistance = 5.0f;
         struct Filter {
-            bool biped      = false;
+            bool biped      = true;
             bool vehicle    = false;
             bool weapon     = false;
             bool projectile = false;
@@ -35,7 +35,7 @@ namespace Mod::DevTools {
         bool animation = false;
         bool bones     = false;
         bool worldBones  = true;
-        bool collision   = false;
+        bool collision   = true;
         bool renderBsp   = false;
     };
 

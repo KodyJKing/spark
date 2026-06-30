@@ -53,9 +53,9 @@ void MarioMod::init() {
     });
 
     Spark::RenderPassenger::addHandler(modId_, +[](void*, auto next, uint64_t param_1, uint16_t* param_2, uint32_t entityHandle) {
-        // if (entityHandle != Engine::getPlayerHandle()) {
+        if (entityHandle != Engine::getPlayerHandle()) {
             next(param_1, param_2, entityHandle);
-        // }
+        }
     }, nullptr);
 
 }

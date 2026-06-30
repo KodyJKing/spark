@@ -26,6 +26,7 @@ namespace Mod::Mario {
     Vec3 getMarioPosition();
     void setMarioPosition(const Vec3& position);
 
+    bool marioExists();
     bool marioInControl();
     bool marioAirborne();
 }

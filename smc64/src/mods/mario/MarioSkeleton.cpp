@@ -11,6 +11,15 @@
 #include <unordered_map>
 #include <string>
 
+#define DEBUG_MARIO_SKELETON 1
+
+#if DEBUG_MARIO_SKELETON
+#include <iostream>
+#define LOG(msg) std::cout << msg << std::endl;
+#else
+#define LOG(msg)
+#endif
+
 namespace Mod::Mario {
     struct MarioBone {
         char name[64];
@@ -130,7 +139,6 @@ namespace Mod::Mario {
             transform.x = haloX.normalize();
             transform.y = haloY.normalize();
             transform.z = haloZ.normalize() * -1.0f;
-            // transform.w = 3.0f/4.0f;
             transform.w = 0.8f;
         }
     }

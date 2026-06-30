@@ -16,7 +16,7 @@
 #include "MarioCollisionDebugRender.hpp"
 #include "MarioChiefPose.hpp"
 
-// #define DEBUG_MARIO_GEOMETRY 1
+#define DEBUG_MARIO_GEOMETRY 1
 
 namespace Mod::Mario {
 

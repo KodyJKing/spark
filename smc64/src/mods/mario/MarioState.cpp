@@ -34,6 +34,10 @@ namespace Mod::Mario {
         sm64_set_mario_position(marioId, position.x, position.y, position.z);
     }
 
+    bool marioExists() {
+        return marioId >= 0;
+    }
+
     bool marioInControl() {
         auto playerEntity = Engine::getPlayerEntity();
         if (!playerEntity) return false;
@@ -45,7 +49,7 @@ namespace Mod::Mario {
 
         if (marioId < 0) return false;
 
-        if (Engine::isPlayerInputDisabled()) return false;
+        // if (Engine::isPlayerInputDisabled()) return false;
 
         return enableMario && possessMario && !::Mod::Mario::LevelEdit::isInputSuppressed() && MarioBSPChunk::hasValidLoadedChunk();
     }

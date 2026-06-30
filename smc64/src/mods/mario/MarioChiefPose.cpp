@@ -7,7 +7,7 @@
 #include <vector>
 #include <string>
 
-// #define BONE_MAPPING_EDITOR 1
+#define BONE_MAPPING_EDITOR 1
 
 #ifdef BONE_MAPPING_EDITOR
 #include "imgui.h"
@@ -39,25 +39,25 @@ namespace Mod::Mario::MarioChiefPose {
 
     // Mapping from Mario bones to Cheif bones.
     std::vector<BoneMapping> marioToChiefBoneMap = {
-        {"pelvis", 0, Engine::Transform{1.000000f, {1.000000f,0.000000f,0.000000f}, {0.000000f,0.194234f,0.980955f}, {0.000000f,-0.980955f,0.194234f}, {-0.042000f,0.026000f,0.000000f}}},
-        {"chest", 6, Engine::Transform{1.000000f, {1.000000f,-0.000000f,0.000000f}, {0.000000f,-0.000000f,1.000000f}, {-0.000000f,-1.000000f,-0.000000f}, {0.000000f,0.021000f,0.000000f}}},
-        {"head", 12, Engine::Transform{1.000000f, {0.930503f,0.366157f,0.009684f}, {-0.054103f,0.111247f,0.992319f}, {0.362267f,-0.923880f,0.123326f}, {0.000000f,-0.042000f,0.000000f}}},
-        
-        {"right_thigh", 1, Engine::Transform{1.000000f, {1.000000f,0.000000f,0.000000f}, {0.000000f,1.000000f,0.000000f}, {0.000000f,-0.000000f,1.000000f}, {0.021000f,0.000000f,0.000000f}}},
-        {"right_calf", 4, Engine::Transform{1.000000f, {1.000000f,0.000000f,-0.000000f}, {-0.000000f,1.000000f,0.000000f}, {0.000000f,0.000000f,1.000000f}, {0.000000f,0.015000f,0.000000f}}},
-        {"right_foot", 8, Engine::Transform{1.000000f, {-0.062775f,0.997801f,-0.021248f}, {-0.320613f,-0.000000f,0.947210f}, {0.945128f,0.066274f,0.319908f}, {0.000000f,0.000000f,0.000000f}}},
+        {"frame pelvis", 0, Engine::Transform::identity()},
+        {"frame head", 12, Engine::Transform::identity()},
+        {"frame chest", 6, Engine::Transform::identity()},
 
-        {"left_thigh", 2, Engine::Transform{1.000000f, {1.000000f,0.000000f,0.000000f}, {0.000000f,1.000000f,0.000000f}, {0.000000f,-0.000000f,1.000000f}, {0.021000f,0.000000f,0.000000f}}},
-        {"left_calf", 5, Engine::Transform{1.000000f, {1.000000f,0.000000f,-0.000000f}, {-0.000000f,1.000000f,0.000000f}, {0.000000f,0.000000f,1.000000f}, {0.000000f,0.015000f,0.000000f}}},
-        {"left_foot", 11, Engine::Transform{1.000000f, {0.074574f,0.982736f,-0.169321f}, {0.364910f,0.131125f,0.921763f}, {0.928051f,-0.130526f,-0.348832f}, {0.000000f,0.000000f,0.000000f}}},
+        {"frame right_thigh", 1, Engine::Transform::identity()},
+        {"frame right_calf", 4, Engine::Transform::identity()},
+        {"frame right_foot", 8, Engine::Transform{1.000000f, {0.290702f,0.956814f,0.000000f}, {0.956814f,-0.290702f,0.000000f}, {0.000000f,-0.000000f,-1.000000f}, {-0.005000f,0.010000f,0.031000f}}},
 
-        {"right_arm", 13, Engine::Transform{1.000000f, {1.000000f,0.000000f,-0.000000f}, {-0.000000f,1.000000f,0.000000f}, {0.000000f,0.000000f,1.000000f}, {0.000000f,0.000000f,0.016000f}}},
-        {"right_forearm", 15, Engine::Transform{1.000000f, {1.000000f,0.000000f,-0.000000f}, {-0.000000f,1.000000f,0.000000f}, {0.000000f,0.000000f,1.000000f}, {0.000000f,0.000000f,0.015000f}}},
-        {"right_hand", 17, Engine::Transform{1.000000f, {1.000000f,0.000000f,0.000000f}, {0.000000f,1.000000f,0.000000f}, {0.000000f,-0.000000f,1.000000f}, {0.000000f,-0.016000f,0.000000f}}},
+        {"frame left_thigh", 2, Engine::Transform::identity()},
+        {"frame left_calf", 5, Engine::Transform::identity()},
+        {"frame left_foot", 11, Engine::Transform{1.000000f, {0.290702f,0.956814f,-0.000000f}, {0.956814f,-0.290702f,0.000000f}, {-0.000000f,-0.000000f,-1.000000f}, {-0.005000f,0.026000f,-0.021000f}}},
 
-        {"left_arm", 14, Engine::Transform{1.000000f, {1.000000f,0.000000f,0.000000f}, {0.000000f,1.000000f,0.000000f}, {0.000000f,-0.000000f,1.000000f}, {0.000000f,0.000000f,-0.016000f}}},
-        {"left_forearm", 16, Engine::Transform{1.000000f, {1.000000f,0.000000f,-0.000000f}, {-0.000000f,1.000000f,0.000000f}, {0.000000f,0.000000f,1.000000f}, {0.000000f,0.000000f,-0.016000f}}},
-        {"left_hand", 18, Engine::Transform{1.000000f, {1.000000f,0.000000f,0.000000f}, {0.000000f,1.000000f,0.000000f}, {0.000000f,-0.000000f,1.000000f}, {0.000000f,-0.016000f,0.000000f}}},
+        {"frame right_arm", 13, Engine::Transform::identity()},
+        {"frame right_forearm", 15, Engine::Transform::identity()},
+        {"frame right_hand", 17, Engine::Transform::identity()},
+
+        {"frame left_arm", 14, Engine::Transform::identity()},
+        {"frame left_forearm", 16, Engine::Transform::identity()},
+        {"frame left_hand", 18, Engine::Transform::identity()}
     };
     
     // Pose Mario using Chief's pose.

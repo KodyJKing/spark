@@ -34,6 +34,16 @@ namespace Engine {
                 Vec3{0.0f, 0.0f, 0.0f}
             };
         }
+
+        static Transform orthoNormal(Vec3 x, Vec3 z, Vec3 pos) {
+            return Transform{
+                1.0f,
+                x,
+                z.cross(x),
+                z,
+                pos
+            };
+        }
     };
 
     Engine::Transform inverseTransform(Engine::Transform &wt);
