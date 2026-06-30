@@ -11,7 +11,7 @@
 #include <string>
 #include <unordered_map>
 
-#define MARIO_WEAPON_OFFSET_UI 1
+// #define MARIO_WEAPON_OFFSET_UI 1
 
 namespace Mod::Mario::MarioWeaponOffset {
 

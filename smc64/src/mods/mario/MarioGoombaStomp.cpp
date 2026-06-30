@@ -13,6 +13,7 @@
 
 #include <unordered_map>
 #include <cmath>
+#include <string>
 
 namespace Mod::Mario::GoombaStomp {
 
@@ -25,6 +26,34 @@ namespace Mod::Mario::GoombaStomp {
     static constexpr float    kStompShieldRegenAmount = 0.2f; // fraction of shield regenerated per stomp
     static constexpr float    kGroundPoundRadiusBoost = 0.25f; // additional horizontal radius when ground-pounding
 
+    struct StompEventType {
+        uint32_t action; // The action to set Mario to after a stomp
+        int32_t soundEffect; // The sound effect to play when a stomp occurs
+        float bounceY; // The upward velocity in Mario units after a stomp
+        bool noAction;
+        bool noBounce;
+    };
+
+    StompEventType groundPound = { .soundEffect = SOUND_OBJ_STOMPED, .noAction = true, .noBounce = true, };
+    StompEventType regularStomp = { .action = ACT_FREEFALL, .soundEffect = SOUND_OBJ_STOMPED, .bounceY = kStompBounceY};
+    StompEventType twirlStomp = { .action = ACT_TWIRLING, .soundEffect = SOUND_MARIO_TWIRL_BOUNCE, .bounceY = kStompBounceY * 5.0f };
+
+    static std::unordered_map<std::string, StompEventType> postStompAction = {
+        {"characters\\sentinel\\sentinel", twirlStomp},
+        {"characters\\floodcarrier\\floodcarrier", twirlStomp},
+    };
+
+    StompEventType getStompEventType(const std::string& entityPath) {
+        // Check if there is a specific post-stomp action for this entity.
+        if (postStompAction.count(entityPath)) {
+            return postStompAction[entityPath];
+        }
+        if (marioState.action == ACT_GROUND_POUND) {
+            return groundPound;
+        }
+        return regularStomp;
+    }
+
     struct StompEvent {
         uint32_t animationTimer; // Counts down to 0.
     };
@@ -34,14 +63,15 @@ namespace Mod::Mario::GoombaStomp {
 
     // ── Helpers ────────────────────────────────────────────────────────────────
 
-    static float shoulderHeight(Engine::Entity* /*entity*/) {
-        // Only Grunts can be stomped for now, so no need to generalize yet.
-        return 0.25f; // Halo units
+    static float shoulderHeight(Engine::Entity* entity) {
+        if (!entity) return 999.9f;
+        if (entity->fromResourcePath("characters\\flood_infection\\flood_infection"))
+            return -0.125f;
+        return 0.25f;
     }
 
-    static float horizontalRadius(Engine::Entity* /*entity*/) {
-        // Only Grunts can be stomped for now, so no need to generalize yet.
-        return 0.3f; // Halo units
+    static float horizontalRadius(Engine::Entity* entity) {
+        return 0.3f;
     }
 
     static float horizontalBoost() {
@@ -150,24 +180,44 @@ namespace Mod::Mario::GoombaStomp {
             // ── Stomp detected! ────────────────────────────────────────────────
             stompEvents[handle] = { kStompAnimTicks };
 
-            sm64_play_sound_global(SOUND_OBJ_STOMPED);
-
             auto player = Engine::getPlayerEntity();
             regenerateShield(*player, kStompShieldRegenAmount, false);
 
-            // Bounce Mario upward, preserving horizontal velocity.
-            if (shouldBounce()) {
-                if (marioInputs.buttonA) {
-                    sm64_set_mario_action(marioId, ACT_DOUBLE_JUMP);
-                } else {
-                    sm64_set_mario_action(marioId, ACT_FREEFALL);
-                    sm64_set_mario_velocity(marioId,
-                        marioState.velocity[0],
-                        kStompBounceY,
-                        marioState.velocity[2]);
-                }
-
+            auto stompType = getStompEventType(entity->getTagResourcePath());
+            if (!stompType.noAction) {
+                sm64_set_mario_action(marioId, stompType.action);
             }
+            if (!stompType.noBounce) {
+                sm64_set_mario_velocity(marioId,
+                    marioState.velocity[0],
+                    stompType.bounceY,
+                    marioState.velocity[2]);
+            }
+            sm64_play_sound_global(stompType.soundEffect);
+
+            // std::string resourcePath = entity->getTagResourcePath();
+            // auto itAction = postStompAction.find(resourcePath);
+            // if (itAction != postStompAction.end()) {
+            //     sm64_set_mario_action(marioId, itAction->second);
+            //     sm64_set_mario_velocity(marioId,
+            //         marioState.velocity[0],
+            //         kStompBounceY,
+            //         marioState.velocity[2]);
+            // } else {
+            //     // Bounce Mario upward, preserving horizontal velocity.
+            //     if (shouldBounce()) {
+            //         if (marioInputs.buttonA) {
+            //             sm64_set_mario_action(marioId, ACT_DOUBLE_JUMP);
+            //         } else {
+            //             sm64_set_mario_action(marioId, ACT_FREEFALL);
+            //             sm64_set_mario_velocity(marioId,
+            //                 marioState.velocity[0],
+            //                 kStompBounceY,
+            //                 marioState.velocity[2]);
+            //         }
+            //     }
+            // }
+            
         });
     }
 
