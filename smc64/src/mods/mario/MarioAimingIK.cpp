@@ -16,7 +16,7 @@ namespace Mod::Mario::MarioAimingIK {
 
     static Vec3 preferredArmDirection() {
         auto chest = getMarioBoneByName("frame chest");
-        return (chest.z + chest.y * 0.7f).normalize() * -1.0f;
+        return (chest.y - chest.z * 0.7f).normalize();
     }
 
     bool marioArmsBusy() {
@@ -66,6 +66,11 @@ namespace Mod::Mario::MarioAimingIK {
         InverseKinematics::MarioIKRequest ikRequest;
         ikRequest.limb             = InverseKinematics::MarioIKRequest::Limb::LeftArm;
         ikRequest.targetTransform  = *weaponRootBone;
+
+        // Rotate target transform 180 about it's x axis to account for the difference in coordinate systems.
+        ikRequest.targetTransform.y *= -1.0f;
+        ikRequest.targetTransform.z *= -1.0f;
+
         ikRequest.targetTransform.pos = target;
         ikRequest.enforceRotation  = true;
         InverseKinematics::applyMarioIK(ikRequest);

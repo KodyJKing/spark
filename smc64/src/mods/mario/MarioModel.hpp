@@ -12,6 +12,5 @@ namespace Mod::Mario::MarioModel {
     extern uint32_t marioHandle;
     
     bool isMario(uint32_t entityHandle);
-    uint32_t playerWeaponHandle();
     uint32_t spawnMarioModel(Vec3 position);
 }

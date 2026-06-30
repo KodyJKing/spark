@@ -104,6 +104,24 @@ namespace Spark::Overlay {
         ImGui::PopStyleVar();
     }
 
+    bool hasInputCapture() {
+        return ImGui::GetIO().WantCaptureKeyboard || ImGui::GetIO().WantCaptureMouse;
+    }
+
+    // Rather than wrestling with hooking Window's cursor functions, we'll just render a fallback cursor so we can always see it.
+    void renderFallbackCursor() {
+        ImVec2 mp = ImGui::GetMousePos();
+        ImDrawList* dl = ImGui::GetForegroundDrawList();
+        const float R  = 8.0f;
+        const float G  = 2.0f;
+        const ImU32 kCursorColor  = IM_COL32(255, 255, 255, 220);
+        const ImU32 kCursorShadow = IM_COL32(0,   0,   0,   120);
+        dl->AddLine({mp.x - R + 1, mp.y + 1}, {mp.x + R + 1, mp.y + 1}, kCursorShadow, G);
+        dl->AddLine({mp.x + 1, mp.y - R + 1}, {mp.x + 1, mp.y + R + 1}, kCursorShadow, G);
+        dl->AddLine({mp.x - R, mp.y}, {mp.x + R, mp.y}, kCursorColor, G);
+        dl->AddLine({mp.x, mp.y - R}, {mp.x, mp.y + R}, kCursorColor, G);
+    }
+
     void render() {
         UnloadLock lock; // Prevent unloading while rendering
 
@@ -137,6 +155,9 @@ namespace Spark::Overlay {
                 Spark::onRenderDebugWorld.dispatch(Spark::noopTerminal, nullptr);
                 Overlay::Gizmos::render();
                 Overlay::ESP::endESPWindow();
+
+                if (Spark::Overlay::hasInputCapture())
+                    renderFallbackCursor();
             }
 
             Spark::onRenderDebugUI.dispatch(Spark::noopTerminal, nullptr);

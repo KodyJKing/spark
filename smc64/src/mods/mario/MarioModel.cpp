@@ -86,8 +86,9 @@ namespace Mod::Mario::MarioModel {
         weaponRootBone->pos = leftHandBone.transformPoint(off);
         if (MarioAimingIK::marioArmsBusy()) {
             weaponRootBone->x = leftHandBone.x;
-            weaponRootBone->y = leftHandBone.y;
-            weaponRootBone->z = leftHandBone.z;
+            // Rotate 180 about x axis to account for difference in hand and weapon coordinate systems.
+            weaponRootBone->y = leftHandBone.y * -1.0f;
+            weaponRootBone->z = leftHandBone.z * -1.0f;
         }
 
         auto initialInverse = Engine::inverseTransform(rootBoneInitial);

@@ -43,15 +43,6 @@ namespace Mod::Mario {
         "frame base",
         "frame chest",
         "frame head",
-        "frame left_arm",
-        "frame left_calf",
-        "frame left_foot",
-        "frame left_forearm",
-        "frame left_hand",
-        "frame left_hip",
-        "frame left_shoulder",
-        "frame left_thigh",
-        "frame pelvis",
         "frame right_arm",
         "frame right_calf",
         "frame right_foot",
@@ -60,6 +51,15 @@ namespace Mod::Mario {
         "frame right_hip",
         "frame right_shoulder",
         "frame right_thigh",
+        "frame pelvis",
+        "frame left_arm",
+        "frame left_calf",
+        "frame left_foot",
+        "frame left_forearm",
+        "frame left_hand",
+        "frame left_hip",
+        "frame left_shoulder",
+        "frame left_thigh",
     };
 
     bool haloBonesInvInitialized = false;
@@ -130,7 +130,8 @@ namespace Mod::Mario {
             transform.x = haloX.normalize();
             transform.y = haloY.normalize();
             transform.z = haloZ.normalize() * -1.0f;
-            transform.w = 3.0/4.0f;
+            // transform.w = 3.0f/4.0f;
+            transform.w = 0.8f;
         }
     }
 

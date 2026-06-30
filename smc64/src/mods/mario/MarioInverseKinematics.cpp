@@ -90,29 +90,17 @@ namespace Mod::Mario::InverseKinematics {
 
     void applyMarioIK(MarioIKRequest& request) {
         std::vector<const char*> boneNames;
-        std::vector<Vec3> pivotOffsets;
         if (request.limb == MarioIKRequest::Limb::LeftArm) {
             boneNames = { "frame left_arm", "frame left_forearm", "frame left_hand" };
-            pivotOffsets = {
-                Vec3{ 0.01f, 0.01f, 0.01f },
-                Vec3{ 0.01f, 0.01f, 0.01f },
-                Vec3{ 0.01f, 0.0f, 0.00f },
-            };
         } else {
             boneNames = { "frame right_arm", "frame right_forearm", "frame right_hand" };
-            pivotOffsets = {
-                Vec3{ 0.0f, -0.01f, 0.01f },
-                Vec3{ 0.0f, -0.01f, 0.01f },
-                Vec3{ 0.0f, 0.0f, 0.0f },
-            };
         }
 
         IKRequest ikRequest;
         for (int i = 0; i < (int)boneNames.size(); i++) {
             Engine::Transform initialTransform = getMarioBoneByName(boneNames[i]);
             float length = i == 2 ? 0.05f : -1.0f;
-            Vec3 pivotOffset = pivotOffsets[i];
-            ikRequest.bones.push_back({ initialTransform, length, pivotOffset });
+            ikRequest.bones.push_back({ initialTransform, length, {0} });
         }
 
         ikRequest.targetTransform = request.targetTransform;

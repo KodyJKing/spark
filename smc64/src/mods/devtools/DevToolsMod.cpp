@@ -6,6 +6,7 @@
 #include "mods/devtools/ScriptConsole.hpp"
 #include "spark/RenderBuses.hpp"
 #include "spark/hook/Hooks.hpp"
+#include "spark/overlay/Overlay.hpp"
 #include "mods/devtools/VectorProfiler.hpp"
 #include "engine/halo1.hpp"
 #include "FreezeEntity.hpp"
@@ -76,6 +77,12 @@ void DevToolsMod::init() {
         std::printf("[HaloScript error] %s\n", formatted.c_str());
         Mod::DevTools::pushConsoleError(formatted.c_str());
         next(source, category, message, location);
+    }, nullptr);
+
+    Spark::UpdatePlayerControlsAndLook::addHandler(modId_, +[](void* ctx, auto next, uint32_t param_1, uint32_t param_2) {
+        if (Spark::Overlay::hasInputCapture() == false) {
+            next(param_1, param_2);
+        }
     }, nullptr);
 
     Mod::DevTools::FreezeEntity::init(modId_);

@@ -11,19 +11,20 @@
 #include <string>
 #include <unordered_map>
 
-// #define MARIO_WEAPON_OFFSET_UI 1
+#define MARIO_WEAPON_OFFSET_UI 1
 
 namespace Mod::Mario::MarioWeaponOffset {
 
     std::unordered_map<std::string, Offset> offsetMap = {
-        { "weapons\\pistol\\pistol", { 0.0450f, -0.0010f, 0.0120f } },
-        { "weapons\\plasma pistol\\plasma pistol", { 0.0560f, -0.0020f, 0.0410f } },
-        { "weapons\\plasma rifle\\plasma rifle", { 0.0450f, -0.0010f, 0.0060f } },
-        { "weapons\\assault rifle\\assault rifle", { 0.0480f, 0.0160f, -0.0210f } },
-        { "weapons\\needler\\needler", { 0.0620f, -0.0020f, -0.0090f } },
-        { "weapons\\rocket launcher\\rocket launcher", { -0.0570f, -0.0020f, 0.0180f } },
-        { "weapons\\shotgun\\shotgun", { 0.1230f, 0.0090f, 0.0380f } },
-        { "weapons\\sniper rifle\\sniper rifle", { 0.0930f, 0.0000f, 0.0240f } },
+        { "weapons\\flamethrower\\flamethrower", { 0.0200f, 0.0080f, 0.0170f } },
+        { "weapons\\rocket launcher\\rocket launcher", { -0.0020f, 0.0080f, -0.0290f } },
+        { "weapons\\shotgun\\shotgun", { 0.1040f, 0.0090f, -0.0210f } },
+        { "weapons\\needler\\needler", { 0.0590f, 0.0050f, -0.0010f } },
+        { "weapons\\plasma rifle\\plasma rifle", { 0.0500f, 0.0000f, 0.0050f } },
+        { "weapons\\plasma pistol\\plasma pistol", { 0.0660f, 0.0000f, -0.0380f } },
+        { "weapons\\pistol\\pistol", { 0.0500f, 0.0000f, -0.0040f } },
+        { "weapons\\assault rifle\\assault rifle", { 0.0530f, 0.0000f, 0.0160f } },
+        { "weapons\\sniper rifle\\sniper rifle", { 0.0940f, 0.0000f, -0.0210f } },
     };
 
     Vec3 offset = { 0.05f, 0.0f, 0.0f };
@@ -79,7 +80,7 @@ namespace Mod::Mario::MarioWeaponOffset {
                 if (ImGui::Button("Copy")) {
                     // Resolve the held weapon's tag path for context.
                     std::string tagPath;
-                    uint32_t weaponHandle = MarioModel::playerWeaponHandle();
+                    uint32_t weaponHandle = Engine::getPlayerHeldWeaponHandle();
                     if (weaponHandle != 0xFFFFFFFF) {
                         auto* rec = Engine::getEntityRecord(weaponHandle);
                         if (rec) {
