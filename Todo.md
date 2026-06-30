@@ -67,6 +67,10 @@
         - Ridable jackal shield. Dropped when ground pounding a jackal. Rideable as koopa shell.
         - Add hard to reach power ups near enemy encounters. Reward players for agressive movement.
         - Add optional obstacle sections to levels with 
+        - Add Mario themed weapons:
+            - Bobomb cannon.
+            - Tennis racket. (melee and projectile deflection)
+            - Golf club. (precision long range grenade launching)
     - Side levels:
         - Add paintings to access side levels.
 
@@ -85,6 +89,8 @@
         - Drive Mario pose from Chief's 
             - in cutscenes 
             x and vehicles.
+            - When throwing grenade (left arm only).
+            - When reloading (arms only).
     
     - Third person camera:
         - Render a false projectile exiting the player's barrel.

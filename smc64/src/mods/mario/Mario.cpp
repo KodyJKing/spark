@@ -3,6 +3,7 @@
 #include "libsm64.h"
 #include "decomp/sm64.h"
 #include "decomp/surface_terrains.h"
+#include "decomp/audio_defines.h"
 
 #include <cstdlib>
 #include <cstdio>
@@ -26,6 +27,7 @@
 #include "MarioGameSpeed.hpp"
 #include "MarioShieldRegen.hpp"
 
+#include "spark/hook/Hooks.hpp"
 #include "spark/overlay/Gizmos.hpp"
 #include "imgui.h"
 
@@ -46,6 +48,7 @@
 #include "MarioGoombaStomp.hpp"
 #include "functions/MarioToCheif.hpp"
 #include "functions/CheifToMario.hpp"
+#include "functions/KillPlayer.hpp"
 
 // #define DEBUG_MARIO 1
 
@@ -290,6 +293,20 @@ namespace Mod::Mario {
         });
     }
 
+    void deathTick() {
+        if (marioId < 0 || !enableMario) return;
+
+        sm64_mario_kill(marioId);
+
+        std::lock_guard<std::mutex> sm64Lock(MarioAudio::sm64Mutex());
+
+        LOG("Mario death tick start");
+        sm64_mario_tick(marioId, &marioInputs, &marioState, &marioGeometry, marioBoneMatrices);
+        LOG("Mario death tick end");
+
+        updateMarioPose(marioBoneMatrices);
+    }
+
     void update() {
         #ifdef ENABLE_MARIO
         std::lock_guard<std::mutex> updateLock(s_updateMutex);
@@ -307,9 +324,9 @@ namespace Mod::Mario {
         }
 
         auto playerRec = Engine::getPlayerRecord();
-        if (!playerRec) return;
+        if (!playerRec) return deathTick();
         auto player = playerRec->entity();
-        if (!player) return;
+        if (!player) return deathTick();
 
         updateGameSpeed(*player);
         updateShieldRegen(*player);
@@ -330,8 +347,13 @@ namespace Mod::Mario {
         if (GetAsyncKeyState(VK_NUMPAD1) & 1) {
             // sm64_set_mario_action_arg(marioId, ACT_RIDING_SHELL_GROUND, 0);
             // sm64_set_mario_action_arg(marioId, ACT_CRAZY_BOX_BOUNCE, 0);
-            sm64_set_mario_state(marioId, marioState.flags | MARIO_WING_CAP);
-            sm64_set_mario_action(marioId, ACT_FLYING_TRIPLE_JUMP);
+            // sm64_set_mario_state(marioId, marioState.flags | MARIO_WING_CAP);
+            // sm64_set_mario_action(marioId, ACT_FLYING_TRIPLE_JUMP);
+            
+            sm64_set_mario_action(marioId, ACT_VERTICAL_WIND);
+            sm64_set_mario_velocity(marioId, 0, 150, 0);
+            
+            // Mod::Mario::killPlayer();
         }
 
         if (marioId < 0 || !enableMario) {
@@ -375,12 +397,6 @@ namespace Mod::Mario {
         } else {
             MarioChiefPose::updatePose();
         }
-
-        bool inForbiddenState = false
-            || (marioState.action == ACT_START_SLEEPING)
-            || (marioState.action == ACT_SLEEPING)
-            || (marioState.action == ACT_WAKING_UP);
-        if (inForbiddenState) sm64_set_mario_action(marioId, ACT_IDLE);
 
         // For now, always heal Mario. Cheif is responsible for recieving damage.
         sm64_mario_heal(marioId, 0xFF);

@@ -7,7 +7,7 @@
 #include <vector>
 #include <string>
 
-#define BONE_MAPPING_EDITOR 1
+// #define BONE_MAPPING_EDITOR 1
 
 #ifdef BONE_MAPPING_EDITOR
 #include "imgui.h"

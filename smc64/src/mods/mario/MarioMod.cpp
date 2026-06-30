@@ -30,7 +30,20 @@ void MarioMod::init() {
     }, nullptr);
 
     Spark::RenderEntity::addHandler(modId_, +[](void*, auto next, Engine::RenderEntityRequest* request) {
-        next(request);
+
+        bool skip = false;
+        if (request && Engine::entityValid(request->entityHandle)) {
+            auto entity = Engine::getEntityPointer(request->entityHandle);
+            std::string tagPath = entity ? entity->getTagResourcePath() : "";
+            // If it contains "cyborg", skip rendering this entity.
+            if (tagPath.find("cyborg") != std::string::npos) {
+                skip = true;
+            }
+        }
+
+        if (!skip) {
+            next(request);
+        }
         Mod::Mario::MarioModel::renderEntity(request, Spark::RenderEntity::original);
     }, nullptr);
 
