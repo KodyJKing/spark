@@ -43,6 +43,7 @@ namespace Engine {
 
     EntityRecord* getPlayerRecord();
     Entity *getPlayerEntity();
+    Inventory *getPlayerInventory();
     std::optional<Vec3> getPlayerPosition();
     bool isPlayerHandle( uint32_t entityHandle );
     bool isPlayerControlled( EntityRecord* rec );

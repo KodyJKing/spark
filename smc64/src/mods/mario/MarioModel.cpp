@@ -1,8 +1,6 @@
 #include "Mario.hpp"
 #include "MarioModel.hpp"
 #include "MarioSkeleton.hpp"
-#include "MarioWeaponOffset.hpp"
-#include "MarioAimingIK.hpp"
 #include <string>
 #include "decomp/sm64.h"
 #include "Coordinates.hpp"
@@ -67,42 +65,6 @@ namespace Mod::Mario::MarioModel {
         }
     }
 
-    void updateWeaponPose( uint32_t weaponHandle ) {
-        auto rec = Engine::getEntityRecord( weaponHandle );
-        if (!rec) return;
-        auto weaponEntity = rec->entity();
-        if (!weaponEntity) return;
-
-        auto weaponBones = weaponEntity->worldBones.get(weaponEntity, 0);
-        if (!weaponBones) return;
-
-        auto leftHandBone = getMarioBoneByName("frame left_hand");
-
-        auto weaponRootBone = &weaponBones[0];
-        auto rootBoneInitial = weaponRootBone[0];
-        
-        MarioWeaponOffset::Offset off;
-        MarioWeaponOffset::getWeaponOffset(weaponHandle, off);
-        weaponRootBone->pos = leftHandBone.transformPoint(off);
-        if (MarioAimingIK::marioArmsBusy()) {
-            weaponRootBone->x = leftHandBone.x;
-            // Rotate 180 about x axis to account for difference in hand and weapon coordinate systems.
-            weaponRootBone->y = leftHandBone.y * -1.0f;
-            weaponRootBone->z = leftHandBone.z * -1.0f;
-        }
-
-        auto initialInverse = Engine::inverseTransform(rootBoneInitial);
-        auto relativeTransform = Engine::multiplyTransforms(
-            *weaponRootBone,
-            initialInverse
-        );
-        auto boneCount = weaponEntity->worldBones.count();
-        for (int i = 1; i < boneCount; i++) {
-            auto& bone = weaponBones[i];
-            bone = Engine::multiplyTransforms(relativeTransform, bone);
-        }
-    }
-
     uint32_t marioHandle  = 0xFFFFFFFF;
 
     uint32_t spawnMarioModel(Vec3 position) {
@@ -163,13 +125,6 @@ namespace Mod::Mario::MarioModel {
                 marioModelLastUpdatedTick = GetTickCount64();
                 marioHandle = entityHandle;
                 updatePose(entityHandle, entity);
-            } else if (entityHandle == Engine::getPlayerHeldWeaponHandle()) {
-                updateWeaponPose(entityHandle);
-
-                // Print tag info for the entity.
-                auto entity = Engine::getEntityPointer(entityHandle);
-                auto tag = Engine::getTag(entity->tagID);
-                LOG("Entity Handle: " << entityHandle << ", Tag: " << tag->getResourcePath());
             }
             
         }, nullptr);

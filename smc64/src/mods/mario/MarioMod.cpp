@@ -5,6 +5,7 @@
 #include "engine/halo1.hpp"
 #include "level-edit/MarioLevelEdit.hpp"
 #include "MarioChiefPose.hpp"
+#include "MarioWeaponPose.hpp"
 #include "MarioPauseTab.hpp"
 #include "spark/events/TeleportPlayer.hpp"
 #include "functions/TeleportMario.hpp"
@@ -18,6 +19,7 @@ void MarioMod::init() {
 
     // Initialize Mario model handlers.
     Mod::Mario::MarioModel::addHandlers(modId_);
+    Mod::Mario::MarioWeaponPose::addHandlers(modId_);
 
     Spark::LoadCheckpoint::addHandler(modId_, +[](void*, auto next) {
         Mod::Mario::deinitMario();

@@ -35,7 +35,7 @@ namespace Mod::DevTools {
         bool animation = false;
         bool bones     = false;
         bool worldBones  = true;
-        bool collision   = true;
+        bool collision   = false;
         bool renderBsp   = false;
     };
 

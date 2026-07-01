@@ -14,6 +14,7 @@ namespace Mod::Mario {
     size_t romSize = 0;
 
     int32_t marioId = -1;
+    uint64_t marioTickCount = 0;
     SM64MarioInputs marioInputs;
     SM64MarioState marioState;
     SM64MarioGeometryBuffers marioGeometry;
@@ -49,7 +50,7 @@ namespace Mod::Mario {
 
         if (marioId < 0) return false;
 
-        // if (Engine::isPlayerInputDisabled()) return false;
+        if (Engine::isPlayerInputDisabled()) return false;
 
         return enableMario && possessMario && !::Mod::Mario::LevelEdit::isInputSuppressed() && MarioBSPChunk::hasValidLoadedChunk();
     }

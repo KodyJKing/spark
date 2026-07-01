@@ -14,6 +14,7 @@ namespace Mod::Mario {
     extern size_t romSize;
 
     extern int32_t marioId;
+    extern uint64_t marioTickCount;
     extern SM64MarioInputs marioInputs;
     extern SM64MarioState marioState;
     extern SM64MarioGeometryBuffers marioGeometry;

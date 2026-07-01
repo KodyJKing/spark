@@ -46,6 +46,7 @@
 #include "MarioWeaponKick.hpp"
 #include "AdrenalineSystem.hpp"
 #include "MarioGoombaStomp.hpp"
+#include "MarioShell.hpp"
 #include "functions/MarioToCheif.hpp"
 #include "functions/CheifToMario.hpp"
 #include "functions/KillPlayer.hpp"
@@ -135,27 +136,42 @@ namespace Mod::Mario {
     }
 
     void initMario() {
+        // Initialize Mario state.
+        marioInputs = {};
+        marioState = {};
+        
         // Create a Mario instance at Cheif's position (split into chunk + local).
         if (marioId < 0) {
 
-            if (Engine::isPlayerInputDisabled()) {
+            // Caveat: Mario will not render until player has exited a vehicle (including after checkpoint reloads).
+            if (Engine::isPlayerInputDisabled() || Engine::isPlayerInVehicle()) {
                 printf("initMario: player input is disabled, skipping Mario spawn.\n");
                 return;
             }
             
-            auto playerPos = Engine::getPlayerPosition();
-            if (!playerPos.has_value()) {
+            auto playerPosOpt = Engine::getPlayerPosition();
+            if (!playerPosOpt.has_value()) {
                 printf("initMario: no player position available, skipping Mario spawn.\n");
                 return;
             }
-            Vec3 marioWorldPos = Coordinates::haloToMario(playerPos.value());
+            Vec3 playerPos = playerPosOpt.value();
+
+            marioTickCount = 0; // Reset Mario tick count when initializing Mario.
+
+            Vec3 marioWorldPos = Coordinates::haloToMario(playerPos);
             marioChunk = Coordinates::marioChunkForPosition(marioWorldPos);
             Vec3 local = Coordinates::marioWorldToLocal(marioWorldPos, marioChunk);
             std::cout << "Local position: (" << local.x << ", " << local.y << ", " << local.z << ")\n";
 
+            // Update Mario state's position so it's available before the first sm64 tick.
+            marioState.position[0] = local.x;
+            marioState.position[1] = local.y;
+            marioState.position[2] = local.z;
+            
             // Create temporary spawn platform, then create Mario.
             createSpawnPlatform(local);
             marioId = sm64_mario_create(local.x, local.y, local.z);
+
         }
         if (marioId < 0) {
             printf("Failed to create Mario instance.\n");
@@ -166,9 +182,7 @@ namespace Mod::Mario {
         printf("Created Mario instance with ID: %d in chunk (%d, %d, %d)\n",
                marioId, marioChunk.x, marioChunk.y, marioChunk.z);
 
-        // Initialize Mario state and geometry buffers.
-        marioInputs = {};
-        marioState = {};
+        // Initialize Mario geometry buffers.
         marioGeometry.position = (float*)malloc(sizeof(float) * 9 * SM64_GEO_MAX_TRIANGLES);
         marioGeometry.color = (float*)malloc(sizeof(float) * 9 * SM64_GEO_MAX_TRIANGLES);
         marioGeometry.normal = (float*)malloc(sizeof(float) * 9 * SM64_GEO_MAX_TRIANGLES);
@@ -276,23 +290,6 @@ namespace Mod::Mario {
 
     void dumpMarioGeometry();
 
-    Vec3 marioWorldPositionMario() {
-        Vec3 local = { marioState.position[0], marioState.position[1], marioState.position[2] };
-        return Coordinates::marioLocalToWorld(local, marioChunk);
-    }
-
-    Vec3 marioWorldPosition() {
-        return Coordinates::marioToHalo(marioWorldPositionMario());
-    }
-
-    Vec3 marioWorldVelocity() {
-        return Coordinates::marioToHalo(Vec3{
-            marioState.velocity[0],
-            marioState.velocity[1],
-            marioState.velocity[2]
-        });
-    }
-
     void deathTick() {
         if (marioId < 0 || !enableMario) return;
 
@@ -334,10 +331,6 @@ namespace Mod::Mario {
 
         MarioCamera::onUpdate(marioWorldPosition());
 
-        // if (GetAsyncKeyState(VK_F6) & 1) {
-        //     dumpMarioGeometry();
-        // }
-
         if (GetAsyncKeyState(VK_F3) & 1) enableMario = !enableMario;
         if (GetAsyncKeyState(VK_F4) & 1) {
             possessMario = !possessMario;
@@ -349,11 +342,11 @@ namespace Mod::Mario {
             // sm64_set_mario_action_arg(marioId, ACT_CRAZY_BOX_BOUNCE, 0);
             // sm64_set_mario_state(marioId, marioState.flags | MARIO_WING_CAP);
             // sm64_set_mario_action(marioId, ACT_FLYING_TRIPLE_JUMP);
-            
-            sm64_set_mario_action(marioId, ACT_VERTICAL_WIND);
-            sm64_set_mario_velocity(marioId, 0, 150, 0);
-            
+            // sm64_set_mario_action(marioId, ACT_VERTICAL_WIND);
+            // sm64_set_mario_velocity(marioId, 0, 150, 0);
             // Mod::Mario::killPlayer();
+
+            sm64_set_mario_action(marioId, ACT_GROUND_BONK);
         }
 
         if (marioId < 0 || !enableMario) {
@@ -384,6 +377,7 @@ namespace Mod::Mario {
             if (marioInControl()) {
                 LOG("Mario tick start");
                 sm64_mario_tick(marioId, &marioInputs, &marioState, &marioGeometry, marioBoneMatrices);
+                marioTickCount++; // Increment Mario tick count after each tick.
                 LOG("Mario tick end");
             }
         }
@@ -400,6 +394,8 @@ namespace Mod::Mario {
 
         // For now, always heal Mario. Cheif is responsible for recieving damage.
         sm64_mario_heal(marioId, 0xFF);
+
+        Mod::Mario::Shell::updateShellState();
 
         #endif
     }
