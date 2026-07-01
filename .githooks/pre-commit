@@ -1,0 +1,9 @@
+#!/bin/sh
+
+# Run /scripts/copy_tags.ps1 and block commit if new changes are detected after copying tags
+
+pwsh -File ./scripts/copy_tags.ps1
+if ! git diff --quiet; then
+    echo "New changes detected after copying tags. Please review and commit them."
+    exit 1
+fi
