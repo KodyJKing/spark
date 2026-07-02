@@ -57,6 +57,10 @@ namespace Mod::Mario {
         CollisionDebugRender::renderImGuiSection();
         #endif // DEBUG_MARIO_COLLISION
 
+        // Show last_mario_action global.
+        uint32_t lastMarioAction = Engine::Scripting::readGlobal("last_mario_action");
+        ImGui::Text("Last Mario Action: 0x%X", lastMarioAction);
+
         ImGui::End();
     }
 

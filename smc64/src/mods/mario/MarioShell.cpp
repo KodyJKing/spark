@@ -7,6 +7,7 @@
 #include "MarioSkeleton.hpp"
 #include "libsm64.h"
 #include "decomp/sm64.h"
+#include "functions/KillPlayer.hpp"
 
 namespace Mod::Mario::Shell {
 
@@ -16,6 +17,10 @@ namespace Mod::Mario::Shell {
     bool isShield(uint32_t entityHandle) {
         auto entity = Engine::getEntityPointer(entityHandle);
         return isShield(entity);
+    }
+
+    bool isMarioInCrashState() {
+        return marioState.action == ACT_BACKWARD_GROUND_KB;
     }
 
     bool isMarioExitingShell() {
@@ -51,7 +56,17 @@ namespace Mod::Mario::Shell {
         return touching;
     }
 
+    void checkForCrash() {
+        static uint32_t wasRidingShell = false;
+        if (wasRidingShell && isMarioInCrashState()) {
+            killPlayer();
+        }
+        wasRidingShell = isMarioInShellAction();
+    }
+
     void updateShellState() {
+        checkForCrash();
+        if (isMarioInShellAction()) return;
         if (marioIsTouchingShellEquipment()) {
             putMarioOnShell();
         }

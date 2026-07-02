@@ -172,6 +172,9 @@ namespace Mod::Mario {
             createSpawnPlatform(local);
             marioId = sm64_mario_create(local.x, local.y, local.z);
 
+            // Initialize the last_mario_action global to Mario's initial action.
+            uint32_t savedAction = Engine::Scripting::readGlobal("last_mario_action");
+            sm64_set_mario_action(marioId, savedAction);
         }
         if (marioId < 0) {
             printf("Failed to create Mario instance.\n");
@@ -397,6 +400,10 @@ namespace Mod::Mario {
         sm64_mario_heal(marioId, 0xFF);
 
         Mod::Mario::Shell::updateShellState();
+
+        // Save last_mario_action global.
+        std::string command = "(set last_mario_action " + std::to_string(marioState.action) + ")";
+        Engine::Scripting::submit(command.c_str());
 
         #endif
     }

@@ -106,13 +106,26 @@ namespace Mod::DevTools {
             Engine::Scripting::submit("(game_save_totally_unsafe)");
         }
 
-        if (ImGui::Button("Inf Clip On")) {
-            Engine::Scripting::submit("cheat_bottomless_clip 1");
+        auto hscBoolToggle = [](const char* label) {
+            bool value = (bool)(Engine::Scripting::readGlobal(label) & 0xFF);
+            bool oldValue = value;
+            ImGui::Checkbox(label, &value);
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip("Toggle %s", label);
+            if (value != oldValue) {
+                std::string command = std::string(label) + " " + (value ? "1" : "0");
+                Engine::Scripting::submit(command.c_str());
+            }
+        };
+
+        if (ImGui::CollapsingHeader("Cheats")) {
+            hscBoolToggle("cheat_bottomless_clip");
+            hscBoolToggle("cheat_deathless_player");
+            hscBoolToggle("cheat_bump_possession");
+            hscBoolToggle("cheat_jetpack");
+            hscBoolToggle("cheat_medusa");
+            hscBoolToggle("cheat_omnipotent");
         }
-        ImGui::SameLine();
-        if (ImGui::Button("Inf Clip Off")) {
-            Engine::Scripting::submit("cheat_bottomless_clip 0");
-        }
+
 
         if (ImGui::CollapsingHeader("Tools")) {
             renderTranslateMapAddress();
