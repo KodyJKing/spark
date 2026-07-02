@@ -62,8 +62,8 @@ namespace Mod::Mario::MarioWeaponKick {
     // ── Public ─────────────────────────────────────────────────────────────────
 
     void registerHandlers(Spark::ModId modId) {
-        Spark::SpawnProjectile::addHandler(modId, +[](void* /*ctx*/, auto next,
-            Engine::ProjectileSpawnArgs* options, uint32_t flags) -> uint32_t
+        Spark::SpawnObject::addHandler(modId, +[](void* /*ctx*/, auto next,
+            Engine::SpawnObjectArgs* options, uint32_t flags) -> uint32_t
         {
             uint32_t projectileHandle = next(options, flags);
 
@@ -77,7 +77,7 @@ namespace Mod::Mario::MarioWeaponKick {
             if (!cfg) return projectileHandle;
 
             // Ignore projectiles that are not of the type specified in the kick config.
-            auto projectileTag = Engine::getTag(options->projectileTagId);
+            auto projectileTag = Engine::getTag(options->objectTagId);
             if (cfg->projectileType != "" && std::string(projectileTag->getResourcePath()) != cfg->projectileType)
                 return projectileHandle;
 

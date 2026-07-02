@@ -109,7 +109,7 @@ namespace Mod::Mario::MarioMelee {
         if (targetWasAlive) {
             auto player = Engine::getPlayerEntity();
             if (player) {
-                regenerateShield(*player, kMeleeShieldRegen, false);
+                regenerateShield(player, kMeleeShieldRegen, false);
             }
         }
     }

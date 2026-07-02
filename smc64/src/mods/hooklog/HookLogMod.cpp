@@ -99,10 +99,11 @@ void HookLogMod::init() {
         next(flareHandle);
     }, nullptr);
 
-    Spark::SpawnProjectile::addHandler(modId_, +[](void*, auto next, Engine::ProjectileSpawnArgs* args, uint32_t flags) -> uint32_t {
-        if (Mod::HookLog::toggles.SpawnProjectile && Mod::HookLog::shouldLog(Mod::HookLog::lastLogTimes.SpawnProjectile))
-            std::cout << "[HookLog] SpawnProjectile\n"
-                      << "  projectileTagId=" << (void*)(uintptr_t)args->projectileTagId << "\n"
+    Spark::SpawnObject::addHandler(modId_, +[](void*, auto next, Engine::SpawnObjectArgs* args, uint32_t flags) -> uint32_t {
+        if (Mod::HookLog::toggles.SpawnObject && Mod::HookLog::shouldLog(Mod::HookLog::lastLogTimes.SpawnObject))
+            std::cout << "[HookLog] SpawnObject\n"
+                      << "  objectTagId=" << (void*)(uintptr_t)args->objectTagId << "\n"
+                      << tagInfoStr(args->objectTagId, "  ")
                       << "  unknown1=" << args->unknown1 << "\n"
                       << "  unknown2=" << args->unknown2 << "\n"
                       << "  unknown3=" << args->unknown3 << "\n"

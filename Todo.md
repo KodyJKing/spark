@@ -3,7 +3,6 @@
     - [Blocker] Fix file naming inconsistencies (mostly casing).
     - Break up Entity type by type. Eg: Vehicle, Biped, Weapon, etc.
     - Create a fork of LibSM64 that exposes bone transforms.
-    - [Major] Fix `SpawnProjectile` misnomer (should be `SpawnObject`).
     - [Major] Fix namespace naming inconsistencies in Mario mod. (should match DevTools mod)
     - [Major] Rename Entity to Object to agree with Halo's naming conventions.
         - Source

@@ -4,5 +4,5 @@
 
 namespace Mod::Mario::Shell {
     void updateShellState();
-    bool updateShellPose(uint32_t entityHandle);
+    void updateShellPose();
 }

@@ -14,21 +14,25 @@ namespace Mod::Mario {
     static constexpr float WALL_KICK_REGEN   = 0.3f;
     static constexpr float TRIPLE_JUMP_REGEN = 0.5f;
     
-    void regenerateShield(Engine::Entity& player, float amount, bool _allowOvershield) {
-        float oldShield = player.shield;
+    void regenerateShield(Engine::Entity* player, float amount, bool _allowOvershield) {
+        if (!player) return;
         
-        player.shield += amount;
-        player.shield = min(player.shield, 1.0f);
-        player.shield = max(oldShield, player.shield);
+        float oldShield = player->shield;
+        
+        player->shield += amount;
+        player->shield = min(player->shield, 1.0f);
+        player->shield = max(oldShield, player->shield);
 
-        float actualRegen = player.shield - oldShield;
+        float actualRegen = player->shield - oldShield;
 
         if (actualRegen > 0.1f) {
             sm64_play_sound_global(SOUND_GENERAL_HEART_SPIN);
         }
     }
     
-    void updateShieldRegen(Engine::Entity& player) {
+    void updateShieldRegen(Engine::Entity* player) {
+        if (!player) return;
+        
         uint32_t action = marioState.action;
         bool risingEdge = (action != prevAction);
         prevAction = action;

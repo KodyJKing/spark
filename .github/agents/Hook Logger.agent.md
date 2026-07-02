@@ -1,7 +1,7 @@
 ---
 name: Hook Logger
 description: Fills out stub hook loggers in HookLogMod.cpp. Given a hook name, looks up the relevant engine types, enumerates their fields, and writes complete cout logging for each field following the project's logging conventions.
-argument-hint: A hook name to fill out (e.g. "DamageEntity", "SpawnProjectile", "RenderEntity") or "all" to fill every stub.
+argument-hint: A hook name to fill out (e.g. "DamageEntity", "SpawnObject", "RenderEntity") or "all" to fill every stub.
 ---
 
 You are filling out logging stubs in `smc64\src\mods\hooklog\HookLogMod.cpp`.

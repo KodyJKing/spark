@@ -46,6 +46,9 @@ namespace Mod::Mario {
         {"frame right_thigh"},
         {"frame right_calf"},
         {"frame right_foot"},
+
+        // Additional bones for equipment like rideable shield.
+        {"frame shield"}
     };
 
     std::vector<std::string> haloBones = {
@@ -69,6 +72,9 @@ namespace Mod::Mario {
         "frame left_hip",
         "frame left_shoulder",
         "frame left_thigh",
+
+        // Additional bones for equipment like rideable shield.
+        "frame shield"
     };
 
     bool haloBonesInvInitialized = false;
@@ -116,10 +122,13 @@ namespace Mod::Mario {
         {0}, // right_thigh
         {0}, // right_calf
         {0}, // right_foot
+
+        // Additional bones for equipment like rideable shield.
+        Engine::Transform::identity()
     };
 
     void updateMarioPose(SM64Matrix4f* marioBoneMatrices) {
-        for (size_t i = 0; i < marioBones.size(); i++) {
+        for (size_t i = 0; i < SM64_MARIO_BONE_COUNT; i++) {
             auto& marioMat = marioBoneMatrices[i];
 
             size_t j = getHaloBoneIndexByName(marioBones[i].name);

@@ -71,13 +71,13 @@ namespace Mod::Mario::MarioModel {
         auto tag = Engine::findTag(marioTagPath, "weap");
         if (!tag) return NULL_HANDLE;
 
-        Engine::ProjectileSpawnArgs args{};
-        args.projectileTagId    = tag->tagID;
+        Engine::SpawnObjectArgs args{};
+        args.objectTagId    = tag->tagID;
         args.ownerEntityHandle  = NULL_HANDLE;
         args.spawnPosition      = position;
 
-        if (!Spark::SpawnProjectile::original) return NULL_HANDLE;
-        return Spark::SpawnProjectile::original(&args, 3);
+        if (!Spark::SpawnObject::original) return NULL_HANDLE;
+        return Spark::SpawnObject::original(&args, 3);
     }
 
     void renderEntity(Engine::RenderEntityRequest *request, Engine::renderEntity_t renderEntityOriginal) {

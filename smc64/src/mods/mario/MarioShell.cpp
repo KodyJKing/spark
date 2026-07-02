@@ -18,12 +18,6 @@ namespace Mod::Mario::Shell {
         return isShield(entity);
     }
 
-    bool playerHoldingShield() {
-        auto heldWeaponHandle = Engine::getPlayerHeldWeaponHandle();
-        auto heldWeapon = Engine::getEntityPointer(heldWeaponHandle);
-        return isShield(heldWeapon);
-    }
-
     bool isMarioExitingShell() {
         return marioState.action == ACT_BACKWARD_GROUND_KB || marioState.action == ACT_CROUCH_SLIDE;
     }
@@ -38,56 +32,51 @@ namespace Mod::Mario::Shell {
         sm64_set_mario_action(marioId, ACT_RIDING_SHELL_GROUND);
     }
 
-    void removeShield() {
-        auto inventory = Engine::getPlayerInventory();
-        if (inventory) {
-            inventory->activeWeaponIndex = 1;
-            for (int i = 0; i < 4; i++) {
-                auto weaponHandle = inventory->weaponHandles[i];
-                if (isShield(inventory->weaponHandles[i])) {
-                    inventory->weaponHandles[i] = NULL_HANDLE;
-                    auto entity = Engine::getEntityPointer(weaponHandle);
-                    if (entity) {
-                        entity->parentHandle = NULL_HANDLE;
-                    }
-                }
-            }
+    void removeEquipmentEntity(Engine::Entity* entity) {
+        // In liu of a propery way to do this, just teleport the entity way under the map.
+        if (entity) {
+            entity->pos.y = -1000.0f;
         }
     }
 
+    bool marioIsTouchingShellEquipment() {
+        auto marioPos = marioWorldPosition();
+        bool touching = false;
+        Engine::foreachEntityInRadius(marioPos, 0.1f, [&touching](Engine::Entity* entity) {
+            if (!touching && isShield(entity)) {
+                removeEquipmentEntity(entity);
+                touching = true;
+            }
+        });
+        return touching;
+    }
+
     void updateShellState() {
-        // if (isMarioExitingShell()) {
-        //     removeShield();
-        // } else 
-        if (playerHoldingShield()) {
+        if (marioIsTouchingShellEquipment()) {
             putMarioOnShell();
         }
     }
 
-    bool updateShellPose(uint32_t entityHandle) {
-        auto entity = Engine::getEntityPointer(entityHandle);
-        if (!isShield(entity)) return false;
+    void updateShellPose() {
+        auto shell = getMarioBonePointerByName("frame shield");
+        if (!shell) return;
+
+        if (!isMarioInShellAction()) {
+            shell->pos = Vec3{0.0f, 0.0f, 0.0f};
+            shell->w = 0.0f;
+            return;
+        }
+
         auto pelvis = getMarioBonePointerByName("frame pelvis");
-        if (!pelvis) return false;
+        if (!pelvis) return;
 
         auto pos = marioWorldPosition();
-
-        auto bone = entity->worldBones.get(entity, 0);
-
-        float tilt = 0.5f;
         
-        Vec3 fwd = (pelvis->x * -1.0f + pelvis->y * tilt).normalize();
-        Vec3 up = pelvis->y;
-        Vec3 right = up.cross(fwd);
-        up = fwd.cross(right);
-        
-        bone->x = fwd;
-        bone->y = right;
-        bone->z = up;
-
-        bone->pos = pos + pelvis->x * 0.1f;
-
-        return true;
+        shell->x = pelvis->z;
+        shell->y = pelvis->x;
+        shell->z = pelvis->y;
+        shell->pos = pos + pelvis->x * 0.05f;
+        shell->w = 1.0f;
     }
 
 }

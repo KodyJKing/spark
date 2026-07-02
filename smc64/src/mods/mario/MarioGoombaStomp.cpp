@@ -33,17 +33,23 @@ namespace Mod::Mario::GoombaStomp {
         float damage; // The damage fraction inflicted by the stomp
         bool noAction;
         bool noBounce;
+        std::string dropEquipment = ""; // The equipment entity to drop when a stomp occurs.
     };
 
     StompEventType groundPound = { .soundEffect = SOUND_OBJ_STOMPED, .damage = kStompDamage, .noAction = true, .noBounce = true, };
     StompEventType regularStomp = { .action = ACT_FREEFALL, .soundEffect = SOUND_OBJ_STOMPED, .bounceY = kStompBounceY, .damage = kStompDamage };
     StompEventType twirlStomp = { .action = ACT_TWIRLING, .soundEffect = SOUND_MARIO_TWIRL_BOUNCE, .bounceY = kStompBounceY * 5.0f, .damage = kStompDamage };
     StompEventType friendlyStomp = { .action = ACT_TRIPLE_JUMP, .soundEffect = SOUND_OBJ_STOMPED, .bounceY = kStompBounceY * 3.0f, .damage = 0.0f };
+    StompEventType jackalStomp = { .action = ACT_FREEFALL, .soundEffect = SOUND_OBJ_STOMPED, .bounceY = kStompBounceY, .damage = kStompDamage, .dropEquipment = "smc64\\jackal_shield\\jackal_shield" };
 
     static std::unordered_map<std::string, StompEventType> postStompAction = {
         {"characters\\sentinel\\sentinel", twirlStomp},
         {"characters\\floodcarrier\\floodcarrier", twirlStomp},
         {"characters\\marine_armored\\marine_armored", friendlyStomp},
+        {"characters\\marine\\marine_plasma_rifle", friendlyStomp},
+        {"characters\\captain_ingame\\captain_ingame", friendlyStomp},
+        {"characters\\jackal\\jackal", jackalStomp},
+        {"characters\\jackal\\jackal major", jackalStomp},
     };
 
     StompEventType getStompEventType(const std::string& entityPath) {
@@ -122,11 +128,46 @@ namespace Mod::Mario::GoombaStomp {
         return Engine::findTag("weapons\\frag grenade\\explosion", "jpt!");
     }
 
-    static void dealStompDamage(uint32_t entityHandle, Vec3 hitPos, float amount) { 
+    static void spawnEquipment(const std::string& resourcePath, Vec3 position, uint32_t victimHandle) {
+        if (resourcePath.empty()) return;
+
+        auto tag = Engine::findTag(resourcePath.c_str(), "eqip");
+        if (!tag) return;
+
+        Engine::SpawnObjectArgs args{};
+        args.objectTagId = tag->tagID;
+        args.spawnPosition = position;
+        args.ownerEntityHandle = victimHandle;
+        
+        args.unknown1 = 0;
+        args.unknown2 = 0;
+        args.unknown3 = 0xFFFFFFFF;
+        args.unknown4 = 0;
+        args.unknown5 = 3;
+
+        uint32_t flags = 3;
+
+        // Beep(440, 100); // Play a beep sound at 440 Hz for 100 ms
+        auto handle = Spark::SpawnObject::dispatch(&args, flags);
+
+        auto entity = Engine::getEntityPointer(handle);
+        if (!entity) {
+            Beep(1440, 50);
+            Beep(1440, 50);
+            return;
+        }
+
+        entity->pos = position + Vec3{ 0.0f, 0.0f, 0.1f };
+        entity->vel = Vec3{ 0.0f, 0.0f, 0.0f };
+        entity->angularVelocity = Vec3{ 0.0f, 0.0f, 0.001f };
+    }
+
+    static void dealStompDamage(uint32_t entityHandle, Vec3 hitPos, StompEvent& stompEvent) { 
         if (!Spark::DamageEntity::original) return;
         auto* tag = getDamageTag();
         if (!tag) return;
 
+        float amount = stompEvent.type.damage;
         float multiplier = amount > 0.0f ? 1.0f : 0.0f;
 
         Engine::DamageEvent ev{};
@@ -149,6 +190,9 @@ namespace Mod::Mario::GoombaStomp {
         if (fatal) {
             // Play a sound effect for the stomp kill.
             sm64_play_sound_global(SOUND_OBJ_ENEMY_DEATH_HIGH);
+
+            // Spawn equipment for the stomp kill.
+            spawnEquipment(stompEvent.type.dropEquipment, hitPos, entityHandle);
         }
     }
 
@@ -188,7 +232,7 @@ namespace Mod::Mario::GoombaStomp {
             stompEvents[handle] = { kStompAnimTicks, stompType };
             
             auto player = Engine::getPlayerEntity();
-            regenerateShield(*player, kStompShieldRegenAmount, false);
+            regenerateShield(player, kStompShieldRegenAmount, false);
 
             if (!stompType.noAction) {
                 sm64_set_mario_action(marioId, stompType.action);
@@ -213,7 +257,7 @@ namespace Mod::Mario::GoombaStomp {
         auto& ev = it->second;
 
         if (ev.animationTimer == 0) {
-            dealStompDamage(entityHandle, Engine::getEntityPointer(entityHandle)->pos, ev.type.damage);
+            dealStompDamage(entityHandle, Engine::getEntityPointer(entityHandle)->pos, ev);
             stompEvents.erase(it);
             return;
         }

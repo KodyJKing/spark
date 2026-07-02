@@ -7003,7 +7003,7 @@ halo1.dll+BE615D: F3 0F 59 3D 6B 99 D6 00  - mulss xmm7,[halo1.dll+194FAD0]
         <Element Offset="1000" Vartype="4 Bytes" Bytesize="4" RLECount="6" OffsetHex="000003E8" DisplayMethod="unsigned integer"/>
       </Elements>
     </Structure>
-    <Structure Name="SpawnProjectileOptions" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" RLECompression="1" AutoCreateStructsize="4096">
+    <Structure Name="SpawnObjectOptions" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" RLECompression="1" AutoCreateStructsize="4096">
       <Elements>
         <Element Offset="0" Vartype="4 Bytes" Bytesize="4" OffsetHex="00000000" Description="projectileTagId" DisplayMethod="hexadecimal"/>
         <Element Offset="4" Vartype="4 Bytes" Bytesize="4" RLECount="2" OffsetHex="00000004" DisplayMethod="unsigned integer"/>

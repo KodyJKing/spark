@@ -2,7 +2,6 @@
 #include "MarioWeaponOffset.hpp"
 #include "MarioAimingIK.hpp"
 #include "MarioSkeleton.hpp"
-#include "MarioShell.hpp"
 #include "spark/hook/Hooks.hpp"
 #include "engine/halo1.hpp"
 
@@ -49,8 +48,7 @@ namespace Mod::Mario::MarioWeaponPose {
             next(entityHandle);
 
             if (entityHandle == Engine::getPlayerHeldWeaponHandle()) {
-                bool wasShell = Shell::updateShellPose(entityHandle);
-                if (!wasShell) updateWeaponPose(entityHandle);
+                updateWeaponPose(entityHandle);
             }
         }, nullptr);
     }

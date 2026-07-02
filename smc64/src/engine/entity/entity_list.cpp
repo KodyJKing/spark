@@ -51,4 +51,15 @@ namespace Engine {
         foreachEntityRecordIndexed( [&cb]( EntityRecord* rec, uint16_t i ) { cb( rec ); } );
     }
 
+    // Todo: Optimize this. Use halo engine's spatial partition system or implement a per-frame spatial hash to reduce the number of distance checks needed.
+    void foreachEntityInRadius(const Vec3& center, float radius, std::function<void( Entity* )> cb ) {
+        foreachEntityRecord( [&center, radius, &cb]( EntityRecord* rec ) {
+            auto entity = getEntityPointer( rec );
+            if ( !entity ) return;
+            if ( ( entity->pos - center ).length() <= radius ) {
+                cb( entity );
+            }
+        } );
+    }
+
 }

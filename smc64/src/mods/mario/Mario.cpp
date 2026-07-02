@@ -326,7 +326,7 @@ namespace Mod::Mario {
         if (!player) return deathTick();
 
         updateGameSpeed(*player);
-        updateShieldRegen(*player);
+        updateShieldRegen(player);
         Engine::Scripting::submit("object_set_scale (player0) 0.4 1");
 
         MarioCamera::onUpdate(marioWorldPosition());
@@ -391,6 +391,7 @@ namespace Mod::Mario {
         } else {
             MarioChiefPose::updatePose();
         }
+        Mod::Mario::Shell::updateShellPose();
 
         // For now, always heal Mario. Cheif is responsible for recieving damage.
         sm64_mario_heal(marioId, 0xFF);

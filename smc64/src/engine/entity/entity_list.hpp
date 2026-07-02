@@ -18,5 +18,6 @@ namespace Engine {
     EntityRecord* getEntityRecord( uint32_t entityHandle );
     EntityRecord* getEntityRecord( EntityList* pEntityList, uint32_t entityHandle );
     void foreachEntityRecord( std::function<void( EntityRecord* )> cb );
-    void foreachEntityRecordIndexed( std::function<void( EntityRecord*, uint16_t )> cb );
+    void foreachEntityInRadius(const Vec3 &center, float radius, std::function<void(Entity *)> cb);
+    void foreachEntityRecordIndexed(std::function<void(EntityRecord *, uint16_t)> cb);
 }

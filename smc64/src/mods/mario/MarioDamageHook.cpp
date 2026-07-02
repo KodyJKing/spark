@@ -92,7 +92,7 @@ namespace Mod::Mario::MarioDamageHook {
                         next(event, entityHandle, p2, p3, hitBoneIndex, p5);
                         bool dead = entity->health <= 0;
                         if (wasAlive && dead) {
-                            regenerateShield(*playerEntity, 1.0f, false);
+                            regenerateShield(playerEntity, 1.0f, false);
 
                             sm64_play_sound_global(SOUND_GENERAL_COLLECT_1UP);
                         }
