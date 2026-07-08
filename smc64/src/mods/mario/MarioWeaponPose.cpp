@@ -24,17 +24,6 @@ namespace Mod::Mario::MarioWeaponPose {
         return result;
     }
 
-    static float s_interpolationFactor = 0.0f;
-    static float interpolateFactor() {
-        float targetT = MarioAimingIK::marioArmsBusy() ? 1.0f : 0.0f;
-        s_interpolationFactor = Math::lerp(s_interpolationFactor, targetT, 0.2f);
-        return Math::smoothstep(0.0f, 0.25f, s_interpolationFactor);
-    }
-
-    static void unbusyArms() {
-        s_interpolationFactor = 0.0f;
-    }
-
     static void updateWeaponPose(uint32_t weaponHandle) {
         auto rec = Engine::getEntityRecord(weaponHandle);
         if (!rec) return;
@@ -54,7 +43,7 @@ namespace Mod::Mario::MarioWeaponPose {
         weaponRootBone->pos = leftHandBone.transformPoint(off);
 
         {
-            float t = interpolateFactor();
+            float t = Mod::Mario::MarioAimingIK::armsBusySmoothed();
 
             Engine::Transform matchHandTransform = {};
             matchHandTransform.pos = leftHandBone.transformPoint(off);
@@ -97,7 +86,7 @@ namespace Mod::Mario::MarioWeaponPose {
 
             // If the object spawned was a projectile owned by the player, jump to an arms unbusy state without delay.
             bool isPlayers = spawnArgs->ownerEntityHandle == Engine::getPlayerHandle();
-            if (isPlayers) unbusyArms();
+            if (isPlayers) MarioAimingIK::unbusyArms();
 
             return result;
         }, nullptr);

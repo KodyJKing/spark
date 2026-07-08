@@ -6,6 +6,7 @@
 #include "MarioState.hpp"
 #include "engine/halo1.hpp"
 #include "decomp/sm64.h"
+#include "math/Math.hpp"
 
 namespace Mod::Mario::MarioAimingIK {
 
@@ -32,8 +33,20 @@ namespace Mod::Mario::MarioAimingIK {
         return false;
     }
 
+    static float s_interpolationFactor = 0.0f;
+    float armsBusySmoothed(bool update) {
+        float targetT = MarioAimingIK::marioArmsBusy() ? 1.0f : 0.0f;
+        if (update) s_interpolationFactor = Math::lerp(s_interpolationFactor, targetT, 0.2f);
+        return Math::smoothstep(0.0f, 0.25f, s_interpolationFactor);
+    }
+
+    void unbusyArms() {
+        s_interpolationFactor = 0.0f;
+    }
+
     static void ikToWeapon() {
-        if (marioArmsBusy()) return;
+        float busy = armsBusySmoothed(true);
+        if (busy > 0.99f) return;
 
         auto weaponHandle = Engine::getPlayerHeldWeaponHandle();
         if (weaponHandle == 0xFFFFFFFF) return;
@@ -49,6 +62,7 @@ namespace Mod::Mario::MarioAimingIK {
 
         auto chest    = getMarioBoneByName("frame chest");
         auto rightArm = getMarioBoneByName("frame right_arm");
+        auto leftArm  = getMarioBoneByName("frame left_arm");
         
         auto fwd   = camera->fwd;
         auto right = weaponRootBone->y;
@@ -58,6 +72,9 @@ namespace Mod::Mario::MarioAimingIK {
         auto dir     = (fwd - right * 0.5f).normalize().projectToCone(coneDir, 0.6f);
         auto target  = base + dir;
 
+        Vec3 currentPos = leftArm.pos;
+        Vec3 blendedTargetPos = target * (1.0f - busy) + currentPos * busy;
+
         InverseKinematics::MarioIKRequest ikRequest;
         ikRequest.limb             = InverseKinematics::MarioIKRequest::Limb::LeftArm;
         ikRequest.targetTransform  = *weaponRootBone;
@@ -66,7 +83,7 @@ namespace Mod::Mario::MarioAimingIK {
         ikRequest.targetTransform.y *= -1.0f;
         ikRequest.targetTransform.z *= -1.0f;
 
-        ikRequest.targetTransform.pos = target;
+        ikRequest.targetTransform.pos = blendedTargetPos;
         ikRequest.enforceRotation  = true;
         InverseKinematics::applyMarioIK(ikRequest);
 

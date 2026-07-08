@@ -5,6 +5,9 @@ namespace Mod::Mario::MarioAimingIK {
     // Used by MarioModel::updateWeaponPose to determine orientation copying.
     bool marioArmsBusy();
 
+    float armsBusySmoothed(bool update = false);
+    void unbusyArms();
+
     // Called once per game tick after updateMarioPose(), before any render-phase
     // entity processing. Reads camera direction, solves arm IK toward the weapon,
     // and writes the result back into marioPose so all downstream systems see a
