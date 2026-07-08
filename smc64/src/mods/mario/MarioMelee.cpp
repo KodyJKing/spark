@@ -53,7 +53,26 @@ namespace Mod::Mario::MarioMelee {
     // ── Helpers ────────────────────────────────────────────────────────────────
     static bool isMeleeAction() {
         if (marioState.action == ACT_CRAZY_BOX_BOUNCE) return true;
+
+        if (marioState.action & ACT_FLAG_BUTT_OR_STOMACH_SLIDE) return false;
+
         return (marioState.action & ACT_FLAG_ATTACKING) != 0;
+    }
+    
+    static bool canAttack(Engine::Entity* targetEntity, uint32_t action) {
+        if (!targetEntity) return false;
+
+        auto category = targetEntity->entityCategory;
+        bool isVehicle = category == Engine::EntityCategory_Vehicle;
+        bool isBiped = category == Engine::EntityCategory_Biped;
+
+        if (!isBiped && !isVehicle) return false;
+
+        // // Vehicles cannot be attacked by slides
+        // bool isSlide = (action & ACT_FLAG_BUTT_OR_STOMACH_SLIDE);
+        // if (isVehicle && isSlide) return false;
+
+        return true;
     }
 
     static Engine::Tag* getDamageTag() {
@@ -168,8 +187,8 @@ namespace Mod::Mario::MarioMelee {
 
                 auto* hitEntity = Engine::getEntityPointer(handle);
                 if (!hitEntity) continue;
-                auto cat = hitEntity->entityCategory;
-                if (cat != Engine::EntityCategory_Biped && cat != Engine::EntityCategory_Vehicle) continue;
+
+                if (!canAttack(hitEntity, marioState.action)) continue;
 
                 // Log the bone index
                 LOG("Bone index: " << result.boneIndex);
