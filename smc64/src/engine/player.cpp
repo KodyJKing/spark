@@ -65,6 +65,20 @@ namespace Engine {
         return entity->pos;
     }
 
+    std::optional<Vec3> getPlayerVelocity() {
+        auto playerEntity = Engine::getPlayerEntity();
+        if (!playerEntity || !Engine::entityValid(playerEntity)) return std::nullopt;
+
+        if (playerEntity->parentHandle) {
+            auto parentEntity = Engine::getEntityPointer(playerEntity->parentHandle);
+            if (parentEntity && Engine::entityValid(parentEntity)) {
+                return parentEntity->vel;
+            }
+        }
+
+        return playerEntity->vel;
+    }
+
     bool isPlayerHandle( uint32_t entityHandle ) {
         auto rec = getEntityRecord( entityHandle );
         return rec && rec->typeId == TypeID_Player;

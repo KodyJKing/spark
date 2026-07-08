@@ -220,6 +220,11 @@ namespace Mod::DevTools {
         ImGui::Text("Player Entity: %p", playerEntity);
 
         if (playerEntity) {
+            ImGui::Text("Position: (%.2f, %.2f, %.2f)", playerEntity->pos.x, playerEntity->pos.y, playerEntity->pos.z);
+
+            auto velocity = Engine::getPlayerVelocity().value_or(Vec3{0.f, 0.f, 0.f});
+            ImGui::Text("Velocity: (%.2f, %.2f, %.2f)", velocity.x, velocity.y, velocity.z);
+
             // Vehicle handle:
             uint32_t vehicleHandle = playerEntity->vehicleHandle;
             ImGui::Text("Vehicle Handle: %X", vehicleHandle);

@@ -7,7 +7,7 @@
 namespace Mod::Mario::ThirdPersonFix {
 
     std::unordered_map<std::string, float> spreadValues = {
-        {"weapons\\shotgun\\pellet", 3.0f},
+        {"weapons\\shotgun\\pellet", 4.0f},
         {"weapons\\assault rifle\\bullet", 0.6f},
     };
 

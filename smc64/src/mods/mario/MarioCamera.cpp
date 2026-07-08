@@ -96,7 +96,7 @@ namespace Mod::Mario::MarioCamera {
             next();
         }, nullptr, 10);
 
-        // Suppress walk input when Mario is possessing the player.
+        // Suppress walk and crouch input when Mario is possessing the player.
         Spark::UpdatePlayerControls::addHandler(modId, +[](void* /*ctx*/, auto next, float* param_1, float* param_2) {
             if (!active) {
                 next(param_1, param_2);
@@ -107,6 +107,7 @@ namespace Mod::Mario::MarioCamera {
             Engine::PlayerController pc = *playerController;
             playerController->walkX = 0.0f;
             playerController->walkY = 0.0f;
+            playerController->actions &= ~Engine::PlayerActionFlags::crouch;
             next(param_1, param_2);
             *playerController = pc;
         }, nullptr, 10);

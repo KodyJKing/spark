@@ -69,8 +69,13 @@ namespace Mod::Mario::MarioChiefPose {
         if (!bones) return;
         auto boneCount = playerEntity->worldBones.count();
         if (boneCount == 0) return;
+
+        // Displacement accounts for 1-frame lag when copying Chief's pose to Mario.
+        const float extrapolationFactor = 1.0f;
+        Vec3 playerVel = Engine::getPlayerVelocity().value_or(Vec3{0.f, 0.f, 0.f});
+        Vec3 displacement = playerVel * extrapolationFactor;
         
-        for (const auto& mapping : marioToChiefBoneMap) {
+        for (auto& mapping : marioToChiefBoneMap) {
             auto marioBone = getMarioBonePointerByName(mapping.marioBone.c_str());
             if (!marioBone) continue;
 
@@ -78,7 +83,7 @@ namespace Mod::Mario::MarioChiefPose {
             auto chiefBone = bones[mapping.chiefBone];
 
             // Apply the relative transform from Mario bone to Cheif bone.
-            marioBone->pos = chiefBone.transformPoint(mapping.relativeTransform.pos);
+            marioBone->pos = chiefBone.transformPoint(mapping.relativeTransform.pos) + displacement;
             marioBone->x = chiefBone.transformVec(mapping.relativeTransform.x);
             marioBone->y = chiefBone.transformVec(mapping.relativeTransform.y);
             marioBone->z = chiefBone.transformVec(mapping.relativeTransform.z);
