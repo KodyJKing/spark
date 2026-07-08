@@ -29,12 +29,7 @@ namespace Mod::Mario::MarioAimingIK {
 
         if (marioState.action == ACT_PUNCHING) return true;
 
-        return false; // ???
-        if (marioState.action == ACT_IDLE) return false;
-        if (marioState.action == ACT_WALKING) return false;
-        if (marioState.action == ACT_RIDING_SHELL_GROUND) return false;
-
-        return true;
+        return false;
     }
 
     static void ikToWeapon() {

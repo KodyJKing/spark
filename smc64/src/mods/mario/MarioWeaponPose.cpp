@@ -4,8 +4,36 @@
 #include "MarioSkeleton.hpp"
 #include "spark/hook/Hooks.hpp"
 #include "engine/halo1.hpp"
+#include "math/Math.hpp"
 
 namespace Mod::Mario::MarioWeaponPose {
+
+    static Engine::Transform lerpTransforms(Engine::Transform& a, Engine::Transform& b, float t) {
+        Engine::Transform result;
+        result.pos = a.pos * (1.0f - t) + b.pos * t;
+        result.x = a.x * (1.0f - t) + b.x * t;
+        result.y = a.y * (1.0f - t) + b.y * t;
+        result.z = a.z * (1.0f - t) + b.z * t;
+        result.w = a.w * (1.0f - t) + b.w * t;
+        return result;
+    }
+
+    static Engine::Transform slerpTransforms(Engine::Transform& a, Engine::Transform& b, float t) {
+        Engine::Transform result = lerpTransforms(a, b, t);
+        Engine::orthonormalize(result);
+        return result;
+    }
+
+    static float s_interpolationFactor = 0.0f;
+    static float interpolateFactor() {
+        float targetT = MarioAimingIK::marioArmsBusy() ? 1.0f : 0.0f;
+        s_interpolationFactor = Math::lerp(s_interpolationFactor, targetT, 0.2f);
+        return Math::smoothstep(0.0f, 0.25f, s_interpolationFactor);
+    }
+
+    static void unbusyArms() {
+        s_interpolationFactor = 0.0f;
+    }
 
     static void updateWeaponPose(uint32_t weaponHandle) {
         auto rec = Engine::getEntityRecord(weaponHandle);
@@ -24,11 +52,23 @@ namespace Mod::Mario::MarioWeaponPose {
         MarioWeaponOffset::Offset off;
         MarioWeaponOffset::getWeaponOffset(weaponHandle, off);
         weaponRootBone->pos = leftHandBone.transformPoint(off);
-        if (MarioAimingIK::marioArmsBusy()) {
-            weaponRootBone->x = leftHandBone.x;
+
+        {
+            float t = interpolateFactor();
+
+            Engine::Transform matchHandTransform = {};
+            matchHandTransform.pos = leftHandBone.transformPoint(off);
+            matchHandTransform.x = leftHandBone.x;
             // Rotate 180 about x axis to account for difference in hand and weapon coordinate systems.
-            weaponRootBone->y = leftHandBone.y * -1.0f;
-            weaponRootBone->z = leftHandBone.z * -1.0f;
+            matchHandTransform.y = leftHandBone.y * -1.0f;
+            matchHandTransform.z = leftHandBone.z * -1.0f;
+            matchHandTransform.w = 1.0f;
+
+            Engine::Transform currentTransform = *weaponRootBone;
+            
+            Engine::Transform blendedTransform = slerpTransforms(currentTransform, matchHandTransform, t);
+
+            *weaponRootBone = blendedTransform;
         }
 
         auto initialInverse = Engine::inverseTransform(rootBoneInitial);
@@ -50,6 +90,16 @@ namespace Mod::Mario::MarioWeaponPose {
             if (entityHandle == Engine::getPlayerHeldWeaponHandle()) {
                 updateWeaponPose(entityHandle);
             }
+        }, nullptr);
+
+        Spark::SpawnObject::addHandler(modId, +[](void*, auto next, Engine::SpawnObjectArgs* spawnArgs, uint32_t entityHandle) {
+            auto result = next(spawnArgs, entityHandle);
+
+            // If the object spawned was a projectile owned by the player, jump to an arms unbusy state without delay.
+            bool isPlayers = spawnArgs->ownerEntityHandle == Engine::getPlayerHandle();
+            if (isPlayers) unbusyArms();
+
+            return result;
         }, nullptr);
     }
 
