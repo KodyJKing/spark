@@ -44,3 +44,5 @@ add rbx,r12                        ; rbx = entityArray + entityArray
 ```
 
 I'm not certain the entities in `entityArray` are all the same size, so this may be a misnomer.
+
+NOTE: EntityList has been renamed to EntityRecordPool, EntityArray has been renamed to EntityPool

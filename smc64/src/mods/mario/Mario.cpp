@@ -307,6 +307,10 @@ namespace Mod::Mario {
         updateMarioPose(marioBoneMatrices);
     }
 
+    void uninitializedTick() {
+        MarioChiefPose::updatePose();
+    }
+
     void update() {
         #ifdef ENABLE_MARIO
         std::lock_guard<std::mutex> updateLock(s_updateMutex);
@@ -315,6 +319,7 @@ namespace Mod::Mario {
             // Don't do anything with Mario if player input is disabled or the level editor has focus.
             MarioCamera::onDisable();
             if (Engine::isPlayerInputDisabled()) deinitMario();
+            uninitializedTick();
             return;
         }
 
@@ -330,7 +335,7 @@ namespace Mod::Mario {
 
         updateGameSpeed(*player);
         updateShieldRegen(player);
-        Engine::Scripting::submit("object_set_scale (player0) 0.4 1");
+        // Engine::Scripting::submit("object_set_scale (player0) 0.4 1");
 
         MarioCamera::onUpdate(marioWorldPosition());
 
@@ -392,7 +397,7 @@ namespace Mod::Mario {
             MarioAimingIK::apply();
             MarioMelee::tick();
         } else {
-            MarioChiefPose::updatePose();
+            // MarioChiefPose::updatePose();
         }
         Mod::Mario::Shell::updateShellPose();
 

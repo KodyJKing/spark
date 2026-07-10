@@ -5,7 +5,7 @@
 
 namespace Mod::Mario {
 
-    void killPlayer() {
+    void damagePlayer(float amount, float multiplier) {
         if (!Spark::DamageEntity::original) return;
 
         auto* tag = Engine::findTag("weapons\\assault rifle\\melee", "jpt!");
@@ -23,9 +23,13 @@ namespace Mod::Mario {
         ev.sourceTypeIndex     = (uint16_t)-1;
         ev.hitPosition         = player->pos;
         ev.hitDirection        = Vec3{ 0.0f, 0.0f, -1.0f };
-        ev.baseDamage          = 100.0f;
-        ev.damageMultiplier    = 100.0f;
+        ev.baseDamage          = amount;
+        ev.damageMultiplier    = multiplier;
         Spark::DamageEntity::dispatch(&ev, playerHandle, 0, 0, -1, 0);
+    }
+
+    void killPlayer() {
+        damagePlayer(100.0f, 100.0f);
     }
 
 }

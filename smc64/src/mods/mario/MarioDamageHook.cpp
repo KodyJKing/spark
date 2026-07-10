@@ -38,6 +38,12 @@ namespace Mod::Mario::MarioDamageHook {
                 if (damageTagPath.find("globals\\distance") != std::string::npos) return;
                 if (damageTagPath.find("globals\\vehicle_collision") != std::string::npos) return;
 
+                bool isShell = (marioState.action & ACT_FLAG_RIDING_SHELL) != 0;
+                bool isMelee = damageTagPath.find("melee") != std::string::npos;
+
+                // Mario takes extra damage while riding the shell.
+                if (isShell && !isMelee) event->damageMultiplier *= 1.75f;
+
                 // Explosions launch mario.
                 if (isExplosion) {
                     Vec3 impulse = event->hitDirection * event->baseDamage * 0.25;

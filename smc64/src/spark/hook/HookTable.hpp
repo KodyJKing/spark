@@ -21,6 +21,5 @@ HOOK( SpawnObject,      uint32_t, 0xB35FD4U, Engine::SpawnObjectArgs*, uint32_t 
 HOOK( DamageEntity,         void,     0xB9EA28U, Engine::DamageEvent* /*event*/, uint32_t /*entityHandle*/, uint16_t, uint16_t, int16_t /*hitBoneIndex*/, uint64_t )
 HOOK( ConsoleReportError,   void,     0xB20CDCU, const char* /*source*/, const char* /*category*/, const char* /*message*/, const char* /*location*/ )
 HOOK( SoundImpulseStart,    void,     0xB32F00U, uint32_t /*soundTagHandle*/, uint32_t /*sourceEntityHandle*/, float /*scale*/ )
-
-// void __renderPassenger(longlong param_1,short *param_2,EntityHandle entityHandle) // halo1.dll+B48F60 
+HOOK( ObjectSetScale,       void,     0xB3BF34U, uint32_t /*entityHandle*/, float /*scale*/, int16_t /*frames*/ )
 HOOK( RenderPassenger,       void,     0xB48F60U, uint64_t, uint16_t* /*param_2*/, uint32_t /*entityHandle*/ )

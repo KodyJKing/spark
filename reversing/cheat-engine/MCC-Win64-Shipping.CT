@@ -203,11 +203,19 @@ halo1.dll+C505F1: 83 CB 04                 - or ebx,04
         </CheatEntry>
         <CheatEntry>
           <ID>79</ID>
-          <Description>"entityList"</Description>
+          <Description>"entityRecordPool"</Description>
           <ShowAsSigned>0</ShowAsSigned>
           <VariableType>4 Bytes</VariableType>
           <Address>[halo1.dll+1C42248]</Address>
           <CheatEntries>
+            <CheatEntry>
+              <ID>116</ID>
+              <Description>"pEntityRecordPool"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <ShowAsSigned>0</ShowAsSigned>
+              <VariableType>8 Bytes</VariableType>
+              <Address>halo1.dll+1C42248</Address>
+            </CheatEntry>
             <CheatEntry>
               <ID>80</ID>
               <Description>"capacity"</Description>
@@ -221,6 +229,38 @@ halo1.dll+C505F1: 83 CB 04                 - or ebx,04
               <ShowAsSigned>0</ShowAsSigned>
               <VariableType>2 Bytes</VariableType>
               <Address>+30</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>115</ID>
+              <Description>"objectsOffset"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <ShowAsSigned>1</ShowAsSigned>
+              <VariableType>4 Bytes</VariableType>
+              <Address>+34</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>117</ID>
+              <Description>"entityRecords[0].A"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <ShowAsSigned>1</ShowAsSigned>
+              <VariableType>4 Bytes</VariableType>
+              <Address>+38</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>118</ID>
+              <Description>"entityRecords[0].B"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <ShowAsSigned>1</ShowAsSigned>
+              <VariableType>4 Bytes</VariableType>
+              <Address>+3C</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>119</ID>
+              <Description>"entityRecords[0].C"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <ShowAsSigned>1</ShowAsSigned>
+              <VariableType>4 Bytes</VariableType>
+              <Address>+40</Address>
             </CheatEntry>
           </CheatEntries>
         </CheatEntry>
@@ -866,6 +906,21 @@ halo1.dll+BE615D: F3 0F 59 3D 6B 99 D6 00  - mulss xmm7,[halo1.dll+194FAD0]
           </CheatEntries>
         </CheatEntry>
       </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>120</ID>
+      <Description>"No description"</Description>
+      <ShowAsHex>1</ShowAsHex>
+      <ShowAsSigned>0</ShowAsSigned>
+      <VariableType>8 Bytes</VariableType>
+      <Address>7FF9B993CDF8</Address>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>121</ID>
+      <Description>"No description"</Description>
+      <ShowAsHex>1</ShowAsHex>
+      <VariableType>4 Bytes</VariableType>
+      <Address>22018C810A8</Address>
     </CheatEntry>
   </CheatEntries>
   <CheatCodes>
@@ -7545,11 +7600,10 @@ halo1.dll+BE615D: F3 0F 59 3D 6B 99 D6 00  - mulss xmm7,[halo1.dll+194FAD0]
         <Element Offset="4" Vartype="2 Bytes" Bytesize="2" OffsetHex="00000004" Description="shaderIndex" DisplayMethod="hexadecimal"/>
         <Element Offset="6" Vartype="Byte" Bytesize="1" RLECount="2" OffsetHex="00000006" DisplayMethod="hexadecimal"/>
         <Element Offset="8" Vartype="Float" Bytesize="4" RLECount="4" OffsetHex="00000008" DisplayMethod="unsigned integer"/>
-        <Element Offset="24" Vartype="4 Bytes" Bytesize="4" RLECount="2" OffsetHex="00000018" DisplayMethod="hexadecimal"/>
+        <Element Offset="24" Vartype="4 Bytes" Bytesize="4" OffsetHex="00000018" DisplayMethod="hexadecimal"/>
         <Element Offset="28" Vartype="Float" Bytesize="4" OffsetHex="0000001C" DisplayMethod="unsigned integer"/>
-        <Element Offset="32" Vartype="4 Bytes" Bytesize="4" OffsetHex="00000020" DisplayMethod="unsigned integer"/>
-        <Element Offset="32" Vartype="4 Bytes" Bytesize="4" OffsetHex="00000020" DisplayMethod="hexadecimal"/>
-        <Element Offset="36" Vartype="4 Bytes" Bytesize="4" RLECount="10" OffsetHex="00000024" DisplayMethod="unsigned integer"/>
+        <Element Offset="28" Vartype="4 Bytes" Bytesize="4" RLECount="2" OffsetHex="0000001C" DisplayMethod="hexadecimal"/>
+        <Element Offset="32" Vartype="4 Bytes" Bytesize="4" RLECount="11" OffsetHex="00000020" DisplayMethod="unsigned integer"/>
         <Element Offset="76" Vartype="4 Bytes" Bytesize="4" RLECount="2" OffsetHex="0000004C" DisplayMethod="hexadecimal"/>
         <Element Offset="84" Vartype="4 Bytes" Bytesize="4" RLECount="2" OffsetHex="00000054" DisplayMethod="unsigned integer"/>
         <Element Offset="92" Vartype="4 Bytes" Bytesize="4" OffsetHex="0000005C" DisplayMethod="hexadecimal"/>
@@ -7613,6 +7667,18 @@ halo1.dll+BE615D: F3 0F 59 3D 6B 99 D6 00  - mulss xmm7,[halo1.dll+194FAD0]
         <Element Offset="1001" Vartype="Byte" Bytesize="1" RLECount="3" OffsetHex="000003E9" DisplayMethod="unsigned integer"/>
         <Element Offset="1004" Vartype="4 Bytes" Bytesize="4" OffsetHex="000003EC" DisplayMethod="unsigned integer"/>
         <Element Offset="1008" Vartype="4 Bytes" Bytesize="4" RLECount="4" OffsetHex="000003F0" DisplayMethod="hexadecimal"/>
+      </Elements>
+    </Structure>
+    <Structure Name="ObjectPool" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" RLECompression="1" AutoCreateStructsize="4096">
+      <Elements>
+        <Element Offset="0" Vartype="String" Bytesize="32" OffsetHex="00000000" DisplayMethod="unsigned integer"/>
+        <Element Offset="32" Vartype="2 Bytes" Bytesize="2" OffsetHex="00000020" Description="capacity" DisplayMethod="unsigned integer"/>
+        <Element Offset="34" Vartype="2 Bytes" Bytesize="2" OffsetHex="00000022" Description="entrySize" DisplayMethod="unsigned integer"/>
+        <Element Offset="36" Vartype="4 Bytes" Bytesize="4" OffsetHex="00000024" DisplayMethod="unsigned integer"/>
+        <Element Offset="40" Vartype="String" Bytesize="4" OffsetHex="00000028" DisplayMethod="unsigned integer"/>
+        <Element Offset="44" Vartype="4 Bytes" Bytesize="4" RLECount="2" OffsetHex="0000002C" DisplayMethod="hexadecimal"/>
+        <Element Offset="52" Vartype="4 Bytes" Bytesize="4" OffsetHex="00000034" Description="objectsOffset" DisplayMethod="hexadecimal"/>
+        <Element Offset="56" Vartype="4 Bytes" Bytesize="4" OffsetHex="00000038" DisplayMethod="hexadecimal"/>
       </Elements>
     </Structure>
   </Structures>

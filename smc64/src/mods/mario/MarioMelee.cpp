@@ -106,6 +106,7 @@ namespace Mod::Mario::MarioMelee {
 
         auto targetEntity = Engine::getEntityPointer(targetHandle);
         bool targetWasAlive = targetEntity && targetEntity->health > 0; 
+        bool ridingShell = (marioState.action & ACT_FLAG_RIDING_SHELL) != 0;
 
         Engine::DamageEvent ev{};
         ev.damageTypeTagHandle = tag->tagID;
@@ -117,6 +118,10 @@ namespace Mod::Mario::MarioMelee {
         ev.hitDirection        = hitDir;
         ev.baseDamage          = kMeleeDamage;
         ev.damageMultiplier    = 1.0f;
+
+        // Todo: Scale damage by relative velocity and remove special scaling for shell.
+        if (ridingShell) ev.damageMultiplier *= 2.0f;
+
         // Spark::DamageEntity::original(&ev, targetHandle, 0, 0, boneIndex, 0);
         Spark::DamageEntity::dispatch(&ev, targetHandle, 0, 0, boneIndex, 0);
 
@@ -125,10 +130,13 @@ namespace Mod::Mario::MarioMelee {
             Spark::SoundImpulseStart::original(soundTag->tagID, 0xFFFFFFFF, 1);
         }
 
+        // Player does not get shield regen for melee damage dealt while shell riding.
         if (targetWasAlive) {
             auto player = Engine::getPlayerEntity();
             if (player) {
-                regenerateShield(player, kMeleeShieldRegen, false);
+                float regen = kMeleeShieldRegen;
+                if (ridingShell) regen /= 2.0f;
+                regenerateShield(player, regen, false);
             }
         }
     }

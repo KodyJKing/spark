@@ -32,14 +32,24 @@ void MarioMod::init() {
     }, nullptr);
 
     Spark::RenderEntity::addHandler(modId_, +[](void*, auto next, Engine::RenderEntityRequest* request) {
-
         bool skip = false;
+        // if (request && Engine::entityValid(request->entityHandle)) {
+        //     auto entity = Engine::getEntityPointer(request->entityHandle);
+        //     std::string tagPath = entity ? entity->getTagResourcePath() : "";
+        //     // If it contains "cyborg", skip rendering this entity.
+        //     if (tagPath.find("cyborg") != std::string::npos) {
+        //         if (tagPath.find("_unarmed") == std::string::npos) {
+        //             skip = true;
+        //         }
+        //     }
+        // }
+
         if (request && Engine::entityValid(request->entityHandle)) {
             auto entity = Engine::getEntityPointer(request->entityHandle);
             std::string tagPath = entity ? entity->getTagResourcePath() : "";
-            // If it contains "cyborg", skip rendering this entity.
             if (tagPath.find("cyborg") != std::string::npos) {
-                skip = true;
+                Spark::ObjectSetScale::original(request->entityHandle, 0.5f, 0);
+                if (entity->health < 0.0f) skip = true;
             }
         }
 
@@ -67,11 +77,11 @@ void MarioMod::init() {
         Mod::Mario::teleportMario(position);
     });
 
-    Spark::RenderPassenger::addHandler(modId_, +[](void*, auto next, uint64_t param_1, uint16_t* param_2, uint32_t entityHandle) {
-        if (entityHandle != Engine::getPlayerHandle()) {
-            next(param_1, param_2, entityHandle);
-        }
-    }, nullptr);
+    // Spark::RenderPassenger::addHandler(modId_, +[](void*, auto next, uint64_t param_1, uint16_t* param_2, uint32_t entityHandle) {
+    //     if (entityHandle != Engine::getPlayerHandle()) {
+    //         next(param_1, param_2, entityHandle);
+    //     }
+    // }, nullptr);
 
 }
 
