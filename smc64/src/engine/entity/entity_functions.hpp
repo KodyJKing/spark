@@ -10,4 +10,5 @@ namespace Engine {
     uint16_t boneCount(void * anim);
     bool entityValid(Entity *entity);
     bool entityValid(uint32_t entityHandle);
+    bool entityHandleStale(uint32_t entityHandle);
 }

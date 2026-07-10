@@ -78,4 +78,8 @@ namespace Engine {
         return entityValid( entity );
     }
 
+    bool entityHandleStale( uint32_t entityHandle ) {
+        return entityHandleFromIndex( entityHandle & 0xFFFF ) != entityHandle;
+    }
+
 }

@@ -97,6 +97,7 @@ namespace Engine {
 
     class EntityRecord {
         public:
+        /// @brief EntityRecord.id forms the upper 16 bits of an entity handle. It comes froms a counter in the pool allocator. This is referred to as "salt" in Ghidra.
         uint16_t id;
         uint16_t unknown_1;
         uint16_t unknown_2;

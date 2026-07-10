@@ -31,7 +31,7 @@ namespace Engine {
         return getEntityPointer( getEntityRecord( entityHandle ) );
     }
 
-    uint32_t indexToEntityHandle( uint16_t index ) {
+    uint32_t entityHandleFromIndex( uint16_t index ) {
         auto rec = getEntityRecord( index );
         if ( !rec ) return 0xFFFFFFFF;
         return rec->id << 16 | index;
