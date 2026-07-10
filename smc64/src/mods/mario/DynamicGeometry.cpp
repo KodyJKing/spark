@@ -57,7 +57,6 @@ namespace Mod::Mario::DynamicGeometry {
 
     struct BoneEntry {
         uint32_t surfaceObjectId;
-        std::vector<SM64Surface> surfaces;
     };
 
     struct EntityBoneKey {
@@ -143,7 +142,6 @@ namespace Mod::Mario::DynamicGeometry {
         
         BoneEntry entry;
         entry.surfaceObjectId = surfaceObjectId;
-        entry.surfaces = std::move(surfaces);
         objectMap[{entity, boneIndex}] = std::move(entry);
     }
 
@@ -267,7 +265,7 @@ namespace Mod::Mario::DynamicGeometry {
         std::lock_guard<std::mutex> updateLock(s_updateMutex);
         LOG("Clearing all dynamic geometry objects (" << objectMap.size() << " entries)");
         for (auto& [key, entry] : objectMap) {
-            LOG(" - Deleting surface object ID: " << entry.surfaceObjectId << " with " << entry.surfaces.size() << " surfaces");
+            LOG(" - Deleting surface object ID: " << entry.surfaceObjectId);
             sm64_surface_object_delete(entry.surfaceObjectId);
         }
         entitiesWithGeometry.clear();
@@ -307,11 +305,6 @@ namespace Mod::Mario::DynamicGeometry {
         // Render a window with stats about the dynamic geometry system
         ImGui::Begin("Dynamic Geometry Debug");
         ImGui::Text("Active Surface Objects: %d", objectMap.size());
-        size_t totalSurfaces = 0;
-        for (const auto& [key, entry] : objectMap) {
-            totalSurfaces += entry.surfaces.size();
-        }
-        ImGui::Text("Total Surfaces: %d", totalSurfaces);
 
         if (ImGui::CollapsingHeader("Entities")) {
             if (ImGui::BeginTable("EntitiesTable", 4, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg)) {
@@ -332,8 +325,6 @@ namespace Mod::Mario::DynamicGeometry {
                     ImGui::Text("%d", (int)key.boneIndex);
                     ImGui::TableSetColumnIndex(2);
                     ImGui::Text("%d", entry.surfaceObjectId);
-                    ImGui::TableSetColumnIndex(3);
-                    ImGui::Text("%zu", entry.surfaces.size());
                 }
                 ImGui::EndTable();
             }
