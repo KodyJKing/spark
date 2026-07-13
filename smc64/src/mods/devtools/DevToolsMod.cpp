@@ -85,6 +85,11 @@ void DevToolsMod::init() {
         }
     }, nullptr);
 
+    // Spark::UpdateCollision::addHandler(modId_, +[](void*, auto next, int isPlayer, uint64_t param_2, float* param_3, float* param_4, float param_5, float param_6, uint32_t entityHandle, float* param_8, uint64_t* param_9, uint16_t param_10, uint64_t* param_11) -> uint16_t {
+    //     // return next(isPlayer, param_2, param_3, param_4, param_5, param_6, entityHandle, param_8, param_9, param_10, param_11);
+    //     return 0;
+    // }, nullptr);
+
     Mod::DevTools::FreezeEntity::init(modId_);
     // Mod::DevTools::BoneHookTest::init(modId_);
 }

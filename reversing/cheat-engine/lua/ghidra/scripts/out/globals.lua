@@ -13307,6 +13307,7 @@ return {
   { name="ROCKALL_BACK_END::vftable", type="pointer[4]", start="halo1.dll+175F578", stop="halo1.dll+175F597" },
   { name="ROCKALL_FRONT_END::vftable_meta_ptr", type="pointer", start="halo1.dll+175F838", stop="halo1.dll+175F83F" },
   { name="ROCKALL_FRONT_END::vftable", type="pointer[16]", start="halo1.dll+175F840", stop="halo1.dll+175F8BF" },
+  { name="PTR_DAT_ASN1TagNames", type="undefined *", start="halo1.dll+17B3B90", stop="halo1.dll+17B3B97" },
   { name="DAT__tickRateBase", type="undefined4", start="halo1.dll+1813170", stop="halo1.dll+1813173" },
   { name="c_system_allocation::vftable_meta_ptr", type="pointer", start="halo1.dll+1883328", stop="halo1.dll+188332F" },
   { name="c_system_allocation::vftable", type="pointer[2]", start="halo1.dll+1883330", stop="halo1.dll+188333F" },
