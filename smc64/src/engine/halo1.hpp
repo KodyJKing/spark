@@ -5,6 +5,7 @@
 #include "common.hpp"
 #include "math.hpp"
 #include "tag.hpp"
+#include "datum/index.hpp"
 #include "entity/index.hpp"
 #include "flares/index.hpp"
 #include "camera.hpp"
