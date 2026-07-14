@@ -77,14 +77,12 @@ namespace Mod::Mario::DynamicGeometry::ModelSwap {
                 { { 0.0f, H, 0.0f }, { H * 0.75f, H * 0.8f, H * 0.25F } }
             }
         },
-        {
-            { "vehicles\\warthog\\warthog", 8 },
-            { ModelSwapType::Empty, {} }
-        },
-        {
-            { "vehicles\\warthog\\warthog", 13 },
-            { ModelSwapType::Empty, {} }
-        }
+        
+        { { "vehicles\\warthog\\warthog", 8 }, { ModelSwapType::Empty, {} } },
+        { { "vehicles\\warthog\\warthog", 13 }, { ModelSwapType::Empty, {} } },
+
+        // Have not found the state that controls when this is tangible. For now, just make it completely intangible to Mario.
+        { { "levels\\a50\\devices\\prison door\\prison door", 0 }, { ModelSwapType::Empty, {} } }
     };
 
     // Build a closed box (12 triangles) centered at `center` with the given half extents.

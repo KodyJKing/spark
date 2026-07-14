@@ -83,6 +83,15 @@ void MarioMod::init() {
     //     }
     // }, nullptr);
 
+    // We do our own entity collision for Mario. Skip the engine's.
+    Spark::EntityVsEntityCollision::addHandler(modId_, +[](void*, auto next, uint32_t flags, uint32_t otherEntityHandle, Vec3* pos, float radius, float param_5, float param_6, uint32_t entityHandle, void* p8) {
+        uint32_t playerHandle = Engine::getPlayerHandle();
+        if (entityHandle == playerHandle || otherEntityHandle == playerHandle) {
+            return;
+        }
+        next(flags, otherEntityHandle, pos, radius, param_5, param_6, entityHandle, p8);
+    }, nullptr);
+
 }
 
 void MarioMod::free() {
