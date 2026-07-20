@@ -11,6 +11,7 @@
 #include "TestRunner.hpp"
 #include "UnicornEngine.hpp"
 #include "MinidumpLoader.hpp"
+#include "SharedDumpFixture.hpp"
 
 #include "engine/entity/entity_list.hpp"
 
@@ -37,9 +38,6 @@
 // perfectly reproducible across runs -- exactly what makes it suited to
 // approval testing rather than hand-written expected values.
 namespace {
-
-constexpr const char* kDumpPath =
-    R"(C:\code\projects\hacking\smc64\smc64-dlltest-unicorn\dumps\MCC-Win64-Shipping.DMP)";
 
 // dllBase()-relative addresses of global pointers/values -- not struct
 // fields, so there's no existing type to read these via (see
@@ -111,9 +109,14 @@ UNICORN_TEST(Dump_EntityList_HandlesTagNamesAndPositions_MatchesApproved) {
     using Engine::EntityRecord;
     using Engine::Tag;
 
-    MinidumpLoader dump(kDumpPath);
-    UnicornEngine engine;
-    dump.loadModule(engine, "halo1.dll");
+    // SHARED-SAFE: this test never executes emulated code (pure host-side
+    // memRead()/ensureMapped() pointer-chasing) and never writes anything,
+    // so sharing the fixture's engine is trivially safe -- and lets its
+    // demand-paged pages (entity pool, tag array) be reused by other
+    // shared tests that touch the same globals.
+    auto& fixture = SharedDumpFixture::instance();
+    MinidumpLoader& dump = fixture.dump();
+    UnicornEngine& engine = fixture.engine();
 
     uint64_t dllBase = dump.moduleBase("halo1.dll");
 
@@ -178,7 +181,7 @@ UNICORN_TEST(Dump_EntityList_HandlesTagNamesAndPositions_MatchesApproved) {
     }
 
     std::filesystem::path approvedDir =
-        std::filesystem::path(kDumpPath).parent_path().parent_path() / "approved";
+        std::filesystem::path(SharedDumpFixture::kDumpPath).parent_path().parent_path() / "approved";
     std::filesystem::path approvedPath = approvedDir / "EntityList.approved.txt";
     std::filesystem::path receivedPath = approvedDir / "EntityList.received.txt";
 

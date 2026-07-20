@@ -60,7 +60,7 @@ The function is stored in a function pointer table (sole Ghidra reference is a `
 
 ## CollisionResult Output Layout (`param_4`)
 
-**[UNVERIFIED — offsets derived from decompiler, not dynamically confirmed]**
+**Confirmed** (2026-07-19) by dynamically calling the real, decompiled `_lineTestVsEntityModel` inside a Unicorn emulator loaded from a captured process dump — see "Dynamic Validation" below. `resultType`, `fraction`, hit point, plane, `materialType`, `entityHandle`, `boneIndex`, and `surfaceIndex` are all confirmed plausible/self-consistent from a real call. The fields at `+0x3c`/`+0x40`/`+0x44`/`+0x48` came back as `0` in that test, which is consistent with (but doesn't prove) the layout below — still **[UNVERIFIED]** for their exact semantics.
 
 | Offset | Type | Content |
 |--------|------|---------|
@@ -72,14 +72,29 @@ The function is stored in a function pointer table (sole Ghidra reference is a `
 | `+0x24` | `Vec4` | Hit plane normal + distance (world space, 16 bytes) |
 | `+0x34` | `int16_t` | Surface material type (from collision tag's surface table) |
 | `+0x38` | `uint32_t` | Entity handle (copied from query) |
-| `+0x3c` | `int16_t` | ? (from `_lineTestVsEntityCollisionRegions` output[1]) |
+| `+0x3c` | `int16_t` | ? (from `_lineTestVsEntityCollisionRegions` output[1]) **[UNVERIFIED semantics]** |
 | `+0x3e` | `int16_t` | Bone/region index |
-| `+0x40` | `int16_t` | ? (from `_lineTestVsEntityCollisionRegions` output[3]) |
-| `+0x44` | `uint32_t` | ? |
-| `+0x48` | `int32_t` | `local_46c` — sign used for plane flip; semantics unknown **[UNVERIFIED]** |
+| `+0x40` | `int16_t` | ? (from `_lineTestVsEntityCollisionRegions` output[3]) **[UNVERIFIED semantics]** |
+| `+0x44` | `uint32_t` | ? **[UNVERIFIED semantics]** |
+| `+0x48` | `int32_t` | `local_46c` — sign used for plane flip; semantics unknown **[UNVERIFIED semantics]** |
 | `+0x4c` | `uint8_t` | Flags byte |
 | `+0x4d` | `uint8_t` | Flags byte |
 | `+0x4e` | `int16_t` | Surface index within BSP surface list |
+
+### Dynamic Validation
+
+Called the real `_lineTestVsEntityModel` (offset `0xB91C0C`) via `smc64-dlltest-unicorn`'s `LineTestVsEntityModelTest.cpp`, using the standard Win64 calling convention (`Win64Call`) against a Unicorn engine loaded from a real captured process dump (`installDemandPaging()`, not just `loadModule()` — this call chain reads entity/tag/BSP data outside the module's own image while executing real code, the first test in the suite to do so).
+
+Target: the player's own cyborg biped (handle `0xE64503D6`, recorded position `(23.066, -17.000, 89.216)` in `approved/EntityList.approved.txt`). Ray: vertical, from 3 units above the recorded position to 3 units below.
+
+Result: a clean hit —
+- `resultType = 3`, `fraction ≈ 0.473`
+- hit point `(23.066, -17.000, 89.377)` — matches the recorded entity position almost exactly (the small +0.16 Z offset is consistent with the position being close to, but not exactly at, the ground-contact point)
+- plane `(≈0, ≈0, -1, -89.377)` — a horizontal ground-ish plane; `dot(normal, hitPoint) == w` checks out (`-1 * 89.377 ≈ -89.377`), confirming the plane storage convention
+- `materialType = 21`, `entityHandle` round-tripped correctly (`0xE64503D6`), `boneIndex = 0`, `surfaceIndex = 1` — all in plausible ranges
+- the four still-unverified fields (`+0x3c`, `+0x40`, `+0x44`, `+0x48`) all read back as `0` for this particular hit
+
+This also confirms the entire call chain (`getEntityCollisionData` → `getTagDataPointer`/`getBoneTransforms` → `_lineTestVsEntityCollisionRegions` → `invertTransform`/`transformPoint`/`transformVec` → `_lineTestVsBSP` → `FUN_7ff9d8064778` recursive BSP walk → `FUN_7ff9d8064b18`/`FUN_7ff9d810d22c`/`FUN_7ff9d8064d78` leaf/portal tests → `transformVec4AsPlane`) is self-contained within halo1.dll: every function in it touches only the entity pool/record pool, tag array, and `DAT_MapBase`/`DAT_RelocatedMapBase`-relative map data (the same globals `EntityListDumpTest.cpp` already reads), plus a handful of module-local constants (`DAT_unitScale`, `DAT_floatNegateMask`, the security cookie). No calls outside the module, no TLS/`gs:`-segment access, no locks — confirmed by decompiling every function in the chain before running this test.
 
 ---
 
@@ -134,6 +149,7 @@ The `t` parameter convention used internally is **inverse-parametric**: `t=0` is
 ## Open Questions / Dynamic Experiments Needed
 
 1. **What is the dispatcher?** Find the function pointer table containing `_lineTestVsEntityModel` and identify all sibling type handlers (types 0, 1, 2 at minimum). Set a breakpoint at the table read or at the start of `_lineTestVsEntityModel` to catch callers in a live session.
-2. **Confirm CollisionResult offsets** by breaking on `_lineTestVsEntityModel` return with `AL=1` and inspecting `param_4` in memory.
-3. **What is `local_46c`** (the sign-flip field at `+0x48`)? Possibly a "back-face" indicator or a surface normal orientation flag.
-4. **Surface material stride** — the `0x48` stride matches Halo's `collision_model` surface struct. Confirm against HCEEK tag definitions.
+2. ~~**Confirm CollisionResult offsets**~~ — **Done.** Confirmed dynamically via `smc64-dlltest-unicorn`'s `LineTestVsEntityModelTest.cpp` (see "Dynamic Validation" above) by calling the real function against a captured dump rather than a live-session breakpoint. `resultType`, `fraction`, hit point, plane, `materialType`, `entityHandle`, `boneIndex`, and `surfaceIndex` are all confirmed.
+3. **What is `local_46c`** (the sign-flip field at `+0x48`)? Read back as `0` in the one dynamic test run so far — possibly a "back-face" indicator or a surface normal orientation flag that's only nonzero for certain hit types. Try a ray that hits a back-facing surface (e.g. from inside a BSP volume looking out) to get a nonzero sample.
+4. **Surface material stride** — the `0x48` stride matches Halo's `collision_model` surface struct. Confirm against HCEEK tag definitions. (`materialType = 21` was observed for the player biped hit in the dynamic test — cross-reference against the biped's collision tag surfaces in HCEEK to confirm the meaning of type 21.)
+5. **Fields `+0x3c`/`+0x40`/`+0x44`** all read back as `0` for the one hit sampled so far — need a test against a more complex multi-region/multi-permutation entity (e.g. a vehicle) to get nonzero samples and infer their meaning.

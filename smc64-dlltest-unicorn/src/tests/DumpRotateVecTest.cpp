@@ -5,6 +5,7 @@
 #include "UnicornEngine.hpp"
 #include "Win64Call.hpp"
 #include "MinidumpLoader.hpp"
+#include "SharedDumpFixture.hpp"
 
 #include "engine/math.hpp"
 
@@ -12,9 +13,6 @@ namespace {
 
 constexpr uintptr_t kRotateVecOffset = 0xBA3004;
 using RotateVecFn = Vec3*(Engine::Transform*, Vec3*, Vec3*);
-
-constexpr const char* kDumpPath =
-    R"(C:\code\projects\hacking\smc64\smc64-dlltest-unicorn\dumps\MCC-Win64-Shipping.DMP)";
 
 }  // namespace
 
@@ -27,37 +25,20 @@ constexpr const char* kDumpPath =
 // setup all at once, using a function whose expected output we already know
 // -- before writing any *new* globals-dependent tests that this suite
 // actually exists for.
+//
+// SHARED-SAFE: confirmed via Ghidra (2026-07-19) -- rotateVec is pure math
+// with zero global reads/writes (see reversing/notes/WorldBones.md
+// "Transform math family"), so it's safe to run against the fixture engine
+// shared with other tests.
 UNICORN_TEST(Dump_RotateVec_AxisSwapMatrix_SwapsXAndY) {
-    MinidumpLoader dump(kDumpPath);
-    UnicornEngine engine;
-    // rotateVec has zero global dependencies, so we only need halo1.dll's
-    // own code mapped -- not the whole 5GB process. Loading everything trips
-    // QEMU/Unicorn's hard cap of ~4096 distinct memory-region "sections"
-    // (a real full-process dump has far more individual VM regions than
-    // that); loadModule() scopes the mapping to just this module's image.
-    dump.loadModule(engine, "halo1.dll");
+    auto& fixture = SharedDumpFixture::instance();
+    MinidumpLoader& dump = fixture.dump();
+    UnicornEngine& engine = fixture.engine();
 
     uint64_t halo1Base = dump.moduleBase("halo1.dll");
     uint64_t rotateVecAddr = halo1Base + kRotateVecOffset;
 
-    // Scratch region for our synthetic stack + argument structs + return
-    // sentinel. Picked from addresses far outside where a normal Win64
-    // process allocates (module images / heaps / stacks all live well below
-    // these), and verified free by probing -- we can't know for certain
-    // what's unused in someone else's captured address space otherwise.
-    uint64_t scratchBase = 0;
-    for (uint64_t candidate : { 0x0000700000000000ULL, 0x0000600000000000ULL,
-                                0x0000500000000000ULL, 0x0000200000000000ULL }) {
-        if (engine.tryMap(candidate, 0x20000, UC_PROT_ALL)) {
-            scratchBase = candidate;
-            break;
-        }
-    }
-    if (scratchBase == 0) {
-        std::cout << "  could not find a free scratch region in the dumped address space\n";
-        return false;
-    }
-
+    uint64_t scratchBase = fixture.allocateScratchSlot();
     uint64_t stackTop = scratchBase + 0x10000;
     uint64_t sentinel = scratchBase + 0x11000;
     uint64_t argsBase = scratchBase + 0x12000;
