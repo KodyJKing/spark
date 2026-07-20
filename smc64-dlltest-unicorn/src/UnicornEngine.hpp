@@ -1,10 +1,19 @@
 #pragma once
 
+#include <cstdint>
+#include <functional>
 #include <stdexcept>
 #include <string>
 #include <vector>
 
 #include <unicorn/unicorn.h>
+
+// One successful memory access observed by traceMemoryAccesses() below.
+struct MemoryAccessRecord {
+    uint64_t address;
+    uint32_t size;
+    bool isWrite;
+};
 
 // RAII wrapper around a uc_engine* configured for 64-bit x86 (matches
 // halo1.dll, which is a Win64 process). Thin convenience layer over the raw
@@ -86,6 +95,25 @@ public:
         check(uc_emu_start(m_uc, begin, until, timeoutMicros, maxInstructions), "uc_emu_start");
     }
 
+    // Diagnostic tool for deciding whether a Unicorn test could be
+    // "promoted" to a plain smc64-dlltest (real LoadLibrary'd DLL, no
+    // dump/emulation): runs `body` (typically one Win64Call) with a
+    // temporary UC_HOOK_MEM_READ/WRITE hook installed, recording every
+    // successful memory access. NOT meant for routine test use -- hooking
+    // every access measurably slows emulation. See tests/
+    // TraceMemoryAccessesTest.cpp for how the recorded accesses get
+    // classified (module image / test scratch / other-i.e.-dump-backed).
+    std::vector<MemoryAccessRecord> traceMemoryAccesses(const std::function<void()>& body) {
+        std::vector<MemoryAccessRecord> records;
+        uc_hook hook{};
+        check(uc_hook_add(m_uc, &hook, UC_HOOK_MEM_READ | UC_HOOK_MEM_WRITE,
+                           reinterpret_cast<void*>(&onMemAccess), &records, 1, 0),
+              "uc_hook_add(trace)");
+        body();
+        uc_hook_del(m_uc, hook);
+        return records;
+    }
+
     static void check(uc_err err, const char* what) {
         if (err != UC_ERR_OK) {
             throw std::runtime_error(std::string(what) + " failed: " + uc_strerror(err));
@@ -93,5 +121,11 @@ public:
     }
 
 private:
+    static void onMemAccess(uc_engine*, uc_mem_type type, uint64_t address, int size,
+                             int64_t /*value*/, void* userData) {
+        auto* records = static_cast<std::vector<MemoryAccessRecord>*>(userData);
+        records->push_back({ address, static_cast<uint32_t>(size), type == UC_MEM_WRITE });
+    }
+
     uc_engine* m_uc = nullptr;
 };

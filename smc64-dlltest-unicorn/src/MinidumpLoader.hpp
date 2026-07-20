@@ -141,6 +141,14 @@ public:
         return findModule(moduleName).base;
     }
 
+    // Returns the captured SizeOfImage of `moduleName`. Throws if the
+    // module isn't present. Used alongside moduleBase() to classify
+    // whether a memory access falls inside the module's own image (see
+    // tests/TraceMemoryAccessesTest.cpp).
+    uint64_t moduleSize(const std::string& moduleName) const {
+        return findModule(moduleName).size;
+    }
+
     // Maps EVERY captured memory range into `engine`. Only usable for small
     // dumps: QEMU's softmmu backend (which Unicorn embeds) caps the total
     // number of distinct memory-region "sections" at TARGET_PAGE_SIZE
