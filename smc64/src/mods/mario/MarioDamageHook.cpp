@@ -42,7 +42,8 @@ namespace Mod::Mario::MarioDamageHook {
                 bool isMelee = damageTagPath.find("melee") != std::string::npos;
 
                 // Mario takes extra damage while riding the shell.
-                if (isShell && !isMelee) event->damageMultiplier *= 1.75f;
+                // if (isShell && !isMelee) event->damageMultiplier *= 1.75f; // Todo: Restore after demo.
+                if (isShell && !isMelee) event->damageMultiplier *= 1.5f;
 
                 // Explosions launch mario.
                 if (isExplosion) {

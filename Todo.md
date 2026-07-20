@@ -15,6 +15,7 @@
         - Store diffs relative to vanilla tag values.
         - Export tag data to XML for human readable diffs.
     - [Major] Save manager for better testing inner loop.
+    - [Major] Unit testing framework for halo1.dll untility functions to verify understanding.
 
 - Bugs and Stability:
     - Audit all raw memory accesses. Replace with safe wrappers in non-performance critical code.
@@ -90,10 +91,11 @@
             - Bias Mario's look direction towards the direction the camera is facing.
             - Lean Mario's head sideways towards weapon when he is firing/ADSing.
         - Drive Mario pose from Chief's 
-            - in cutscenes 
+            x in cutscenes.
             x and vehicles.
             - When throwing grenade (left arm only).
             - When reloading (arms only).
+            - Fix Mario's hands and feet being enlarged when in vehicles (due to IK setting end effector transform.w, I believe).
     
     - Third person camera:
         - Render a false projectile exiting the player's barrel.
