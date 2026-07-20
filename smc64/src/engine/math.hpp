@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include "math/Vectors.hpp"
 
 namespace Engine {
@@ -11,6 +12,10 @@ namespace Engine {
     };
 
     // Commonly used for world space bone transforms.
+    // Matches Ghidra's `Transform` struct exactly: w=s (scale), x/y/z=m.x/m.y/m.z
+    // (orientation matrix, basis columns), pos=t (translation). Confirmed by
+    // calling the real rotateVec/transformVec4AsPlane via smc64-dlltest --
+    // see smc64-dlltest/src/tests/TransformTests.cpp.
     struct Transform {
         float w; // (scale)
         Vec3 x, y, z, pos; // (forward, left, up, translation)
@@ -45,6 +50,12 @@ namespace Engine {
             };
         }
     };
+
+    static_assert(sizeof(Transform) == 0x34);
+    static_assert(offsetof(Transform, x) == 0x04);
+    static_assert(offsetof(Transform, y) == 0x10);
+    static_assert(offsetof(Transform, z) == 0x1c);
+    static_assert(offsetof(Transform, pos) == 0x28);
 
     Engine::Transform inverseTransform(Engine::Transform &wt);
     Engine::Transform multiplyTransforms(Engine::Transform & a, Engine::Transform & b);

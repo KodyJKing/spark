@@ -14,8 +14,43 @@ Analysis of how Halo CE computes, propagates, and commits entity bone transforms
 | `_moveEntityAndUpdate` | `0xB359E8` | Medium |
 | `getBoneTransforms` | `0xB36E64` | High |
 | `_commitEntityRenderState` | `0xBA8414` | Medium |
+| `rotateVec` | `0xBA3004` | High (dynamically confirmed) |
+| `transformVec` | `0xBA2F5C` | High (dynamically confirmed) |
+| `transformPoint` | `0xBA2EA8` | High (dynamically confirmed) |
+| `invertTransform` | `0xBA2214` | High (dynamically confirmed) |
+| `transformVec4AsPlane` | `0xBA3090` | High (dynamically confirmed) |
 
----
+### Transform math family — confirmed via `smc64-dlltest`
+
+All five functions above were called directly (standalone, outside MCC) with
+synthetic `Transform`/`Vec3`/`Vec4` inputs and their output checked against
+hand-derived expected values -- see `smc64-dlltest/src/tests/TransformTests.cpp`.
+Key findings:
+
+- `Transform.m`'s `x`/`y`/`z` are basis **column** vectors: `rotateVec` computes
+  `out = m.x*in.x + m.y*in.y + m.z*in.z`. Matches the existing
+  `Engine::Transform::transformVec()`/`transformPoint()` member methods in
+  `engine/math.hpp` for rotation.
+- **`rotateVec` ignores scale entirely.** `transformVec`/`transformPoint`,
+  by contrast, multiply the input vector by `Transform.w` (scale) *before*
+  rotating -- unless `w == 1.0` exactly (`DAT_unitScale`, confirmed by reading
+  the constant from the loaded module), in which case the multiply is skipped.
+  **This means the existing `Engine::Transform::transformVec()`/
+  `transformPoint()` member methods do NOT match the real engine functions
+  when scale != 1** (they never apply `w`). Likely low-impact in practice
+  since bone scale is normally 1.0 (per the note above on "Scaling bones
+  seems pretty rare" in `Reversing.md`), but worth fixing if any codepath
+  relies on non-unit bone scale. `_attachEntityToBone` (below) uses
+  `rotateVec` (not `transformVec`) for velocity/facing, which is consistent
+  with those being pure directions that shouldn't be scaled.
+- `invertTransform` is the standard similarity-transform inverse:
+  `invScale = 1/scale` (or `1.0` if scale is already `1.0`), rotation matrix
+  is transposed, and `invTranslation = R^T * (-translation * invScale)`.
+  Confirmed both against a hand-derived example (asymmetric cyclic-permutation
+  rotation, to actually exercise the transpose swap) and an invert-twice
+  round-trip recovering the original transform exactly.
+
+
 
 ## `updateWorldBones` — What It Does
 

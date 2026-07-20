@@ -10,3 +10,6 @@
 [submodule "vendor/libsm64"]
 	path = vendor/libsm64
 	url = https://github.com/KodyJKing/libsm64.git
+[submodule "vendor/unicorn"]
+	path = vendor/unicorn
+	url = https://github.com/unicorn-engine/unicorn.git

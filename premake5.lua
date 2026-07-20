@@ -23,3 +23,5 @@ group ""
 
 include "smc64/premake5.lua"
 include "smc64-launcher/premake5.lua"
+include "smc64-dlltest/premake5.lua"
+include "smc64-dlltest-unicorn/premake5.lua"

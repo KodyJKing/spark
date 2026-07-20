@@ -3,9 +3,22 @@
 bin/
 obj/
 tmp/
+_bin/
+_obj/
 
 vendor/*/bin/
 vendor/*/obj/
+vendor/unicorn/build/
+
+# Captured memory dumps used by smc64-dlltest-unicorn -- these come from a
+# live/dumped game process and should never be committed. Keep the README
+# documenting the manifest format though.
+smc64-dlltest-unicorn/dumps/*
+!smc64-dlltest-unicorn/dumps/README.md
+
+# Approval-test scratch output (regenerated every run) -- the .approved.txt
+# reference files next to these ARE committed.
+smc64-dlltest-unicorn/approved/*.received.txt
 
 # Files
 *.vcxproj

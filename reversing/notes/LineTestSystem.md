@@ -51,7 +51,7 @@ The function is stored in a function pointer table (sole Ghidra reference is a `
 2. Computes `end = origin + dir` and `negDir = -dir` (XOR with float negate mask).
 3. Calls `getEntityCollisionData()` to fetch the entity's collision data (bone transforms, BSP pointer, etc.). Exits if the entity has no collision data.
 4. Calls `_lineTestVsEntityCollisionRegions()` which iterates bone regions, transforms the ray into each bone's local space, and runs the BSP intersection test.
-5. On a hit, calls `transformVec4AsPlane()` to bring the hit plane normal from bone-space into world-space.
+5. On a hit, calls `transformVec4AsPlane()` to bring the hit plane normal from bone-space into world-space. **Confirmed** via standalone `smc64-dlltest` harness (calls the real compiled function with synthetic `Transform`/`Vec4` inputs, offsets `0xBA3090` / `0xBA3004` for `rotateVec`): the transform's `m.x`/`m.y`/`m.z` are basis *column* vectors, `out = m.x*in.x + m.y*in.y + m.z*in.z` (not row-major). Plane transform is `outNormal = rotateVec(m, inNormal)`, `outW = dot(t, outNormal) + inW * s` — standard plane-under-rigid-transform formula. See `smc64-dlltest/src/tests/TransformTests.cpp`.
 6. If the hit plane faces away from the ray (`local_46c < 0`), flips all four plane components (normal + distance).
 7. Looks up the surface material: `materialTable + 0x24 + surfaceIndex * 0x48`. The `materialTable` pointer is relocated via `DAT_MapBase`/`DAT_RelocatedMapBase`.
 8. Fills `param_4` (see layout below) and returns `true`.
