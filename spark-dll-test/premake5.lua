@@ -1,4 +1,4 @@
-project "smc64-launcher"
+project "spark-dll-test"
     kind "ConsoleApp"
     language "C++"
     cppdialect "C++20"
@@ -14,13 +14,19 @@ project "smc64-launcher"
     }
 
     includedirs {
-        "src"
+        "src",
+        "../spark/src"
     }
+
+    -- /EHa (not just /EHsc) so the SEH translator in main.cpp can turn a bad
+    -- "this function is pure" hypothesis (e.g. an access violation) into a
+    -- catchable C++ exception instead of taking down the whole harness.
+    buildoptions { "/EHa" }
 
     filter "configurations:Debug"
         runtime "Debug"
         symbols "On"
-  
+
     filter "configurations:Release"
         runtime "Release"
         optimize "On"

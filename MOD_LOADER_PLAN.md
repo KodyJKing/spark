@@ -105,10 +105,15 @@ actually does:
 ## Phase 2 — Mod loader
 
 New `spark/mod/ModLoader.hpp/.cpp`:
-- Resolve `<exe-dir>/mods/` via `GetModuleFileNameA(NULL, ...)` on the host process
-  (works whether Spark is injected into the real MCC exe or run via the dev
-  launcher/test harness, since it's always relative to the actual running exe, not
-  Spark's own DLL path).
+- Resolve `<exe-dir>/mods/` via `Utils::getModsDirectory()` (`utils/Utils.hpp/.cpp`),
+  which calls `GetModuleFileNameA(NULL, ...)` — the running *process'* image path, not
+  `__ImageBase`/`getCurrentImageBase()` (Spark's own DLL path). This is deliberate and
+  already implemented: Spark is frequently injected from the repo's own build output
+  during dev (see `Utils::isInjected()`), so resolving relative to Spark's own module
+  would find the wrong directory. `GetModuleFileNameA(NULL, ...)` always resolves to the
+  actual game executable regardless of where Spark itself was loaded from, so the mods
+  directory is stable across dev (injected) and production (loaded from the game's own
+  binary directory) alike.
 - Enumerate `*.dll` in that directory.
 - For each: `LoadLibrary`, validate the ABI version export, then call its
   `spark_modLoad()` entry point. Track the returned `HMODULE` for teardown.

@@ -95,7 +95,7 @@ std::filesystem::path getModDllPath() {
     GetModuleFileNameA(NULL, modulePath, MAX_PATH);
     std::filesystem::path moduleDir = std::filesystem::path(modulePath);
     std::filesystem::path binPath = moduleDir.parent_path().parent_path();
-    std::filesystem::path modDllPath = binPath / "smc64" / "smc64.dll";
+    std::filesystem::path modDllPath = binPath / "spark" / "spark.dll";
     return modDllPath;
 }
 

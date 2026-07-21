@@ -1,4 +1,4 @@
-project "smc64"
+project "spark"
     kind "SharedLib"
     language "C++"
     cppdialect "C++20"

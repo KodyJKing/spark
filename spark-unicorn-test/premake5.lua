@@ -1,4 +1,4 @@
-project "smc64-dlltest-unicorn"
+project "spark-unicorn-test"
     kind "ConsoleApp"
     language "C++"
     cppdialect "C++20"
@@ -15,7 +15,7 @@ project "smc64-dlltest-unicorn"
 
     includedirs {
         "src",
-        "../smc64/src",
+        "../spark/src",
         "../vendor/unicorn/include"
     }
 

@@ -45,4 +45,12 @@ namespace Utils {
         return result;
     }
 
+    std::filesystem::path getModsDirectory() {
+        char path[MAX_PATH];
+        // NULL == the process' own main executable image, deliberately not getCurrentImageBase()/
+        // __ImageBase (this DLL). See header comment for why that distinction matters.
+        GetModuleFileNameA(nullptr, path, MAX_PATH);
+        return std::filesystem::path(path).parent_path() / "mods";
+    }
+
 }

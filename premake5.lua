@@ -1,7 +1,7 @@
-workspace "smc64"
+workspace "spark"
    architecture "x64"
    configurations { "Debug", "Release" }
-   startproject "smc64"
+   startproject "spark"
 
    defines { 
       "ZYDIS_STATIC_BUILD",
@@ -21,7 +21,7 @@ group "Dependencies"
    include "vendor/zydis"
 group ""
 
-include "smc64/premake5.lua"
-include "smc64-launcher/premake5.lua"
-include "smc64-dlltest/premake5.lua"
-include "smc64-dlltest-unicorn/premake5.lua"
+include "spark/premake5.lua"
+include "spark-launcher/premake5.lua"
+include "spark-dll-test/premake5.lua"
+include "spark-unicorn-test/premake5.lua"

@@ -38,7 +38,7 @@ try {
     }
 
     if ($Clean) {
-        $objDir = Join-Path $root "obj\$Config-Win64\smc64-dlltest-unicorn"
+        $objDir = Join-Path $root "obj\$Config-Win64\spark-unicorn-test"
         Write-Host "Removing $objDir for a clean rebuild..."
         Remove-Item $objDir -Recurse -Force -ErrorAction SilentlyContinue
     }
@@ -47,11 +47,11 @@ try {
     & "premake5.exe" "vs2022"
     if ($LASTEXITCODE -ne 0) { throw "premake5 failed" }
 
-    Write-Host "Building smc64-dlltest-unicorn ($Config)..."
-    & "MSBuild.exe" "smc64.sln" "/t:smc64-dlltest-unicorn" "/p:Configuration=$Config" "/p:Platform=Win64" "/m"
+    Write-Host "Building spark-unicorn-test ($Config)..."
+    & "MSBuild.exe" "spark.sln" "/t:spark-unicorn-test" "/p:Configuration=$Config" "/p:Platform=Win64" "/m"
     if ($LASTEXITCODE -ne 0) { throw "MSBuild failed" }
 
-    $exe = Join-Path $root "bin\$Config-Win64\smc64-dlltest-unicorn\smc64-dlltest-unicorn.exe"
+    $exe = Join-Path $root "bin\$Config-Win64\spark-unicorn-test\spark-unicorn-test.exe"
     if (-not (Test-Path $exe)) {
         throw "Build reported success but $exe was not produced."
     }
