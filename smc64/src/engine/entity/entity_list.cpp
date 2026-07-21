@@ -37,27 +37,23 @@ namespace Engine {
         return rec->id << 16 | index;
     }
 
-    void foreachEntityRecordIndexed( std::function<void( EntityRecord*, uint16_t i )> cb ) {
+    void foreachEntityRecordIndexed( EntityRecordCallback cb, void* ctx ) {
         auto pEntityList = getEntityListPointer();
         if ( !pEntityList ) return;
         for ( uint16_t i = 0; i < pEntityList->capacity; i++ ) {
             auto pRecord = getEntityRecord( pEntityList, i );
             if ( pRecord->entityArrayOffset == -1 ) continue;
-            cb( pRecord, i );
+            cb( ctx, pRecord, i );
         }
     }
 
-    void foreachEntityRecord( std::function<void( EntityRecord* )> cb ) {
-        foreachEntityRecordIndexed( [&cb]( EntityRecord* rec, uint16_t i ) { cb( rec ); } );
-    }
-
     // Todo: Optimize this. Use halo engine's spatial partition system or implement a per-frame spatial hash to reduce the number of distance checks needed.
-    void foreachEntityInRadius(const Vec3& center, float radius, std::function<void( Entity* )> cb ) {
-        foreachEntityRecord( [&center, radius, &cb]( EntityRecord* rec ) {
+    void foreachEntityInRadius( const Vec3& center, float radius, EntityCallback cb, void* ctx ) {
+        foreachEntityRecord( [&]( EntityRecord* rec ) {
             auto entity = getEntityPointer( rec );
             if ( !entity ) return;
             if ( ( entity->pos - center ).length() <= radius ) {
-                cb( entity );
+                cb( ctx, entity );
             }
         } );
     }

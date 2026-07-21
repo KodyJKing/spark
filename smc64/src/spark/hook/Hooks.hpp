@@ -11,6 +11,13 @@ namespace Spark {
 #include "HookTable.hpp"
 #undef HOOK
 
+    // Suppress implicit instantiation of each hook's storage everywhere except
+    // HookInstantiations.cpp, which performs the one real (exported) explicit
+    // instantiation that actually owns bus/original/base.
+    #define HOOK(Name, Ret, Offset, ...) extern template struct Hook<Offset, Ret, __VA_ARGS__>;
+    #include "HookTable.hpp"
+    #undef HOOK
+
 
     inline void installAllHooks(uintptr_t base) {
         #define HOOK(Name, ...) Name::install(base);

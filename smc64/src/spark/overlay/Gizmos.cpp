@@ -51,10 +51,10 @@ namespace Spark::Overlay::Gizmos {
         s_gizmos.push_back(Gizmo{ GizmoType::Point, position, Vec3{}, std::string{}, color, durationFrames, durationFrames });
     }
 
-    void drawText(Vec3& center, std::string text, ImU32 color, uint32_t durationFrames) {
+    void drawText(Vec3& center, const char* text, ImU32 color, uint32_t durationFrames) {
         if (!Spark::showDebugOverlay) return;
         std::lock_guard<std::mutex> lock(s_mutex);
-        s_gizmos.push_back(Gizmo{ GizmoType::Text, center, Vec3{}, std::move(text), color, durationFrames, durationFrames });
+        s_gizmos.push_back(Gizmo{ GizmoType::Text, center, Vec3{}, std::string{text ? text : ""}, color, durationFrames, durationFrames });
     }
 
     void render() {
@@ -70,7 +70,7 @@ namespace Spark::Overlay::Gizmos {
             switch (g.type) {
                 case GizmoType::Line:  ESP::drawLine(g.a, g.b, color); break;
                 case GizmoType::Point: ESP::drawPoint(g.a, color); break;
-                case GizmoType::Text:  ESP::drawText(g.a, g.text, color); break;
+                case GizmoType::Text:  ESP::drawText(g.a, g.text.c_str(), color); break;
             }
             if (g.framesRemaining > 0)
                 g.framesRemaining -= 1;

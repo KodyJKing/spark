@@ -17,14 +17,14 @@ namespace Engine {
         return entry;
     }
 
-    void foreachFlareEntry( std::function<void( FlareEntry*, uint32_t handle )> cb ) {
+    void foreachFlareEntry( FlareEntryCallback cb, void* ctx ) {
         auto mgr = getFlareManager();
         if ( !mgr ) return;
         for ( int16_t i = 0; i < mgr->capacity; i++ ) {
             auto entry = mgr->entryAtIndex( i );
             if ( entry->generation == 0 ) continue;
             uint32_t handle = ( (uint32_t) (uint16_t) entry->generation << 16 ) | (uint16_t) i;
-            cb( entry, handle );
+            cb( ctx, entry, handle );
         }
     }
 

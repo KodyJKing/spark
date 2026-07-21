@@ -43,7 +43,7 @@ namespace {
         }
 
         if (label >= 0)
-            ESP::drawText(center, std::to_string(label), color);
+            ESP::drawText(center, std::to_string(label).c_str(), color);
     }
 
     // Current-frame state exposed to renderImGuiSection

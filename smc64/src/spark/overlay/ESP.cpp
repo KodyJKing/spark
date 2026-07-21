@@ -145,7 +145,7 @@ namespace Spark::Overlay::ESP {
         drawLine(corners[3], corners[7], color);
     }
 
-    void drawText(Vec3 pos, std::string text, ImU32 color) {
+    void drawText(Vec3 pos, const char* text, ImU32 color) {
         Vec3 screenPos = worldToScreen(pos);
 
         if (screenPos.z < 0)
@@ -154,7 +154,7 @@ namespace Spark::Overlay::ESP {
         ImGui::GetWindowDrawList()->AddText(
             ImVec2{screenPos.x, screenPos.y},
             color,
-            text.c_str()
+            text
         );
     }
 

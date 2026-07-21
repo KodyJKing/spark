@@ -88,6 +88,9 @@
 			"fstream": "cpp",
 			"set": "cpp",
 			"future": "cpp"
+		},
+		"chat.tools.terminal.autoApprove": {
+			".\\scripts\\build.ps1": true
 		}
 	}
 }

@@ -4,19 +4,34 @@
 #include "MinHook.h"
 #include "utils/UnloadLock.hpp"
 #include "spark/EventBus.hpp"
+#include "spark/SparkAPI.h"
 
 namespace Spark {
 
+// Storage (bus/original/base) must have exactly one instance shared by Spark and every
+// mod DLL that registers handlers on it — explicitly instantiated + exported once per
+// hook in HookInstantiations.cpp. Hooks.hpp declares `extern template` for each hook so
+// no other translation unit implicitly instantiates (and thus duplicates) this storage.
+// install()/uninstall() touch MinHook directly and are Spark-internal only — mod DLLs
+// must only ever call addHandler()/unregisterHandlers().
+//
+// C4251 (member needs dll-interface) is a false positive here: EventBus<>'s member
+// functions just operate in-place on whichever Hook<>::bus storage they're called
+// through, and that storage is guaranteed to be a single shared instance via the
+// explicit-instantiation + extern-template scheme above, so EventBus<> itself never
+// needs its own dllexport/dllimport annotation.
+#pragma warning(push)
+#pragma warning(disable: 4251)
 template<uintptr_t Offset, typename Ret, typename... Args>
-struct Hook {
+struct SPARK_API Hook {
     using Bus     = EventBus<Ret, Args...>;
     using Fn      = Ret(*)(Args...);
     using Cursor  = typename Bus::Cursor;
     using Handler = typename Bus::HandlerFn;
 
-    inline static Bus       bus;
-    inline static Fn        original = nullptr;
-    inline static uintptr_t base     = 0;
+    static Bus       bus;
+    static Fn        original;
+    static uintptr_t base;
 
     static void addHandler(ModId owner, Handler fn, void* ctx, int priority = 0) {
         bus.addHandler(owner, fn, ctx, priority);
@@ -53,5 +68,15 @@ private:
         return (*static_cast<Fn*>(ctx))(args...);
     }
 };
+
+template<uintptr_t Offset, typename Ret, typename... Args>
+typename Hook<Offset, Ret, Args...>::Bus Hook<Offset, Ret, Args...>::bus;
+
+template<uintptr_t Offset, typename Ret, typename... Args>
+typename Hook<Offset, Ret, Args...>::Fn Hook<Offset, Ret, Args...>::original = nullptr;
+
+template<uintptr_t Offset, typename Ret, typename... Args>
+uintptr_t Hook<Offset, Ret, Args...>::base = 0;
+#pragma warning(pop)
 
 } // namespace Spark

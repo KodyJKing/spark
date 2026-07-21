@@ -21,9 +21,9 @@ namespace Spark::Overlay::ESP {
 
     void drawBox(Vec3 center, Vec3 size, ImU32 color);
 
-    void drawText(Vec3 pos, std::string text, ImU32 color);
-
     void drawCircle(Vec3 center, float radius, ImU32 color, bool perspective = true, bool filled = false);
+
+    void drawText(Vec3 pos, const char* text, ImU32 color);
 
     void beginESPWindow(const char * name);
 
