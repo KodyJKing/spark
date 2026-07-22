@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include "spark/SparkAPI.h"
 
 namespace Engine::Scripting {
 
@@ -7,7 +8,7 @@ namespace Engine::Scripting {
     // Handles normalization, compilation, and execution in one call.
     // Accepts bare variable names ("rasterizer_wireframe") or full HaloScript
     // expressions ("(set rasterizer_wireframe true)").
-    void submit(const char* input);
+    SPARK_API void submit(const char* input);
 
     struct GlobalSearchResult {
         int16_t index;
@@ -16,8 +17,8 @@ namespace Engine::Scripting {
         uint16_t flags2;
     };
 
-    GlobalSearchResult lookupGlobal(const char* name);
+    SPARK_API GlobalSearchResult lookupGlobal(const char* name);
 
-    uint32_t readGlobal(int16_t index);
-    uint32_t readGlobal(const char* name);
+    SPARK_API uint32_t readGlobal(int16_t index);
+    SPARK_API uint32_t readGlobal(const char* name);
 }

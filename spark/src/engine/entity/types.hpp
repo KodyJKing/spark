@@ -5,6 +5,7 @@
 #include "math/Vectors.hpp"
 #include "../math.hpp"
 #include "../tag.hpp"
+#include "spark/SparkAPI.h"
 
 namespace Engine {
 
@@ -19,7 +20,7 @@ namespace Engine {
         }
     };
 
-    class Entity {
+    class SPARK_API Entity {
         public:
         uint32_t tagID; 
         char pad_0004[16]; 
@@ -104,7 +105,7 @@ namespace Engine {
         uint16_t typeId;
         int32_t entityArrayOffset;
 
-        Entity* entity();
+        SPARK_API Entity* entity();
     };
 
     class EntityList {

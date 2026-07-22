@@ -7,6 +7,7 @@
 
 #include "../tag.hpp"
 #include "../bsp/index.hpp"
+#include "spark/SparkAPI.h"
 
 namespace Engine {
 
@@ -27,9 +28,9 @@ namespace Engine {
     static_assert(sizeof(CollisionNode) == 0x40, "CollisionNode size is not 0x40 bytes");
     static_assert(offsetof(CollisionNode, collisionBsps.offset) == 0x38, "CollisionNode::collisionBsps offset is not 0x38 bytes");
 
-    uint32_t collisionGeometryTagId(Tag* objectTag);
+    SPARK_API uint32_t collisionGeometryTagId(Tag* objectTag);
 
-    Tag* getCollisionGeometryTag( Tag* objectTag );
+    SPARK_API Tag* getCollisionGeometryTag( Tag* objectTag );
 
-    CollisionBSP* getObjectCollisionBSP( Tag* objectCollTag );
+    SPARK_API CollisionBSP* getObjectCollisionBSP( Tag* objectCollTag );
 }

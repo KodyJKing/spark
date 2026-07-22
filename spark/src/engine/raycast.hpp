@@ -2,6 +2,7 @@
 
 #include "math/Vectors.hpp"
 #include <cstdint>
+#include "spark/SparkAPI.h"
 
 #define ENGINE_RAYCAST_PROJECTILE_FLAGS 0x1000e9
 
@@ -35,7 +36,7 @@ namespace Engine {
     };
     static_assert(sizeof(RaycastResult) == 0x50 + 0x10, "RaycastResult size mismatch");
 
-    void raycast(uint64_t flags, Vec3 *origin, Vec3 *displacement, uint32_t sourceEntityHandle, RaycastResult *raycastResultOut);
+    SPARK_API void raycast(uint64_t flags, Vec3 *origin, Vec3 *displacement, uint32_t sourceEntityHandle, RaycastResult *raycastResultOut);
 
-    void raycastPlayerCrosshair(RaycastResult *raycastResultOut, float maxDistance = 100.0f, uint64_t flags = ENGINE_RAYCAST_PROJECTILE_FLAGS);
+    SPARK_API void raycastPlayerCrosshair(RaycastResult *raycastResultOut, float maxDistance = 100.0f, uint64_t flags = ENGINE_RAYCAST_PROJECTILE_FLAGS);
 }

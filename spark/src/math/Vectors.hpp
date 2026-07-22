@@ -1,10 +1,11 @@
 #pragma once
 
 #include <string>
+#include "spark/SparkAPI.h"
 
 struct Vec3i;
 
-struct Vec3 {
+struct SPARK_API Vec3 {
     float x, y, z;
 
     std::string toString();
@@ -83,7 +84,7 @@ struct Vec3 {
     }
 };
 
-struct Vec3i {
+struct SPARK_API Vec3i {
     int32_t x, y, z;
 
     Vec3i operator+( const Vec3i& other );
@@ -103,7 +104,7 @@ struct Vec3i {
     Vec3 toVec3();
 };
 
-struct Vec4 {
+struct SPARK_API Vec4 {
     float x, y, z, w;
 
     Vec4 operator+( const Vec4& other );
@@ -119,7 +120,7 @@ struct Vec4 {
     float dot( const Vec4& other );
 };
 
-struct Matrix3 {
+struct SPARK_API Matrix3 {
     union {
         float m[9]; // Column-major order
         struct {
@@ -133,7 +134,7 @@ struct Matrix3 {
     static Matrix3 fromEulerYXZ(Vec3 eulerDeg);
 };
 
-struct Matrix4 {
+struct SPARK_API Matrix4 {
     union {
         float m[16]; // Column-major order
         struct {
@@ -158,7 +159,7 @@ struct Matrix4 {
     Matrix4 inverse();
 };
 
-struct Quaternion {
+struct SPARK_API Quaternion {
     float x, y, z, w;
 
     Quaternion operator+( Quaternion other );
@@ -202,7 +203,7 @@ inline Vec3 closestPointOnAxisToRay(const Ray& r, Vec3 axisOrigin, Vec3 axisDir)
     return axisOrigin + axisDir * t;
 }
 
-struct Camera {
+struct SPARK_API Camera {
     Vec3 pos, fwd, up;
     float fov, width, height;
     bool verticalFov;
@@ -213,4 +214,4 @@ struct Camera {
     Ray  mouseRay(float sx, float sy);
 };
 
-Vec3 orientationToEulerAngles(Vec3 fwd, Vec3 up);
+SPARK_API Vec3 orientationToEulerAngles(Vec3 fwd, Vec3 up);

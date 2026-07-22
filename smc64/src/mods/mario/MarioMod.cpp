@@ -1,6 +1,7 @@
 #include "MarioMod.hpp"
 #include "spark/hook/Hooks.hpp"
 #include "spark/RenderBuses.hpp"
+#include "spark/mod/ImGuiBridge.hpp"
 #include "Mario.hpp"
 #include "engine/halo1.hpp"
 #include "level-edit/MarioLevelEdit.hpp"
@@ -32,6 +33,7 @@ void MarioMod::init() {
     }, nullptr);
 
     Spark::RenderEntity::addHandler(modId_, +[](void*, auto next, Engine::RenderEntityRequest* request) {
+        Spark::Mod::syncImGuiContext();
         bool skip = false;
         // if (request && Engine::entityValid(request->entityHandle)) {
         //     auto entity = Engine::getEntityPointer(request->entityHandle);
@@ -60,11 +62,13 @@ void MarioMod::init() {
     }, nullptr);
 
     Spark::onRenderDebugWorld.addHandler(modId_, +[](void*, Bus::Cursor next) {
+        Spark::Mod::syncImGuiContext();
         Mod::Mario::debugRender();
         next();
     }, nullptr);
 
     Spark::onRenderPauseMenuTabs.addHandler(modId_, +[](void*, Bus::Cursor next) {
+        Spark::Mod::syncImGuiContext();
         Mod::Mario::renderPauseMenuTab();
         next();
     }, nullptr);

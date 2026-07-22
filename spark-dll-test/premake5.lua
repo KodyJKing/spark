@@ -15,7 +15,8 @@ project "spark-dll-test"
 
     includedirs {
         "src",
-        "../spark/src"
+        "../spark/src",
+        "../vendor/imgui"
     }
 
     -- /EHa (not just /EHsc) so the SEH translator in main.cpp can turn a bad

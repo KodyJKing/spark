@@ -10,22 +10,23 @@
 
 #include "types.hpp"
 #include "entity_functions.hpp"
+#include "spark/SparkAPI.h"
 
 namespace Engine {
-    bool areEntitiesLoaded();
-    Entity* getEntityPointer( EntityRecord* pRecord );
-    Entity* getEntityPointer( uint32_t entityHandle );
-    uint32_t entityHandleFromIndex(uint16_t index);
-    EntityRecord *getEntityRecord(uint32_t entityHandle);
-    EntityRecord* getEntityRecord( EntityList* pEntityList, uint32_t entityHandle );
+    SPARK_API bool areEntitiesLoaded();
+    SPARK_API Entity* getEntityPointer( EntityRecord* pRecord );
+    SPARK_API Entity* getEntityPointer( uint32_t entityHandle );
+    SPARK_API uint32_t entityHandleFromIndex(uint16_t index);
+    SPARK_API EntityRecord *getEntityRecord(uint32_t entityHandle);
+    SPARK_API EntityRecord* getEntityRecord( EntityList* pEntityList, uint32_t entityHandle );
 
     // Raw C-ABI-safe callback types (function pointer + context). Safe to call across a
     // DLL boundary, unlike std::function (implementation-defined layout/allocator).
     using EntityRecordCallback = void(*)( void* ctx, EntityRecord* rec, uint16_t index );
     using EntityCallback = void(*)( void* ctx, Entity* entity );
 
-    void foreachEntityRecordIndexed( EntityRecordCallback cb, void* ctx );
-    void foreachEntityInRadius( const Vec3& center, float radius, EntityCallback cb, void* ctx );
+    SPARK_API void foreachEntityRecordIndexed( EntityRecordCallback cb, void* ctx );
+    SPARK_API void foreachEntityInRadius( const Vec3& center, float radius, EntityCallback cb, void* ctx );
 
     // Header-only convenience wrappers — instantiated per call site, so ordinary capturing
     // lambdas keep working. Only the trampoline (a plain function pointer) crosses into

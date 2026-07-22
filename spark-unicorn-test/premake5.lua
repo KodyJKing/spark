@@ -16,7 +16,8 @@ project "spark-unicorn-test"
     includedirs {
         "src",
         "../spark/src",
-        "../vendor/unicorn/include"
+        "../vendor/unicorn/include",
+        "../vendor/imgui"
     }
 
     filter "configurations:Debug"

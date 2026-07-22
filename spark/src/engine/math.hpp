@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include "math/Vectors.hpp"
+#include "spark/SparkAPI.h"
 
 namespace Engine {
     // Commonly used for relative bone transforms.
@@ -57,7 +58,7 @@ namespace Engine {
     static_assert(offsetof(Transform, z) == 0x1c);
     static_assert(offsetof(Transform, pos) == 0x28);
 
-    Engine::Transform inverseTransform(Engine::Transform &wt);
-    Engine::Transform multiplyTransforms(Engine::Transform & a, Engine::Transform & b);
-    void orthonormalize(Engine::Transform &wt);
+    SPARK_API Engine::Transform inverseTransform(Engine::Transform &wt);
+    SPARK_API Engine::Transform multiplyTransforms(Engine::Transform & a, Engine::Transform & b);
+    SPARK_API void orthonormalize(Engine::Transform &wt);
 }

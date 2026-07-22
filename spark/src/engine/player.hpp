@@ -5,6 +5,7 @@
 #include "camera.hpp"
 #include "camera_controller.hpp"
 #include "entity/index.hpp"
+#include "spark/SparkAPI.h"
 
 namespace Engine {
     namespace PlayerActionFlags {
@@ -33,20 +34,20 @@ namespace Engine {
         uint32_t targetHandle; // 01A4
     };
 
-    Camera* getPlayerCameraPointer();
-    CameraController *getPlayerCameraControllerPointer();
-    bool isPlayerInputDisabled();
-    void enterThirdPerson();
-    uint32_t getPlayerHandle();
-    uint32_t getPlayerHeldWeaponHandle();
-    PlayerController * getPlayerControllerPointer();
+    SPARK_API Camera* getPlayerCameraPointer();
+    SPARK_API CameraController *getPlayerCameraControllerPointer();
+    SPARK_API bool isPlayerInputDisabled();
+    SPARK_API void enterThirdPerson();
+    SPARK_API uint32_t getPlayerHandle();
+    SPARK_API uint32_t getPlayerHeldWeaponHandle();
+    SPARK_API PlayerController * getPlayerControllerPointer();
 
-    EntityRecord* getPlayerRecord();
-    Entity *getPlayerEntity();
-    Inventory *getPlayerInventory();
-    std::optional<Vec3> getPlayerPosition();
-    std::optional<Vec3> getPlayerVelocity();
-    bool isPlayerHandle(uint32_t entityHandle);
-    bool isPlayerControlled( EntityRecord* rec );
-    bool isPlayerInVehicle();
+    SPARK_API EntityRecord* getPlayerRecord();
+    SPARK_API Entity *getPlayerEntity();
+    SPARK_API Inventory *getPlayerInventory();
+    SPARK_API std::optional<Vec3> getPlayerPosition();
+    SPARK_API std::optional<Vec3> getPlayerVelocity();
+    SPARK_API bool isPlayerHandle(uint32_t entityHandle);
+    SPARK_API bool isPlayerControlled( EntityRecord* rec );
+    SPARK_API bool isPlayerInVehicle();
 }

@@ -6,10 +6,11 @@
 #include <string>
 #include "map.hpp"
 #include "memory/Memory.hpp"
+#include "spark/SparkAPI.h"
 
 namespace Engine {
     // Thanks to Kavawuvi for documentation on the map format and tag structure.
-    class Tag {
+    class SPARK_API Tag {
         public:
         uint32_t groupID; // Group ID's are fourcc's
         uint32_t parentGroupID; 
@@ -51,9 +52,9 @@ namespace Engine {
         }
     };
 
-    Tag* getTag( uint32_t tagID );
-    Tag * findTag(const char * path, const char * fourCC);
-    Tag * findTag(const char * path, uint32_t fourCC);
-    bool validTagPath(const char * path);
-    bool tagExists(Tag * tag);
+    SPARK_API Tag* getTag( uint32_t tagID );
+    SPARK_API Tag * findTag(const char * path, const char * fourCC);
+    SPARK_API Tag * findTag(const char * path, uint32_t fourCC);
+    SPARK_API bool validTagPath(const char * path);
+    SPARK_API bool tagExists(Tag * tag);
 }

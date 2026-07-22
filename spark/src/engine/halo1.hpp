@@ -19,7 +19,7 @@
 #include "scripting/TerminalOutput.hpp"
 
 namespace Engine {
-    bool isCameraLoaded();
-    bool isGameLoaded();
-    float gameVolume();
+    SPARK_API bool isCameraLoaded();
+    SPARK_API bool isGameLoaded();
+    SPARK_API float gameVolume();
 }

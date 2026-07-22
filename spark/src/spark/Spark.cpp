@@ -13,14 +13,15 @@
 #include "mods/freecam/FreecamMod.hpp"
 #include "spark/hook/Hooks.hpp"
 #include "spark/mod/ModRegistry.hpp"
+#include "spark/mod/ModLoader.hpp"
 #include "mods/devtools/DevToolsMod.hpp"
 #include "mods/hooklog/HookLogMod.hpp"
-#include "mods/mario/MarioMod.hpp"
 
 namespace Spark {
 
     uintptr_t halo1 = 0;
     ModRegistry registry;
+    ModLoader modLoader;
 
     bool isInstalled = false;
 
@@ -36,7 +37,7 @@ namespace Spark {
         registry.add(new FreecamMod());
         registry.add(new DevToolsMod());
         registry.add(new HookLogMod());
-        registry.add(new MarioMod());
+        modLoader.loadAll(); // LoadLibrary's *.dll from the mods directory (e.g. smc64.dll), calling spark_registerMod() for each.
         registry.initAll(halo1);
 
         std::cout << "Mods installed." << std::endl;
@@ -48,6 +49,7 @@ namespace Spark {
         isInstalled = false;
 
         registry.freeAll();
+        modLoader.unloadAll(); // FreeLibrary each mod DLL only after its IMod::free() has already run above.
 
         std::cout << "Mods uninstalled." << std::endl;
     }

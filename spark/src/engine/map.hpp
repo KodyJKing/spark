@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include "spark/SparkAPI.h"
 
 namespace Engine {
 
@@ -22,11 +23,11 @@ namespace Engine {
     };
     #pragma pack(pop)
     
-    char* getMapName();
-    MapHeader* getMapHeader();
-    bool isOnMap( const char* mapName );
-    bool isMapLoaded();
-    uint64_t translateMapAddress( uint32_t address );
-    uint32_t translateToMapAddress(uint64_t absoluteAddress);
+    SPARK_API char* getMapName();
+    SPARK_API MapHeader* getMapHeader();
+    SPARK_API bool isOnMap( const char* mapName );
+    SPARK_API bool isMapLoaded();
+    SPARK_API uint64_t translateMapAddress( uint32_t address );
+    SPARK_API uint32_t translateToMapAddress(uint64_t absoluteAddress);
 
 }
