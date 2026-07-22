@@ -150,8 +150,10 @@ New `spark/mod/ModLoader.hpp/.cpp`:
       successful MSBuild): copies `bin/<Config>-Win64/smc64/smc64.dll` (+ `.pdb`) into
       `<MCCPath>/MCC/Binaries/Win64/mods/`, resolving `<MCCPath>` via `-MCCPath` param →
       `$env:MCC_HOME` → hardcoded default, matching `build_libsm64.ps1`'s convention.
-- [ ] Update `package.ps1` / `install_package.ps1` similarly for end-user installs — not
-      yet done.
+- [x] Updated `package.ps1` to stage `smc64.dll` into the package's `mods/` folder
+      (alongside `spark.dll` + the xaudio2 detour), and `install_package.ps1`'s
+      `-Uninstall` path to remove `mods/smc64.dll`/`.pdb` (and the `mods/` directory
+      itself if left empty) without touching any other mods a user may have installed.
 - No changes needed to the core detach → build → reinject loop itself
   (`watch.ps1` / `run_launcher.ps1` / `kill_injected_instances.ps1`) — the loop already
   rebuilds+relaunches the whole solution and doesn't care how many DLLs are involved, as
@@ -160,6 +162,10 @@ New `spark/mod/ModLoader.hpp/.cpp`:
 ## Status as of this writing
 
 - `spark.dll` and `smc64.dll` both compile and link with 0 errors.
-- Not yet done: actual in-game injection/smoke test of the split (does `ModLoader`
-  successfully find and load `smc64.dll`, does Mario actually work end-to-end at
-  runtime); no git commit has been made yet for this migration.
+- `scripts/copy_mods.ps1` verified working for the dev workflow; `package.ps1` /
+  `install_package.ps1` now also stage/remove `smc64.dll` for end-user installs.
+- Still not yet done: full in-game injection/smoke test confirming `ModLoader`
+  loads `smc64.dll` and Mario works end-to-end at runtime (dev workflow via
+  `copy_mods.ps1` appears to be working per manual testing); the ABI version guard
+  and `Spark::halo1` accessor remain deferred (see Phase 0 "still to do").
+- Committed on branch `dll-split` (`93d48f3` + follow-up cleanup commits).

@@ -25,6 +25,15 @@ if (Test-Path $MCCPath) {
             Remove-Item -Path "$MCCBinPath\spark.dll" -Force
             # Restore xaudio backup.
             Rename-Item -Path $XAudioBackupPath -NewName "xaudio2_9redist.dll" -Force
+
+            # Remove our mod DLL(s) from the shared mods/ directory without touching
+            # any other mods a user may have installed there.
+            $ModsDir = "$MCCBinPath\mods"
+            Remove-Item -Path "$ModsDir\smc64.dll" -Force -ErrorAction SilentlyContinue
+            Remove-Item -Path "$ModsDir\smc64.pdb" -Force -ErrorAction SilentlyContinue
+            if ((Test-Path $ModsDir) -and !(Get-ChildItem -Path $ModsDir -Force)) {
+                Remove-Item -Path $ModsDir -Force
+            }
         }
 
     }

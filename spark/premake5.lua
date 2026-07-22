@@ -17,9 +17,6 @@ project "spark"
         "../vendor/imgui/*.cpp",
         "../vendor/imgui/backends/imgui_impl_win32.*",
         "../vendor/imgui/backends/imgui_impl_dx11.*",
-        "../vendor/libsm64/dist/include/*.h",
-        "../vendor/libsm64/dist/include/decomp/*.h",
-        "../vendor/libsm64/dist/include/decomp/PR/*.h"
     }
 
     includedirs {
@@ -28,8 +25,6 @@ project "spark"
         "../vendor/imgui/backends",
         "../vendor/imgui",
         "../vendor/zydis",
-        "../vendor/libsm64/dist/include",
-        "../vendor/libsm64/dist/include/decomp",
     }
 
     defines {
@@ -44,7 +39,6 @@ project "spark"
     links { 
         "MinHook",
         "Zydis",
-        "../vendor/libsm64/dist/sm64",
     }
 
     filter "system:windows"
