@@ -1,6 +1,6 @@
-# SMC64
+# Spark
 
-Super Master Chief 64
+A mod loader for Halo CE on the Master Chief Collection.
 
 ## Installation
 
