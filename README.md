@@ -2,9 +2,19 @@
 
 A mod loader for Halo CE on the Master Chief Collection.
 
+Spark itself doesn't contain any gameplay mod - it hooks the engine, patches
+`xaudio2_9redist.dll` to load `spark.dll` in production, and loads every `*.dll` it finds in a
+`mods/` folder (plus any directories listed in the `SPARK_MODS_PATH` environment variable),
+calling each one's exported `spark_modLoad()` entry point. Mods (e.g.
+[smc64](https://github.com/KodyJKing/smc64)) live in their own repositories and depend on this
+one as a git submodule for the engine API (`SparkAPI.h`), hook registration, event buses, and
+`Engine::` query functions.
+
 ## Installation
 
-Download the latest [release](https://github.com/KodyJKing/smc64/releases) and follow the instructions in `SMC64_REAMDE.md`.
+Download the latest [release](https://github.com/KodyJKing/spark/releases), follow the
+instructions in the archive's `README.md`, then drop whatever mod DLL(s) you want into the
+`mods/` folder it creates.
 
 ## Developer Setup
 
@@ -23,17 +33,17 @@ scripts/build.ps1
 scripts/run_launcher.ps1
 ```
 
-Halo MCC will need to be running when you run `run_launcher.ps1`.
+Halo MCC will need to be running when you run `run_launcher.ps1`. Note that without a mod DLL in `mods/`, spark on its own has no visible gameplay effect - see a mod repo like [smc64](https://github.com/KodyJKing/smc64) to develop against it.
 
 ## Workflow
 
-When developing, run `scripts/watch_launcher.ps1` to build/run in watch mode. When you save a source file, this script will uninject, rebuild, and reinject the mod DLL.
+When developing, run `scripts/watch_launcher.ps1` to build/run in watch mode. When you save a source file, this script will uninject, rebuild, and reinject `spark.dll`.
 
-If you're using Cheat Engine as part of your workflow, turn off symbols in the debug build configuration (`smc64/premake5.lua`). Otherwise, Cheat Engine will hold on to the PDB file and prevent rebuilding.
+If you're using Cheat Engine as part of your workflow, turn off symbols in the debug build configuration (`spark/premake5.lua`). Otherwise, Cheat Engine will hold on to the PDB file and prevent rebuilding.
 
 ## Packaging
 
-If you want to package the mod for distribution, you will need to build MSDetours' `setdll.exe` first. 
+If you want to package spark for distribution, you will need to build MSDetours' `setdll.exe` first. 
 
 Make sure that `nmake` is on your path. For me, it is located under `C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\<latest>\bin\Hostx64\x64`.
 
@@ -55,7 +65,7 @@ All scripts assume you are running from the root of the repository.
 
 ### `build.ps1`
 
-Builds mod once.
+Builds spark once.
 
 Arguments:
 
@@ -64,7 +74,7 @@ Arguments:
 
 ### `run_launcher.ps1`
 
-Injects mod into game once. MCC must already be running.
+Injects spark into game once. MCC must already be running.
 
 Arguments:
 
@@ -74,7 +84,7 @@ Arguments:
 
 ### `watch_build.ps1`
 
-Builds mod and recompiles on file change. 
+Builds spark and recompiles on file change. 
 
 Press `R` in the terminal to rebuild without waiting for a file change.
 
@@ -84,7 +94,7 @@ Arguments:
 
 ### `watch_launcher.ps1`
 
-Builds mod and runs launcher. Uninjects mod from game, recompiles and reruns launcher on file change. 
+Builds spark and runs launcher. Uninjects spark from game, recompiles and reruns launcher on file change. 
 
 Press `R` in the terminal to rebuild without waiting for a file change.
 

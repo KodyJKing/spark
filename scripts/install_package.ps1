@@ -12,7 +12,7 @@ if (Test-Path $MCCPath) {
         # Package the project.
         & "./scripts/package.ps1" -Config $Config -IDE $IDE
         # Install the package.
-        $ZipPath = "bin\$Config-Win64\smc64-$Config.zip"
+        $ZipPath = "bin\$Config-Win64\spark-$Config.zip"
         # Unzip the package into the MCC directory.
         Expand-Archive -Path $ZipPath -Destination $MCCBinPath -Force
     } else {
@@ -26,11 +26,11 @@ if (Test-Path $MCCPath) {
             # Restore xaudio backup.
             Rename-Item -Path $XAudioBackupPath -NewName "xaudio2_9redist.dll" -Force
 
-            # Remove our mod DLL(s) from the shared mods/ directory without touching
-            # any other mods a user may have installed there.
+            # Spark itself doesn't own any mod DLLs - leave mods/ (and its contents)
+            # entirely alone here. Only clean it up if some other step already left it
+            # empty; never touch files inside it, since those belong to individually
+            # installed mods (e.g. smc64), not to spark.
             $ModsDir = "$MCCBinPath\mods"
-            Remove-Item -Path "$ModsDir\smc64.dll" -Force -ErrorAction SilentlyContinue
-            Remove-Item -Path "$ModsDir\smc64.pdb" -Force -ErrorAction SilentlyContinue
             if ((Test-Path $ModsDir) -and !(Get-ChildItem -Path $ModsDir -Force)) {
                 Remove-Item -Path $ModsDir -Force
             }

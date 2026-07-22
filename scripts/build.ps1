@@ -12,7 +12,3 @@ if ($IDE -ne "vs2022") {
 & "premake5.exe" $IDE
 & "MSBuild.exe" "spark.sln" "/t:Build" "/p:Configuration=$Config" "/p:Platform=Win64"
 
-if ($LASTEXITCODE -eq 0) {
-    & "./scripts/copy_mods.ps1" -Config $Config
-}
-

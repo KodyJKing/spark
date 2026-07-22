@@ -169,3 +169,31 @@ New `spark/mod/ModLoader.hpp/.cpp`:
   `copy_mods.ps1` appears to be working per manual testing); the ABI version guard
   and `Spark::halo1` accessor remain deferred (see Phase 0 "still to do").
 - Committed on branch `dll-split` (`93d48f3` + follow-up cleanup commits).
+
+## Phase 4 — Repo split (`smc64.dll` moved to its own repository) — in progress
+
+This repo (`spark`) and `smc64` (the Mario mod) are being split into two separate
+repositories, with `smc64` depending on this repo as a git submodule. See `smc64`'s
+`REPO_SPLIT_PLAN.md` for the full plan. As part of this:
+
+- [x] `smc64/`, `data/` (Mario model/armature conversion), and `tags/` (`mario`,
+      `jackal_shield`, `mario_cyborg`) removed from this repo — all mod-only content now
+      lives exclusively in the `smc64` repo.
+- [x] `vendor/libsm64` submodule removed — mod-only dependency, not needed by spark itself.
+- [x] Top-level `premake5.lua` no longer includes `smc64/premake5.lua`.
+- [x] `scripts/copy_mods.ps1` removed (and its call from `build.ps1`) — staging a specific
+      mod's DLL during dev is now that mod repo's own concern, not spark's.
+- [x] `package.ps1`/`install_package.ps1` now only stage/remove `spark.dll` (the xaudio2
+      detour is how spark itself gets loaded in production) — no more `smc64.dll`-specific
+      logic. The end-user package this produces (`spark-$Config.zip`) is just the loader;
+      a mod repo like `smc64` is expected to build its own package on top of this one
+      (installing spark's package first/alongside, then dropping its own DLL into `mods/`).
+- [x] `spark/shipfiles/SMC64_REAMDE.md` (Mario-specific end-user instructions) removed;
+      replaced with a generic `spark/shipfiles/README.md` covering just the loader.
+- [x] `ModLoader::loadAll()` now also scans directories listed in a `SPARK_MODS_PATH`
+      environment variable (semicolon-delimited, like `PATH`), in addition to the default
+      `<exe-dir>/mods/`, so a mod repo's own build output can be pointed at directly during
+      dev without a copy step.
+- [ ] Not yet done: verifying a full clean build of this repo standalone (no `smc64/`)
+      with 0 errors, and updating `smc64` itself to add this repo as a submodule and wire
+      its own build/package scripts on top.
