@@ -1,3 +1,4 @@
+#define SPARK_EXPORTS
 #include "spark/Spark.hpp"
 #include "spark/SparkHost.hpp"
 #include <Windows.h>
@@ -13,6 +14,10 @@
 #include "mods/freecam/FreecamMod.hpp"
 #include "spark/hook/Hooks.hpp"
 #include "spark/mod/ModRegistry.hpp"
+
+namespace Spark {
+    bool showDebugOverlay = false;
+}
 #include "spark/mod/ModLoader.hpp"
 #include "mods/devtools/DevToolsMod.hpp"
 #include "mods/hooklog/HookLogMod.hpp"

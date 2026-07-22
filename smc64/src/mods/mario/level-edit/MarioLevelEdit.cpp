@@ -6,6 +6,7 @@
 #include "LevelEditWindows.hpp"
 #include "spark/RenderBuses.hpp"
 #include "spark/hook/Hooks.hpp"
+#include "spark/mod/ImGuiBridge.hpp"
 #endif
 
 namespace Mod::Mario::LevelEdit {
@@ -43,9 +44,11 @@ void initHandlers(Spark::ModId modId) {
     using Bus = Spark::EventBus<void>;
     Spark::RenderBSPAlbedo::addHandler(modId, +[](void* ctx, Spark::RenderBSPAlbedo::Cursor next) {
         next();
+        Spark::Mod::syncImGuiContext();
         renderWorld(*static_cast<EditorState*>(ctx));
     }, &s_state);
     Spark::onRenderDebugUI.addHandler(modId, +[](void* ctx, Bus::Cursor next) {
+        Spark::Mod::syncImGuiContext();
         renderUI(*static_cast<EditorState*>(ctx));
         next();
     }, &s_state);
