@@ -11,6 +11,7 @@
 #include "math/Math.hpp"
 #include "memory/Memory.hpp"
 #include "engine/halo1.hpp"
+#include "engine/decomp/index.hpp"
 #include "mods/freecam/FreecamMod.hpp"
 #include "spark/hook/Hooks.hpp"
 #include "spark/mod/ModRegistry.hpp"
@@ -42,8 +43,10 @@ namespace Spark {
         registry.add(new FreecamMod());
         registry.add(new DevToolsMod());
         registry.add(new HookLogMod());
-        modLoader.loadAll(); // LoadLibrary's *.dll from the mods directory (e.g. smc64.dll), calling spark_registerMod() for each.
+        // modLoader.loadAll(); // LoadLibrary's *.dll from the mods directory (e.g. smc64.dll), calling spark_registerMod() for each.
         registry.initAll(halo1);
+
+        Engine::Decomp::install(halo1);
 
         std::cout << "Mods installed." << std::endl;
     }
@@ -52,6 +55,8 @@ namespace Spark {
         if (!isInstalled)
             return;
         isInstalled = false;
+
+        Engine::Decomp::uninstall(halo1);
 
         registry.freeAll();
         modLoader.unloadAll(); // FreeLibrary each mod DLL only after its IMod::free() has already run above.
