@@ -50,6 +50,12 @@ namespace Engine {
         uint32_t vehicleHandle; 
         uint32_t childHandle; 
         uint32_t parentHandle;
+        // pad_00DC+0x60 (absolute offset 0x13C) is believed to be the start of a per-instance
+        // "active permutation index" byte array - see reversing/notes/LineTestSystem.md's
+        // _lineTestVsEntityCollisionRegions section. Indexed by Engine::CollisionNode's selector
+        // field (currently inside CollisionNode::name in collision.hpp, likely mis-sized) to pick
+        // which of a node's collisionBsps entries is the entity's current active permutation.
+        // Not carved out of this padding yet - exact array length unconfirmed.
         char pad_00DC[204];
         ChildArrayHeader<QuatTransform> bones;
         ChildArrayHeader<Transform> worldBones;
@@ -86,6 +92,8 @@ namespace Engine {
         uint16_t boneCount();
         QuatTransform* getBoneTransforms() { return bones.get( this, 0 ); }
         std::vector<QuatTransform> copyBoneTransforms();
+
+        uint16_t getBspPermutation(uint16_t index);
     };
     static_assert( offsetof(Entity, animId) == 0x8C );
     static_assert( offsetof(Entity, animFrame) == 0x8E );

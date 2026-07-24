@@ -18,7 +18,17 @@ namespace Engine {
     static_assert(offsetof(CollisionTagData, collisionNodes.offset) == 0x290, "CollisionTagData::collisionNodes.count offset is not 0x290 bytes");
 
     struct CollisionNode {
-        char name[0x2C];
+        // NOTE (2026-07-23, see reversing/notes/LineTestSystem.md "_lineTestVsEntityCollisionRegions"
+        // section): `name`/`region`/`parentNode`/`nextSiblingNode`/`firstChildNode` below are an
+        // UNVERIFIED guess. A live decompile of _lineTestVsEntityCollisionRegions (0xC47940) reads a
+        // binary int16_t permutation-selector at +0x20 (used to index Entity+0x13c's per-instance
+        // permutation-state array, clamped to collisionBsps.count, to pick the ONE active BSP for
+        // this node) - that falls inside this guessed 0x2C-byte name field. Halo tag names are
+        // conventionally 32 bytes (0x20), which would put a real field boundary exactly at +0x20.
+        // Only `collisionBsps` (+0x34/+0x38, asserted below) is confirmed correct independently.
+        char name[0x20];
+        uint16_t permutationIndex;
+        char pad_0x22[0xA];
         uint16_t region;
         uint16_t parentNode;
         uint16_t nextSiblingNode;

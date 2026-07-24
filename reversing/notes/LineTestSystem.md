@@ -72,9 +72,9 @@ The function is stored in a function pointer table (sole Ghidra reference is a `
 | `+0x24` | `Vec4` | Hit plane normal + distance (world space, 16 bytes) |
 | `+0x34` | `int16_t` | Surface material type (from collision tag's surface table) |
 | `+0x38` | `uint32_t` | Entity handle (copied from query) |
-| `+0x3c` | `int16_t` | ? (from `_lineTestVsEntityCollisionRegions` output[1]) **[UNVERIFIED semantics]** |
+| `+0x3c` | `int16_t` | Permutation selector index — raw `node+0x20` value from `_lineTestVsEntityCollisionRegions` output[1] (index into `Entity+0x13c`'s per-instance byte array, **before** clamping). See `_lineTestVsEntityCollisionRegions` section below. |
 | `+0x3e` | `int16_t` | Bone/region index |
-| `+0x40` | `int16_t` | ? (from `_lineTestVsEntityCollisionRegions` output[3]) **[UNVERIFIED semantics]** |
+| `+0x40` | `int16_t` | Clamped permutation index actually tested this hit (`_lineTestVsEntityCollisionRegions` output[2] = `_clampedPermutationIndex`). See `_lineTestVsEntityCollisionRegions` section below. |
 | `+0x44` | `uint32_t` | ? **[UNVERIFIED semantics]** |
 | `+0x48` | `int32_t` | `local_46c` — sign used for plane flip; semantics unknown **[UNVERIFIED semantics]** |
 | `+0x4c` | `uint8_t` | Flags byte |
@@ -109,27 +109,33 @@ Partial — only fields accessed by `_lineTestVsEntityModel`.
 
 ---
 
-## `_lineTestVsEntityCollisionRegions` — Per-Region BSP Dispatcher
+## `_lineTestVsEntityCollisionRegions` — Per-Node Permutation/BSP Selection
 
 **Offset:** `0xC47940`  
-**Confidence:** Medium
+**Confidence:** Medium-high (hand-read from a fresh Ghidra decompile 2026-07-23; not yet dynamically isolated on its own — only as part of the whole-chain test in "Dynamic Validation" above)
 
-Iterates over an entity's collision regions (count at `EntityCollisionData+0x8+0x28c`). For each region:
+Iterates `node` over `CollisionTagData->collisionNodes` (`Engine::CollisionNode`, stride `0x40`, count at `CollisionTagData+0x28c`, matching `collision.hpp`'s `CollisionTagData`/`CollisionNode`). For each node (loop variable named `_nodeIndex` in Ghidra):
 
-1. Looks up the region's bone permutation via a byte-indexed clamped table — determines which permutation is active based on the entity's current bone data.
-2. If the permutation's BSP has faces (`piVar8[0] > 0`), proceeds.
-3. Inverts the bone's transform (or uses identity if the scale matches a sentinel value).
-4. Transforms the ray origin and direction into bone-local space.
-5. Calls `_lineTestVsBSP` with clamped entry `t` (from the previous best hit, or 0).
-6. On a hit, writes `[bone, permutation, region]` back to the output short array (`param_5`).
+1. **Permutation selector index** — reads `int16_t` at `node+0x20`. If it's `-1`, the node is skipped entirely (no active geometry for it this frame). Otherwise this value is used as an index into the entity's own per-instance byte array (see below).
+2. **Skip empty nodes** — if `node->collisionBsps.count` (at `node+0x34`) is `0`, skip.
+3. **Resolve + clamp the active permutation** — reads `collisionData->field6_0x10[selectorIndex]` (a `uint8_t`; `field6_0x10` is `EntityCollisionData+0x10`, which `getEntityCollisionData` points at **`Entity+0x13c`** — Ghidra's own auto-generated name for that field is `field_0x13c_collisionRelated`). This byte is clamped to `[0, node->collisionBsps.count - 1]` to get the final permutation index (`_clampedPermutationIndex`).
+4. **Pick the one active `CollisionBSP`** — indexes `node->collisionBsps` (base at `node+0x38`, relocated) by `_clampedPermutationIndex * sizeof(CollisionBSP)` (`0x60` bytes — `CollisionBSP` has 8 `BlockPointer`s, and `engine/tag.hpp`'s `BlockPointer` is 12 bytes: `count`+`offset`+`bullshit`, so `8 * 12 = 0x60`, self-consistent with `bsp.hpp`). **Only this single BSP is tested** — sibling permutations at other indices in the same node are never touched this call.
+5. If the selected BSP has geometry (`selectedBsp->bsp3DNodes.count > 0`, checked via the first `int` of the struct), inverts the bone's transform (or uses identity if the bone's scale matches a sentinel value `DAT_7ff9d8c73898`), transforms the ray into bone-local space, and calls `_lineTestVsBSP`.
+6. On a hit, writes `[nodeIndex, selectorIndex, clampedPermutationIndex]` back to the output short array (`param_5`, aka `outRegionHit`/`RegionHitOutput` in the hand-decompiled `_lineTestVsEntityModel.hpp`).
 
-The output array (`param_5`, 6 shorts) layout:
+**This is the mechanism that decides which single BSP/permutation is "the" collision geometry for a node** — it is **not** "merge every BSP the node has"; it's "the entity has one active permutation per permutation-group (indexed via `node+0x20` into `Entity+0x13c`), clamped to that node's own BSP count, and only that one is live." A node with multiple `collisionBsps` entries is analogous to a render model's Region → Permutations (e.g. damage states, alternate variants) — normally exactly one is "on" at a time, selected by the entity's own state, not something a consumer should merge together.
+
+**Practical implication:** `Mod::Mario::DynamicGeometry.cpp`'s `convertCollisionBSPToSM64Surfaces` currently loops over *every* index in `node->collisionBsps` and merges all their surfaces — this is why some entities were observed rendering overlapping/duplicate collision meshes (every permutation variant stacked together instead of just the active one). The two other existing consumers of this data, `getObjectCollisionBSP` ([`collision.cpp`](../../spark/src/engine/tags/collision.cpp)) and `drawEntityCollision` ([`DrawEntityCollision.cpp`](../../spark/src/mods/devtools/DrawEntityCollision.cpp)), both sidestep this entirely by hard-coding index `0` rather than resolving the real active permutation — that's a reasonable approximation (index 0 is very often the only/default permutation) but not equivalent to what the engine's own line-test actually does.
+
+**Struct-layout implication — `Engine::CollisionNode` in `collision.hpp` needs a second look:** the `char name[0x2C]` guess is very likely wrong for the `+0x20..+0x2C` byte range, since this decompile reads a live binary `int16_t` selector at `node+0x20` — that's *inside* the guessed name field. Halo tag "name" fields are conventionally 32 bytes (`0x20`), which would put a real field boundary exactly at `+0x20` — consistent with the selector living immediately after a `name[0x20]` rather than in the middle of a 44-byte one. The `region`/`parentNode`/`nextSiblingNode`/`firstChildNode` shorts currently guessed at `+0x2C..+0x34` are therefore also suspect (real fields, but possibly at different offsets, or different fields altogether) — **not re-verified here**. Only `+0x20` (permutation selector) and `+0x34`/`+0x38` (`collisionBsps` BlockPointer) are confirmed live reads from this function. `+0x38` is unchanged/still correct either way, since it's independently confirmed by the `collisionBsps.offset` static_assert.
+
+The full output array (`param_5`/`outRegionHit`, 6 shorts) layout (matches `RegionHitOutput` in `_lineTestVsEntityModel.hpp`):
 
 | Index | Content |
 |-------|---------|
-| `[0]` | Bone index of closest hit |
-| `[1]` | Permutation index |
-| `[2]` | Sub-region index |
+| `[0]` | Bone/node index of closest hit |
+| `[1]` | Permutation selector index (the raw `node+0x20` value, **not** the clamped index) |
+| `[2]` | Clamped permutation index actually tested (`_clampedPermutationIndex`) |
 | `[4]` | Best `t` (float, reinterpreted as short pair) |
 | `[5]` | Init to `0x7f7f` (large float = "no hit yet") |
 
@@ -152,4 +158,5 @@ The `t` parameter convention used internally is **inverse-parametric**: `t=0` is
 2. ~~**Confirm CollisionResult offsets**~~ — **Done.** Confirmed dynamically via `smc64-dlltest-unicorn`'s `LineTestVsEntityModelTest.cpp` (see "Dynamic Validation" above) by calling the real function against a captured dump rather than a live-session breakpoint. `resultType`, `fraction`, hit point, plane, `materialType`, `entityHandle`, `boneIndex`, and `surfaceIndex` are all confirmed.
 3. **What is `local_46c`** (the sign-flip field at `+0x48`)? Read back as `0` in the one dynamic test run so far — possibly a "back-face" indicator or a surface normal orientation flag that's only nonzero for certain hit types. Try a ray that hits a back-facing surface (e.g. from inside a BSP volume looking out) to get a nonzero sample.
 4. **Surface material stride** — the `0x48` stride matches Halo's `collision_model` surface struct. Confirm against HCEEK tag definitions. (`materialType = 21` was observed for the player biped hit in the dynamic test — cross-reference against the biped's collision tag surfaces in HCEEK to confirm the meaning of type 21.)
-5. **Fields `+0x3c`/`+0x40`/`+0x44`** all read back as `0` for the one hit sampled so far — need a test against a more complex multi-region/multi-permutation entity (e.g. a vehicle) to get nonzero samples and infer their meaning.
+5. ~~**Fields `+0x3c`/`+0x40`**~~ — **Mostly resolved (2026-07-23)**, from a fresh Ghidra decompile of `_lineTestVsEntityCollisionRegions` (see its section above): `+0x3c` is the raw (unclamped) permutation-selector index read from `node+0x20`, and `+0x40` is the clamped permutation index actually tested. Still not dynamically re-validated in isolation (both read back as `0` in the one biped test, consistent with a single-permutation node). `+0x44` remains unexplained.
+6. ~~**`Engine::CollisionNode`'s layout in `collision.hpp` needs re-verification**~~ — **Hypothesis corroborated (2026-07-23):** the three-part chain (`Entity+0x13c` = start of a per-instance active-permutation byte array → `EntityCollisionData+0x10` is a live pointer into it → `CollisionNode+0x20` is the selector index into it) is now cross-referenced across `engine/entity/types.hpp`, `EntityCollisionData.hpp`, and `collision.hpp`. Still not dynamically isolated (no confirmed byte values read from a real multi-permutation entity yet), and the exact byte boundaries of `CollisionNode` between `+0x20` and `+0x34` (and the true length of `Entity`'s permutation array) remain unconfirmed. Next step would be a dynamic dump of a real multi-permutation entity (e.g. a vehicle with a damage-state part) to read nonzero values out of `Entity+0x13c` and confirm the array's extent.

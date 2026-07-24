@@ -26,6 +26,13 @@ namespace Engine {
         return result;
     }
 
+    uint16_t Entity::getBspPermutation(uint16_t index) {
+        if (index >= 1024) return 0;
+        auto ptr = (uintptr_t)this + 0x13c + index;
+        auto value = Memory::safeRead<uint8_t>(ptr).value_or(0);
+        return value;
+    }
+
     bool isReloading( Entity* entity ) { return entity->weaponAnim == 0x05; }
     bool isDoingMelee( Entity* entity ) { return entity->weaponAnim == 0x07; }
 

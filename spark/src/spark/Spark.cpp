@@ -43,7 +43,7 @@ namespace Spark {
         registry.add(new FreecamMod());
         registry.add(new DevToolsMod());
         registry.add(new HookLogMod());
-        // modLoader.loadAll(); // LoadLibrary's *.dll from the mods directory (e.g. smc64.dll), calling spark_registerMod() for each.
+        modLoader.loadAll(); // LoadLibrary's *.dll from the mods directory (e.g. smc64.dll), calling spark_registerMod() for each.
         registry.initAll(halo1);
 
         Engine::Decomp::install(halo1);
