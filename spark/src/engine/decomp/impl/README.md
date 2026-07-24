@@ -1,7 +1,7 @@
 # Decomp conventions
 
 ### Functions
-- One file per function.
+- One file per public impl function. (private helpers are okay)
 - Use the exact same name as used in Ghidra.
 
 ### Types
