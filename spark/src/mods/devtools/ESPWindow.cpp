@@ -236,6 +236,10 @@ namespace Mod::DevTools {
             // Child handle:
             uint32_t childHandle = playerEntity->childHandle;
             ImGui::Text("Child Handle: %X", childHandle);
+
+            // World Bones:
+            auto worldBones = playerEntity->worldBones.get(playerEntity, 0);
+            ImGuiUtils::renderCopyableTextf("World Bones Pointer", "%p", (void*) worldBones);
         }
 
         // Player input:
