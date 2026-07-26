@@ -99,7 +99,7 @@ void HookLogMod::init() {
         next(flareHandle);
     }, nullptr);
 
-    Spark::SpawnObject::addHandler(modId_, +[](void*, auto next, Engine::SpawnObjectArgs* args, uint32_t flags) -> uint32_t {
+    Spark::SpawnObject::addHandler(modId_, +[](void*, auto next, Engine::SpawnObjectArgs* args, uint32_t flags, uint64_t param_3, uint64_t param_4) -> uint32_t {
         if (Mod::HookLog::toggles.SpawnObject && Mod::HookLog::shouldLog(Mod::HookLog::lastLogTimes.SpawnObject))
             std::cout << "[HookLog] SpawnObject\n"
                       << "  objectTagId=" << (void*)(uintptr_t)args->objectTagId << "\n"
@@ -111,8 +111,10 @@ void HookLogMod::init() {
                       << "  unknown4=" << args->unknown4 << "\n"
                       << "  unknown5=" << args->unknown5 << "\n"
                       << "  spawnPosition=(" << args->spawnPosition.x << ", " << args->spawnPosition.y << ", " << args->spawnPosition.z << ")\n"
-                      << "  flags=" << flags << "\n";
-        return next(args, flags);
+                      << "  flags=" << flags << "\n"
+                      << "  param_3=" << (void*)(uintptr_t)param_3 << "\n"
+                      << "  param_4=" << (void*)(uintptr_t)param_4 << "\n";
+        return next(args, flags, param_3, param_4);
     }, nullptr);
 
     Spark::DamageEntity::addHandler(modId_, +[](void*, auto next, Engine::DamageEvent* event, uint32_t entityHandle, uint16_t param_3, uint16_t param_4, int16_t hitBoneIndex, uint64_t param_6) {

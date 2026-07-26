@@ -14,6 +14,7 @@ namespace Engine {
         uint32_t unknown4;
         uint32_t unknown5;
         Vec3 spawnPosition;
+        char _safetyPadding[0x40];
     };
 
 }
