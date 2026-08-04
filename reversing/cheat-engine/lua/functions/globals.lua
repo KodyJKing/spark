@@ -12,7 +12,7 @@ end
 
 function prints(s)
     print(s)
-    return s
+    return false
 end
 
 function hex(x)

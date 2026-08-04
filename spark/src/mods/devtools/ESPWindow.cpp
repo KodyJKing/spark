@@ -186,6 +186,7 @@ namespace Mod::DevTools {
         ImGui::Text("Frag Count: %d", inventory->fragCount);
         ImGui::Text("Plasma Count: %d", inventory->plasmaCount);
         ImGui::Text("Active Weapon Handle: %X", inventory->activeWeaponHandle());
+        ImGuiUtils::renderCopyableTextf("Inventory Pointer", "%p", (void*) inventory);
     }
 
     void playerController() {
