@@ -16,7 +16,6 @@
 class Halo1Module {
 public:
     // Matches the install path used by scripts/install_package.ps1 and
-    // scripts/build_libsm64.ps1.
     static constexpr const char* kDefaultPath =
         R"(C:\Program Files (x86)\Steam\steamapps\common\Halo The Master Chief Collection\halo1\halo1.dll)";
 
