@@ -21,10 +21,10 @@
 #define SPARK_GAMEPAD_RIGHT_THUMB 519
 #define SPARK_GAMEPAD_LEFT_SHOULDER 520
 #define SPARK_GAMEPAD_RIGHT_SHOULDER 521
-#define SPARK_GAMEPAD_A 522
-#define SPARK_GAMEPAD_B 523
-#define SPARK_GAMEPAD_X 524
-#define SPARK_GAMEPAD_Y 525
+#define SPARK_GAMEPAD_A 524
+#define SPARK_GAMEPAD_B 525
+#define SPARK_GAMEPAD_X 526
+#define SPARK_GAMEPAD_Y 527
 
 // Axes: value 0-1, split into two codes for axes that go negative
 #define SPARK_GAMEPAD_LEFT_TRIGGER       528  // 0-1
