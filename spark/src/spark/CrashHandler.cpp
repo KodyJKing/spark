@@ -17,6 +17,10 @@
 #pragma comment(lib, "dbghelp.lib")
 #pragma comment(lib, "psapi.lib")
 
+#ifdef _DEBUG
+    #define ENABLE_CRASH_HANDLER 1
+#endif
+
 namespace Spark::CrashHandler {
 
 static void*                          s_vehHandle = nullptr;
@@ -201,6 +205,7 @@ static LONG WINAPI handler(EXCEPTION_POINTERS* ep) {
 }
 
 void install() {
+    #ifdef ENABLE_CRASH_HANDLER
     wchar_t exePath[MAX_PATH];
     GetModuleFileNameW(nullptr, exePath, MAX_PATH);
     s_decisionsPath = std::filesystem::path(exePath).parent_path() / L"crash_handler_decisions.txt";
@@ -211,14 +216,17 @@ void install() {
 
     s_vehHandle = AddVectoredExceptionHandler(1, handler);
     std::cout << "[CrashHandler] VEH installed (" << s_vehHandle << ")" << std::endl;
+    #endif
 }
 
 void uninstall() {
+    #ifdef ENABLE_CRASH_HANDLER
     if (s_vehHandle) {
         RemoveVectoredExceptionHandler(s_vehHandle);
         s_vehHandle = nullptr;
         std::cout << "[CrashHandler] VEH removed" << std::endl;
     }
+    #endif
 }
 
 } // namespace Spark::CrashHandler

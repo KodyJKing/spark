@@ -10,6 +10,10 @@
 #include "spark/overlay/Overlay.hpp"
 #include "spark/CrashHandler.hpp"
 
+#ifdef _DEBUG
+#define ENABLE_DEBUG_CONTROLS 1
+#endif
+
 // MainThread
 DWORD WINAPI MainThread(LPVOID _hModule) {
     HMODULE hModule = (HMODULE) _hModule;
@@ -30,16 +34,20 @@ DWORD WINAPI MainThread(LPVOID _hModule) {
         Spark::Overlay::init();
         
         while (!SparkHost::bExit && !SparkHost::bReinit) {
-            if (GetAsyncKeyState(VK_F8) & 1)
-                Console::toggleConsole();
+            
             if ( Utils::isInjected() && (GetAsyncKeyState(VK_F9) & 1) ) { // Only allow uninjecting if the mod was injected.
                 SparkHost::exit();
                 break;
             }
+            #ifdef ENABLE_DEBUG_CONTROLS
+            if (GetAsyncKeyState(VK_F8) & 1)
+                Console::toggleConsole();
             if (GetAsyncKeyState(VK_F10) & 1) {
                 SparkHost::reinitialize();
                 break;
             }
+            #endif
+
             Spark::modThreadUpdate();
             Sleep(1000 / 60);
         }
