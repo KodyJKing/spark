@@ -5,9 +5,9 @@
 
 namespace Spark::Input {
 
-std::unordered_map<std::string, std::vector<ButtonCode>> defaultBindings;
+std::map<std::string, std::vector<ButtonCode>> defaultBindings;
 
-static std::unordered_map<std::string, std::vector<ButtonCode>> s_currentBindings;
+static std::map<std::string, std::vector<ButtonCode>> s_currentBindings;
 static const std::vector<ButtonCode> s_empty;
 
 void addAction(const char* actionName, const ButtonCode* defaultButtons, int count) {

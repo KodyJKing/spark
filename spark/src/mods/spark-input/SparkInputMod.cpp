@@ -6,10 +6,6 @@
 #include "imgui.h"
 
 void SparkInputMod::init() {
-
-    // Add test keybind
-    Spark::Input::addAction("test_action", 255);
-
     Spark::UpdateAllEntities::addHandler(modId_, +[](void* ctx, auto next) {
         Spark::Input::update();
         next();

@@ -16,122 +16,114 @@ static IDirectInputDevice8*  g_keyboard = nullptr;
 
 // DIK_ scan code names, indexed 0x00-0xFF
 static const char* s_keyNames[256] = {
-    nullptr,        // 0x00
-    "Escape",       // 0x01
-    "1",            // 0x02
-    "2",            // 0x03
-    "3",            // 0x04
-    "4",            // 0x05
-    "5",            // 0x06
-    "6",            // 0x07
-    "7",            // 0x08
-    "8",            // 0x09
-    "9",            // 0x0A
-    "0",            // 0x0B
-    "Minus",        // 0x0C
-    "Equals",       // 0x0D
-    "Backspace",    // 0x0E
-    "Tab",          // 0x0F
-    "Q",            // 0x10
-    "W",            // 0x11
-    "E",            // 0x12
-    "R",            // 0x13
-    "T",            // 0x14
-    "Y",            // 0x15
-    "U",            // 0x16
-    "I",            // 0x17
-    "O",            // 0x18
-    "P",            // 0x19
-    "LBracket",     // 0x1A
-    "RBracket",     // 0x1B
-    "Enter",        // 0x1C
-    "LCtrl",        // 0x1D
-    "A",            // 0x1E
-    "S",            // 0x1F
-    "D",            // 0x20
-    "F",            // 0x21
-    "G",            // 0x22
-    "H",            // 0x23
-    "J",            // 0x24
-    "K",            // 0x25
-    "L",            // 0x26
-    "Semicolon",    // 0x27
-    "Apostrophe",   // 0x28
-    "Grave",        // 0x29
-    "LShift",       // 0x2A
-    "Backslash",    // 0x2B
-    "Z",            // 0x2C
-    "X",            // 0x2D
-    "C",            // 0x2E
-    "V",            // 0x2F
-    "B",            // 0x30
-    "N",            // 0x31
-    "M",            // 0x32
-    "Comma",        // 0x33
-    "Period",       // 0x34
-    "Slash",        // 0x35
-    "RShift",       // 0x36
-    "Numpad*",      // 0x37
-    "LAlt",         // 0x38
-    "Space",        // 0x39
-    "CapsLock",     // 0x3A
-    "F1",           // 0x3B
-    "F2",           // 0x3C
-    "F3",           // 0x3D
-    "F4",           // 0x3E
-    "F5",           // 0x3F
-    "F6",           // 0x40
-    "F7",           // 0x41
-    "F8",           // 0x42
-    "F9",           // 0x43
-    "F10",          // 0x44
-    "NumLock",      // 0x45
-    "ScrollLock",   // 0x46
-    "Numpad7",      // 0x47
-    "Numpad8",      // 0x48
-    "Numpad9",      // 0x49
-    "Numpad-",      // 0x4A
-    "Numpad4",      // 0x4B
-    "Numpad5",      // 0x4C
-    "Numpad6",      // 0x4D
-    "Numpad+",      // 0x4E
-    "Numpad1",      // 0x4F
-    "Numpad2",      // 0x50
-    "Numpad3",      // 0x51
-    "Numpad0",      // 0x52
-    "NumpadDot",    // 0x53
-    nullptr,        // 0x54
-    nullptr,        // 0x55
-    nullptr,        // 0x56
-    "F11",          // 0x57
-    "F12",          // 0x58
-    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 0x59-0x5F
-    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 0x60-0x67
-    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 0x68-0x6F
-    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 0x70-0x77
-    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 0x78-0x7F
-    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 0x80-0x87
-    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 0x88-0x8F
-    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 0x90-0x97
-    nullptr, nullptr, nullptr, nullptr,                                     // 0x98-0x9B
-    "NumpadEnter",  // 0x9C
-    "RCtrl",        // 0x9D
-    nullptr, nullptr,                                                       // 0x9E-0x9F
-    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 0xA0-0xA7
-    nullptr, nullptr, nullptr, nullptr, nullptr,                            // 0xA8-0xAC
-    "Numpad/",      // 0xAD ... actually DIK_DIVIDE is 0xB5
-    nullptr, nullptr,                                                       // 0xAE-0xAF
-    nullptr, nullptr, nullptr, nullptr, nullptr,                            // 0xB0-0xB4
-    "Numpad/",      // 0xB5
-    nullptr, nullptr,                                                       // 0xB6-0xB7
-    "RAlt",         // 0xB8
-    nullptr,        // 0xB9
-    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 0xBA-0xBF -> actually 0xBA-0xC1 wrong - let me just fill correctly
-    // Actually let me just do blocks:
+    /* 00 */ nullptr,
+    /* 01 */ "Escape",
+    /* 02 */ "1",          /* 03 */ "2",          /* 04 */ "3",          /* 05 */ "4",
+    /* 06 */ "5",          /* 07 */ "6",          /* 08 */ "7",          /* 09 */ "8",
+    /* 0A */ "9",          /* 0B */ "0",          /* 0C */ "Minus",      /* 0D */ "Equals",
+    /* 0E */ "Backspace",  /* 0F */ "Tab",
+    /* 10 */ "Q",          /* 11 */ "W",          /* 12 */ "E",          /* 13 */ "R",
+    /* 14 */ "T",          /* 15 */ "Y",          /* 16 */ "U",          /* 17 */ "I",
+    /* 18 */ "O",          /* 19 */ "P",          /* 1A */ "LBracket",   /* 1B */ "RBracket",
+    /* 1C */ "Enter",      /* 1D */ "LCtrl",
+    /* 1E */ "A",          /* 1F */ "S",          /* 20 */ "D",          /* 21 */ "F",
+    /* 22 */ "G",          /* 23 */ "H",          /* 24 */ "J",          /* 25 */ "K",
+    /* 26 */ "L",          /* 27 */ "Semicolon",  /* 28 */ "Apostrophe", /* 29 */ "Grave",
+    /* 2A */ "LShift",     /* 2B */ "Backslash",
+    /* 2C */ "Z",          /* 2D */ "X",          /* 2E */ "C",          /* 2F */ "V",
+    /* 30 */ "B",          /* 31 */ "N",          /* 32 */ "M",          /* 33 */ "Comma",
+    /* 34 */ "Period",     /* 35 */ "Slash",       /* 36 */ "RShift",     /* 37 */ "Numpad*",
+    /* 38 */ "LAlt",       /* 39 */ "Space",       /* 3A */ "CapsLock",
+    /* 3B */ "F1",         /* 3C */ "F2",          /* 3D */ "F3",         /* 3E */ "F4",
+    /* 3F */ "F5",         /* 40 */ "F6",          /* 41 */ "F7",         /* 42 */ "F8",
+    /* 43 */ "F9",         /* 44 */ "F10",
+    /* 45 */ "NumLock",    /* 46 */ "ScrollLock",
+    /* 47 */ "Numpad7",    /* 48 */ "Numpad8",    /* 49 */ "Numpad9",    /* 4A */ "Numpad-",
+    /* 4B */ "Numpad4",    /* 4C */ "Numpad5",    /* 4D */ "Numpad6",    /* 4E */ "Numpad+",
+    /* 4F */ "Numpad1",    /* 50 */ "Numpad2",    /* 51 */ "Numpad3",    /* 52 */ "Numpad0",
+    /* 53 */ "NumpadDot",
+    /* 54 */ nullptr,      /* 55 */ nullptr,
+    /* 56 */ "OEM102",
+    /* 57 */ "F11",        /* 58 */ "F12",
+    /* 59 */ nullptr,      /* 5A */ nullptr,      /* 5B */ nullptr,      /* 5C */ nullptr,
+    /* 5D */ nullptr,      /* 5E */ nullptr,      /* 5F */ nullptr,
+    /* 60 */ nullptr,      /* 61 */ nullptr,      /* 62 */ nullptr,      /* 63 */ nullptr,
+    /* 64 */ "F13",        /* 65 */ "F14",        /* 66 */ "F15",
+    /* 67 */ nullptr,      /* 68 */ nullptr,      /* 69 */ nullptr,      /* 6A */ nullptr,
+    /* 6B */ nullptr,      /* 6C */ nullptr,      /* 6D */ nullptr,      /* 6E */ nullptr,
+    /* 6F */ nullptr,
+    /* 70 */ "Kana",
+    /* 71 */ nullptr,      /* 72 */ nullptr,
+    /* 73 */ "ABNT_C1",
+    /* 74 */ nullptr,      /* 75 */ nullptr,      /* 76 */ nullptr,      /* 77 */ nullptr,
+    /* 78 */ nullptr,
+    /* 79 */ "Convert",
+    /* 7A */ nullptr,
+    /* 7B */ "NoConvert",
+    /* 7C */ nullptr,
+    /* 7D */ "Yen",        /* 7E */ "ABNT_C2",
+    /* 7F */ nullptr,
+    /* 80 */ nullptr,      /* 81 */ nullptr,      /* 82 */ nullptr,      /* 83 */ nullptr,
+    /* 84 */ nullptr,      /* 85 */ nullptr,      /* 86 */ nullptr,      /* 87 */ nullptr,
+    /* 88 */ nullptr,      /* 89 */ nullptr,      /* 8A */ nullptr,      /* 8B */ nullptr,
+    /* 8C */ nullptr,
+    /* 8D */ "NumpadEquals",
+    /* 8E */ nullptr,      /* 8F */ nullptr,
+    /* 90 */ "PrevTrack",
+    /* 91 */ "At",         /* 92 */ "Colon",      /* 93 */ "Underline",
+    /* 94 */ "Kanji",      /* 95 */ "Stop",       /* 96 */ "AX",         /* 97 */ "Unlabeled",
+    /* 98 */ nullptr,
+    /* 99 */ "NextTrack",
+    /* 9A */ nullptr,      /* 9B */ nullptr,
+    /* 9C */ "NumpadEnter",
+    /* 9D */ "RCtrl",
+    /* 9E */ nullptr,      /* 9F */ nullptr,
+    /* A0 */ "Mute",       /* A1 */ "Calculator", /* A2 */ "PlayPause",
+    /* A3 */ nullptr,
+    /* A4 */ "MediaStop",
+    /* A5 */ nullptr,      /* A6 */ nullptr,      /* A7 */ nullptr,      /* A8 */ nullptr,
+    /* A9 */ nullptr,      /* AA */ nullptr,      /* AB */ nullptr,      /* AC */ nullptr,
+    /* AD */ nullptr,
+    /* AE */ "VolumeDown",
+    /* AF */ nullptr,
+    /* B0 */ "VolumeUp",
+    /* B1 */ nullptr,
+    /* B2 */ "WebHome",    /* B3 */ "NumpadComma",
+    /* B4 */ nullptr,
+    /* B5 */ "Numpad/",
+    /* B6 */ nullptr,
+    /* B7 */ "SysRq",      /* B8 */ "RAlt",
+    /* B9 */ nullptr,      /* BA */ nullptr,      /* BB */ nullptr,      /* BC */ nullptr,
+    /* BD */ nullptr,      /* BE */ nullptr,      /* BF */ nullptr,
+    /* C0 */ nullptr,      /* C1 */ nullptr,      /* C2 */ nullptr,      /* C3 */ nullptr,
+    /* C4 */ nullptr,
+    /* C5 */ "Pause",
+    /* C6 */ nullptr,
+    /* C7 */ "Home",       /* C8 */ "Up",         /* C9 */ "PgUp",
+    /* CA */ nullptr,
+    /* CB */ "Left",
+    /* CC */ nullptr,
+    /* CD */ "Right",
+    /* CE */ nullptr,
+    /* CF */ "End",        /* D0 */ "Down",       /* D1 */ "PgDn",
+    /* D2 */ "Insert",     /* D3 */ "Delete",
+    /* D4 */ nullptr,      /* D5 */ nullptr,      /* D6 */ nullptr,      /* D7 */ nullptr,
+    /* D8 */ nullptr,      /* D9 */ nullptr,      /* DA */ nullptr,
+    /* DB */ "LWin",       /* DC */ "RWin",       /* DD */ "Apps",
+    /* DE */ "Power",      /* DF */ "Sleep",
+    /* E0 */ nullptr,      /* E1 */ nullptr,      /* E2 */ nullptr,
+    /* E3 */ "Wake",
+    /* E4 */ nullptr,
+    /* E5 */ "WebSearch",  /* E6 */ "WebFavorites", /* E7 */ "WebRefresh",
+    /* E8 */ "WebStop",    /* E9 */ "WebForward",   /* EA */ "WebBack",
+    /* EB */ "MyComputer", /* EC */ "Mail",         /* ED */ "MediaSelect",
+    /* EE */ nullptr,      /* EF */ nullptr,
+    /* F0 */ nullptr,      /* F1 */ nullptr,      /* F2 */ nullptr,      /* F3 */ nullptr,
+    /* F4 */ nullptr,      /* F5 */ nullptr,      /* F6 */ nullptr,      /* F7 */ nullptr,
+    /* F8 */ nullptr,      /* F9 */ nullptr,      /* FA */ nullptr,      /* FB */ nullptr,
+    /* FC */ nullptr,      /* FD */ nullptr,      /* FE */ nullptr,      /* FF */ nullptr,
 };
 
-// Fully initialize the rest with extended keys inline is unwieldy;
-// instead we patch the known extended entries after definition.
 static const char* s_mouseNames[8] = {
     "Mouse1", "Mouse2", "Mouse3", "Mouse4",
     "Mouse5", "Mouse6", "Mouse7", "Mouse8",

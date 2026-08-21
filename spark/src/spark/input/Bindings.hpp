@@ -5,7 +5,7 @@
 
 #include <string>
 #include <vector>
-#include <unordered_map>
+#include <map>
 
 namespace Spark::Input {
     SPARK_API void addAction(const char* actionName, const ButtonCode* defaultButtons, int count);
@@ -17,5 +17,5 @@ namespace Spark::Input {
     SPARK_API unsigned char actionPressed(const char* actionName, unsigned char* lastState);
 
     const std::vector<ButtonCode>& getBoundButtons(const char* actionName);
-    extern std::unordered_map<std::string, std::vector<ButtonCode>> defaultBindings;
+    extern std::map<std::string, std::vector<ButtonCode>> defaultBindings;
 }

@@ -40,18 +40,26 @@ static void updateKeyboardControls(Engine::Camera* camera) {
     Vec3 up    = camera->up;
     Vec3 right = fwd.cross(up);
 
-    if (GetAsyncKeyState('W') & 0x8000) camera->pos += fwd   * speed;
-    if (GetAsyncKeyState('S') & 0x8000) camera->pos -= fwd   * speed;
-    if (GetAsyncKeyState('A') & 0x8000) camera->pos -= right * speed;
-    if (GetAsyncKeyState('D') & 0x8000) camera->pos += right * speed;
-    if (GetAsyncKeyState('R') & 0x8000) camera->pos += up    * speed;
-    if (GetAsyncKeyState('F') & 0x8000) camera->pos -= up    * speed;
+    if (Spark::Input::actionState("freecam:forward") & 0x80)  camera->pos += fwd   * speed;
+    if (Spark::Input::actionState("freecam:backward") & 0x80) camera->pos -= fwd   * speed;
+    if (Spark::Input::actionState("freecam:left") & 0x80)     camera->pos -= right * speed;
+    if (Spark::Input::actionState("freecam:right") & 0x80)    camera->pos += right * speed;
+    if (Spark::Input::actionState("freecam:up") & 0x80)       camera->pos += up    * speed;
+    if (Spark::Input::actionState("freecam:down") & 0x80)     camera->pos -= up    * speed;
 }
 
 void FreecamMod::init() {
     Spark::Input::addAction("freecam:toggle", DIK_HOME);
     Spark::Input::addAction("freecam:fast",   SPARK_GAMEPAD_RIGHT_SHOULDER);
     Spark::Input::addAction("freecam:slow",   SPARK_GAMEPAD_LEFT_SHOULDER);
+    
+    Spark::Input::addAction("freecam:forward", DIK_W);
+    Spark::Input::addAction("freecam:backward", DIK_S);
+    Spark::Input::addAction("freecam:left", DIK_A);
+    Spark::Input::addAction("freecam:right", DIK_D);
+    Spark::Input::addAction("freecam:up", DIK_R);
+    Spark::Input::addAction("freecam:down", DIK_F);
+
     Spark::RenderFPVModel::addHandler(modId_, +[](void* ctx, auto next) {
         if (static_cast<FreecamMod*>(ctx)->enabled_) return;
         next();
