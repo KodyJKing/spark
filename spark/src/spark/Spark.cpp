@@ -46,10 +46,14 @@ namespace Spark {
         Input::init();
         Input::loadBindings();
 
-        registry.add(new FreecamMod());
         registry.add(new SparkInputMod());
+        
+        #ifdef _DEBUG
+        registry.add(new FreecamMod());
         registry.add(new DevToolsMod());
-        // registry.add(new HookLogMod());
+        registry.add(new HookLogMod());
+        #endif
+
         modLoader.loadAll(); // LoadLibrary's *.dll from the mods directory (e.g. smc64.dll), calling spark_registerMod() for each.
         registry.initAll(halo1);
 
