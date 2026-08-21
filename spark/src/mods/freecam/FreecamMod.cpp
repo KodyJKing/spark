@@ -4,16 +4,10 @@
 #include "engine/halo1.hpp"
 #include "memory/Memory.hpp"
 #include "math/Vectors.hpp"
-#include <Windows.h>
 #define DIRECTINPUT_VERSION 0x0800
 #include <dinput.h>
-#include <Xinput.h>
 
-static void updateXboxControls(Engine::Camera* camera) {
-    XINPUT_STATE state;
-    ZeroMemory(&state, sizeof(XINPUT_STATE));
-    XInputGetState(0, &state);
-
+static void updateControls(Engine::Camera* camera) {
     float speed = 0.2f;
     if (Spark::Input::actionState("freecam:fast") & 0x80) speed *= 5.0f;
     if (Spark::Input::actionState("freecam:slow") & 0x80) speed *= 0.2f;
@@ -22,30 +16,12 @@ static void updateXboxControls(Engine::Camera* camera) {
     Vec3 up    = camera->up;
     Vec3 right = fwd.cross(up);
 
-    Vec3 moveDelta = {};
-    moveDelta += fwd   * (state.Gamepad.sThumbLY / 32768.0f * speed);
-    moveDelta += right * (state.Gamepad.sThumbLX / 32768.0f * speed);
-    moveDelta += up    * (state.Gamepad.bRightTrigger / 255.0f * speed);
-    moveDelta -= up    * (state.Gamepad.bLeftTrigger  / 255.0f * speed);
-
-    camera->pos += moveDelta;
-}
-
-static void updateKeyboardControls(Engine::Camera* camera) {
-    float speed = 0.2f;
-    if (Spark::Input::actionState("freecam:fast") & 0x80) speed *= 5.0f;
-    if (Spark::Input::actionState("freecam:slow") & 0x80) speed *= 0.2f;
-
-    Vec3 fwd   = camera->fwd;
-    Vec3 up    = camera->up;
-    Vec3 right = fwd.cross(up);
-
-    if (Spark::Input::actionState("freecam:forward") & 0x80)  camera->pos += fwd   * speed;
-    if (Spark::Input::actionState("freecam:backward") & 0x80) camera->pos -= fwd   * speed;
-    if (Spark::Input::actionState("freecam:left") & 0x80)     camera->pos -= right * speed;
-    if (Spark::Input::actionState("freecam:right") & 0x80)    camera->pos += right * speed;
-    if (Spark::Input::actionState("freecam:up") & 0x80)       camera->pos += up    * speed;
-    if (Spark::Input::actionState("freecam:down") & 0x80)     camera->pos -= up    * speed;
+    camera->pos += fwd   * (Spark::Input::actionAxis("freecam:forward")  * speed);
+    camera->pos -= fwd   * (Spark::Input::actionAxis("freecam:backward") * speed);
+    camera->pos -= right * (Spark::Input::actionAxis("freecam:left")     * speed);
+    camera->pos += right * (Spark::Input::actionAxis("freecam:right")    * speed);
+    camera->pos += up    * (Spark::Input::actionAxis("freecam:up")       * speed);
+    camera->pos -= up    * (Spark::Input::actionAxis("freecam:down")     * speed);
 }
 
 void FreecamMod::init() {
@@ -53,12 +29,18 @@ void FreecamMod::init() {
     Spark::Input::addAction("freecam:fast",   SPARK_GAMEPAD_RIGHT_SHOULDER);
     Spark::Input::addAction("freecam:slow",   SPARK_GAMEPAD_LEFT_SHOULDER);
     
-    Spark::Input::addAction("freecam:forward", DIK_W);
-    Spark::Input::addAction("freecam:backward", DIK_S);
-    Spark::Input::addAction("freecam:left", DIK_A);
-    Spark::Input::addAction("freecam:right", DIK_D);
-    Spark::Input::addAction("freecam:up", DIK_R);
-    Spark::Input::addAction("freecam:down", DIK_F);
+    const Spark::Input::ButtonCode kForward[]  = { DIK_W, SPARK_GAMEPAD_LEFT_STICK_UP };
+    const Spark::Input::ButtonCode kBackward[] = { DIK_S, SPARK_GAMEPAD_LEFT_STICK_DOWN };
+    const Spark::Input::ButtonCode kLeft[]     = { DIK_A, SPARK_GAMEPAD_LEFT_STICK_LEFT };
+    const Spark::Input::ButtonCode kRight[]    = { DIK_D, SPARK_GAMEPAD_LEFT_STICK_RIGHT };
+    const Spark::Input::ButtonCode kUp[]       = { DIK_R, SPARK_GAMEPAD_RIGHT_TRIGGER };
+    const Spark::Input::ButtonCode kDown[]     = { DIK_F, SPARK_GAMEPAD_LEFT_TRIGGER };
+    Spark::Input::addAction("freecam:forward",  kForward,  2);
+    Spark::Input::addAction("freecam:backward", kBackward, 2);
+    Spark::Input::addAction("freecam:left",     kLeft,     2);
+    Spark::Input::addAction("freecam:right",    kRight,    2);
+    Spark::Input::addAction("freecam:up",       kUp,       2);
+    Spark::Input::addAction("freecam:down",     kDown,     2);
 
     Spark::RenderFPVModel::addHandler(modId_, +[](void* ctx, auto next) {
         if (static_cast<FreecamMod*>(ctx)->enabled_) return;
@@ -108,6 +90,5 @@ void FreecamMod::update() {
     auto camera = Engine::getPlayerCameraPointer();
     if (!camera || !Memory::isAllocated(camera)) return;
 
-    updateXboxControls(camera);
-    updateKeyboardControls(camera);
+    updateControls(camera);
 }

@@ -55,4 +55,14 @@ unsigned char actionPressed(const char* actionName, unsigned char * lastState) {
     return pressed;
 }
 
+float actionAxis(const char* actionName) {
+    auto it = s_currentBindings.find(actionName);
+    if (it == s_currentBindings.end()) return 0.0f;
+    float axis = 0.0f;
+    for (ButtonCode btn : it->second) {
+        if (btn < 768) axis += Input::getAxis(btn);
+    }
+    return axis;
+}
+
 } // namespace Spark::Input

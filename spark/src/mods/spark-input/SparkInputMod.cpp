@@ -5,6 +5,9 @@
 #include "spark/RenderBuses.hpp"
 #include "imgui.h"
 
+// Spark-internal; not exported to mod DLLs
+namespace Spark::Input { void activeButtons(ButtonCode* buffer, int bufferSize, int* activeCount); }
+
 void SparkInputMod::init() {
     Spark::UpdateAllEntities::addHandler(modId_, +[](void* ctx, auto next) {
         Spark::Input::update();

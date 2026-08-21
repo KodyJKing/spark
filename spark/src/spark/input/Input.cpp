@@ -134,12 +134,19 @@ static const int s_mouseVKs[8] = {
     VK_LBUTTON, VK_RBUTTON, VK_MBUTTON, VK_XBUTTON1, VK_XBUTTON2, 0, 0, 0
 };
 
-static const char* s_padNames[16] = {
+static const char* s_padNames[26] = {
     "Pad_DUp",    "Pad_DDown",  "Pad_DLeft",  "Pad_DRight",
     "Pad_Start",  "Pad_Back",   "Pad_LThumb", "Pad_RThumb",
     "Pad_LB",     "Pad_RB",     nullptr,       nullptr,
     "Pad_A",      "Pad_B",      "Pad_X",       "Pad_Y",
+    "Pad_LT",     "Pad_RT",
+    "Pad_LX-",    "Pad_LX+",
+    "Pad_LY-",    "Pad_LY+",
+    "Pad_RX-",    "Pad_RX+",
+    "Pad_RY-",    "Pad_RY+",
 };
+
+float axes[10] = {};
 
 char* getButtonName(ButtonCode button) {
     if (button < 256) {
@@ -153,10 +160,22 @@ char* getButtonName(ButtonCode button) {
     }
     {
         unsigned int padIdx = button - 512;
-        if (padIdx < 16)
+        if (padIdx < 26)
             return const_cast<char*>(s_padNames[padIdx]);
         return nullptr;
     }
+}
+
+float getAxis(ButtonCode button) {
+    if (button >= 528 && button <= 537)
+        return axes[button - 528];
+    if (button < 768)
+        return (buttons[button] & 0x80) ? 1.0f : 0.0f;
+    return 0.0f;
+}
+
+unsigned char actionStateRaw(ButtonCode button) {
+    return (button < 768) ? buttons[button] : 0;
 }
 
 void activeButtons(ButtonCode* buffer, int bufferSize, int* activeCount) {
@@ -223,14 +242,28 @@ void update() {
     for (int i = 0; i < 8; i++)
         buttons[256 + i] = (hasFocus && s_mouseVKs[i] && (GetAsyncKeyState(s_mouseVKs[i]) & 0x8000)) ? 0x80 : 0;
 
-    // Gamepad: wButtons bits 0-15 stored as 0x80/0 per slot
+    // Gamepad: buttons (bits 0-15) + axes (slots 16-25)
     XINPUT_STATE xs = {};
     if (XInputGetState(0, &xs) == ERROR_SUCCESS) {
         WORD w = xs.Gamepad.wButtons;
         for (int i = 0; i < 16; i++)
             buttons[512 + i] = (w >> i) & 1 ? 0x80 : 0;
+        auto pos = [](float v) { return v > 0.0f ? v : 0.0f; };
+        axes[0] = xs.Gamepad.bLeftTrigger  / 255.0f;
+        axes[1] = xs.Gamepad.bRightTrigger / 255.0f;
+        axes[2] = pos(-xs.Gamepad.sThumbLX / 32768.0f);
+        axes[3] = pos( xs.Gamepad.sThumbLX / 32767.0f);
+        axes[4] = pos(-xs.Gamepad.sThumbLY / 32768.0f);
+        axes[5] = pos( xs.Gamepad.sThumbLY / 32767.0f);
+        axes[6] = pos(-xs.Gamepad.sThumbRX / 32768.0f);
+        axes[7] = pos( xs.Gamepad.sThumbRX / 32767.0f);
+        axes[8] = pos(-xs.Gamepad.sThumbRY / 32768.0f);
+        axes[9] = pos( xs.Gamepad.sThumbRY / 32767.0f);
+        for (int i = 0; i < 10; i++)
+            buttons[528 + i] = (axes[i] >= SPARK_AXIS_PRESS_THRESHOLD) ? 0x80 : 0;
     } else {
-        memset(&buttons[512], 0, 16);
+        memset(&buttons[512], 0, 26);
+        memset(axes, 0, sizeof(axes));
     }
 }
 

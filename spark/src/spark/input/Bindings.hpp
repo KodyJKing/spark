@@ -15,6 +15,7 @@ namespace Spark::Input {
     SPARK_API void resetAction(const char* actionName);
     SPARK_API unsigned char actionState(const char* actionName);
     SPARK_API unsigned char actionPressed(const char* actionName, unsigned char* lastState);
+    SPARK_API float actionAxis(const char* actionName);
 
     const std::vector<ButtonCode>& getBoundButtons(const char* actionName);
     extern std::map<std::string, std::vector<ButtonCode>> defaultBindings;

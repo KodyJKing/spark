@@ -1,5 +1,7 @@
 #pragma once
 
+#define SPARK_AXIS_PRESS_THRESHOLD 0.5f
+
 #define SPARK_MOUSE_1 256
 #define SPARK_MOUSE_2 257
 #define SPARK_MOUSE_3 258
@@ -23,3 +25,15 @@
 #define SPARK_GAMEPAD_B 523
 #define SPARK_GAMEPAD_X 524
 #define SPARK_GAMEPAD_Y 525
+
+// Axes: value 0-1, split into two codes for axes that go negative
+#define SPARK_GAMEPAD_LEFT_TRIGGER       528  // 0-1
+#define SPARK_GAMEPAD_RIGHT_TRIGGER      529  // 0-1
+#define SPARK_GAMEPAD_LEFT_STICK_LEFT    530  // left  = -X
+#define SPARK_GAMEPAD_LEFT_STICK_RIGHT   531  // right = +X
+#define SPARK_GAMEPAD_LEFT_STICK_DOWN    532  // down  = -Y
+#define SPARK_GAMEPAD_LEFT_STICK_UP      533  // up    = +Y
+#define SPARK_GAMEPAD_RIGHT_STICK_LEFT   534
+#define SPARK_GAMEPAD_RIGHT_STICK_RIGHT  535
+#define SPARK_GAMEPAD_RIGHT_STICK_DOWN   536
+#define SPARK_GAMEPAD_RIGHT_STICK_UP     537
