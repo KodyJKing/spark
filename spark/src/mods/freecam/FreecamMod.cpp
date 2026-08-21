@@ -1,12 +1,13 @@
 #include "FreecamMod.hpp"
 #include "spark/hook/Hooks.hpp"
+#include "spark/input/Bindings.hpp"
 #include "engine/halo1.hpp"
 #include "memory/Memory.hpp"
 #include "math/Vectors.hpp"
 #include <Windows.h>
+#define DIRECTINPUT_VERSION 0x0800
+#include <dinput.h>
 #include <Xinput.h>
-#include <iostream>
-#pragma comment(lib, "Xinput.lib")
 
 static void updateXboxControls(Engine::Camera* camera) {
     XINPUT_STATE state;
@@ -14,10 +15,8 @@ static void updateXboxControls(Engine::Camera* camera) {
     XInputGetState(0, &state);
 
     float speed = 0.2f;
-    if (state.Gamepad.wButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER)
-        speed *= 5.0f;
-    if (state.Gamepad.wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER)
-        speed *= 0.2f;
+    if (Spark::Input::actionState("freecam:fast") & 0x80) speed *= 5.0f;
+    if (Spark::Input::actionState("freecam:slow") & 0x80) speed *= 0.2f;
 
     Vec3 fwd   = camera->fwd;
     Vec3 up    = camera->up;
@@ -34,8 +33,8 @@ static void updateXboxControls(Engine::Camera* camera) {
 
 static void updateKeyboardControls(Engine::Camera* camera) {
     float speed = 0.2f;
-    if (GetAsyncKeyState(VK_MENU)    & 0x8000) speed *= 5.0f;
-    if (GetAsyncKeyState(VK_CONTROL) & 0x8000) speed *= 0.2f;
+    if (Spark::Input::actionState("freecam:fast") & 0x80) speed *= 5.0f;
+    if (Spark::Input::actionState("freecam:slow") & 0x80) speed *= 0.2f;
 
     Vec3 fwd   = camera->fwd;
     Vec3 up    = camera->up;
@@ -50,6 +49,9 @@ static void updateKeyboardControls(Engine::Camera* camera) {
 }
 
 void FreecamMod::init() {
+    Spark::Input::addAction("freecam:toggle", DIK_HOME);
+    Spark::Input::addAction("freecam:fast",   SPARK_GAMEPAD_RIGHT_SHOULDER);
+    Spark::Input::addAction("freecam:slow",   SPARK_GAMEPAD_LEFT_SHOULDER);
     Spark::RenderFPVModel::addHandler(modId_, +[](void* ctx, auto next) {
         if (static_cast<FreecamMod*>(ctx)->enabled_) return;
         next();
@@ -90,7 +92,9 @@ void FreecamMod::init() {
 }
 
 void FreecamMod::update() {
-    if (GetAsyncKeyState(VK_HOME) & 1) enabled_ = !enabled_;
+    static unsigned char prevToggle = 0;
+    unsigned char toggleNow = Spark::Input::actionPressed("freecam:toggle", &prevToggle);
+    if (toggleNow) enabled_ = !enabled_;
     if (!enabled_) return;
 
     auto camera = Engine::getPlayerCameraPointer();
