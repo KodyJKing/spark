@@ -16,6 +16,7 @@
 #include "spark/hook/Hooks.hpp"
 #include "spark/mod/ModRegistry.hpp"
 #include "input/Input.hpp"
+#include "input/Bindings.hpp"
 
 namespace Spark {
     bool showDebugOverlay = false;
@@ -43,6 +44,7 @@ namespace Spark {
         std::cout << moduleName << ": " << (void*) halo1 << std::endl;
         
         Input::init();
+        Input::loadBindings();
 
         registry.add(new FreecamMod());
         registry.add(new SparkInputMod());

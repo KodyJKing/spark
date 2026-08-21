@@ -21,4 +21,7 @@ namespace Spark::Input {
 
     const std::vector<ButtonCode>& getBoundButtons(const char* actionName);
     extern std::map<std::string, std::vector<ButtonCode>> defaultBindings;
+
+    void loadBindings();
+    void saveBindings();
 }

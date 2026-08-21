@@ -2,6 +2,10 @@
 #include "spark/input/Input.hpp"
 #include <algorithm>
 #include <vector>
+#include <fstream>
+#include <sstream>
+#include <Windows.h>
+#include <filesystem>
 
 namespace Spark::Input {
 
@@ -20,6 +24,8 @@ void bindAction(const char* actionName, ButtonCode button) {
     auto& v = s_currentBindings[actionName];
     if (std::find(v.begin(), v.end(), button) == v.end())
         v.push_back(button);
+
+    saveBindings();
 }
 
 void unbindAction(const char* actionName, ButtonCode button) {
@@ -27,12 +33,16 @@ void unbindAction(const char* actionName, ButtonCode button) {
     if (it == s_currentBindings.end()) return;
     auto& v = it->second;
     v.erase(std::remove(v.begin(), v.end(), button), v.end());
+
+    saveBindings();
 }
 
 void resetAction(const char* actionName) {
     auto it = defaultBindings.find(actionName);
     if (it != defaultBindings.end())
         s_currentBindings[actionName] = it->second;
+    
+    saveBindings();
 }
 
 const std::vector<ButtonCode>& getBoundButtons(const char* actionName) {
@@ -63,6 +73,40 @@ float actionAxis(const char* actionName) {
         if (btn < 768) axis += Input::getAxis(btn);
     }
     return axis;
+}
+
+static std::filesystem::path bindingsPath() {
+    char exe[MAX_PATH];
+    GetModuleFileNameA(nullptr, exe, MAX_PATH);
+    return std::filesystem::path(exe).parent_path() / "spark_bindings.txt";
+}
+
+void saveBindings() {
+    std::ofstream f(bindingsPath());
+    if (!f) return;
+    for (auto& [name, codes] : s_currentBindings) {
+        f << name;
+        for (ButtonCode c : codes) f << ',' << c;
+        f << '\n';
+    }
+}
+
+void loadBindings() {
+    std::ifstream f(bindingsPath());
+    if (!f) return;
+    std::string line;
+    while (std::getline(f, line)) {
+        if (line.empty()) continue;
+        std::istringstream ss(line);
+        std::string token;
+        std::getline(ss, token, ',');
+        std::string name = token;
+        std::vector<ButtonCode> codes;
+        while (std::getline(ss, token, ',')) {
+            codes.push_back(static_cast<ButtonCode>(std::stoul(token)));
+        }
+        s_currentBindings[name] = std::move(codes);
+    }
 }
 
 } // namespace Spark::Input
