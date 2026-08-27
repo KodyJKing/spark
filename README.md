@@ -1,14 +1,6 @@
 # Spark
 
-A mod loader for Halo CE on the Master Chief Collection.
-
-Spark itself doesn't contain any gameplay mod - it hooks the engine, patches
-`xaudio2_9redist.dll` to load `spark.dll` in production, and loads every `*.dll` it finds in a
-`mods/` folder (plus any directories listed in the `SPARK_MODS_PATH` environment variable),
-calling each one's exported `spark_modLoad()` entry point. Mods (e.g.
-[smc64](https://github.com/KodyJKing/smc64)) live in their own repositories and depend on this
-one as a git submodule for the engine API (`SparkAPI.h`), hook registration, event buses, and
-`Engine::` query functions.
+A mod loader and SDK for Halo CE on the Master Chief Collection.
 
 ## Installation
 
@@ -24,7 +16,9 @@ Clone the repository recursively to get submodules:
 git clone --recursive
 ``` 
 
-Install [Visual Studio 2022](https://visualstudio.microsoft.com/) and add MSBuild to your PATH. Location may vary. For me, it's located under `C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin`.
+Install [Visual Studio 2022](https://visualstudio.microsoft.com/) and add MSBuild to your PATH. Location may vary. For me, it's located under `C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin`. Alternatively, you can just install Visual Studio 2022 build tools.
+
+Download [Premake](https://premake.github.io/) and add it to your path.
 
 ## Building and Running
 

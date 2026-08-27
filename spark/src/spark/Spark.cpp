@@ -42,6 +42,8 @@ namespace Spark {
         const std::string moduleName = "halo1.dll";
         halo1 = (uintptr_t) Utils::waitForModule(moduleName);
         std::cout << moduleName << ": " << (void*) halo1 << std::endl;
+
+        Engine::init();
         
         Input::init();
         Input::loadBindings();
