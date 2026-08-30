@@ -79,7 +79,7 @@ void DevToolsMod::init() {
         next(source, category, message, location);
     }, nullptr);
 
-    Spark::UpdatePlayerControlsAndLook::addHandler(modId_, +[](void* ctx, auto next, uint32_t param_1, uint32_t param_2) {
+    Spark::UpdatePlayerControlsAndLook::addHandler(modId_, +[](void* ctx, auto next, float param_1, uint32_t param_2) {
         if (Spark::Overlay::hasInputCapture() == false) {
             next(param_1, param_2);
         }
