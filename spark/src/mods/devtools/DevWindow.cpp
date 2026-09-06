@@ -1,5 +1,6 @@
 #include "mods/devtools/DevWindow.hpp"
 #include "mods/devtools/ScriptConsole.hpp"
+#include "mods/devtools/dissect/DissectTag.hpp"
 #include "imgui.h"
 #include "engine/halo1.hpp"
 #include "memory/Memory.hpp"
@@ -106,6 +107,11 @@ namespace Mod::DevTools {
             Engine::Scripting::submit("(game_save_totally_unsafe)");
         }
 
+        if (ImGui::Button("Tag Browser"))
+            showTagBrowser = !showTagBrowser;
+        if (showTagBrowser)
+            tagBrowser();
+
         auto hscBoolToggle = [](const char* label) {
             bool value = (bool)(Engine::Scripting::readGlobal(label) & 0xFF);
             bool oldValue = value;
@@ -131,11 +137,9 @@ namespace Mod::DevTools {
             renderTranslateMapAddress();
             renderInterpretU32();
             renderInterpretObjectFields();
-            if (ImGui::Button("Tag Browser"))
-                showTagBrowser = !showTagBrowser;
-            if (showTagBrowser)
-                tagBrowser();
         }
+
+        Mod::DevTools::DissectTag::render();
     }
 
     void renderPauseMenuTabs() {

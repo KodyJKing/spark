@@ -15,6 +15,10 @@ namespace Engine {
         auto fourccC = Strings::fourccToString( grandparentGroupID );
         return "[" + fourccC + " > " + fourccB + " > " + fourccA + "]";
     }
+    std::string Tag::classIdStr() {
+        auto fourccA = Strings::fourccToString( groupID );
+        return fourccA;
+    }
 
     Tag* getTag( uint32_t tagID ) {
         if (tagID == NULL_HANDLE)

@@ -25,6 +25,7 @@ project "spark"
         "../vendor/imgui/backends",
         "../vendor/imgui",
         "../vendor/zydis",
+        "../vendor/json",
     }
 
     defines {

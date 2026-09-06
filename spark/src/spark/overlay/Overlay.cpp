@@ -39,6 +39,7 @@ namespace Spark::Overlay {
         if ( ImGui::CollapsingHeader("MinHook") ) ImGui::TextWrapped(Spark::Licenses::minHook);
         if ( ImGui::CollapsingHeader("Zydis") ) ImGui::TextWrapped(Spark::Licenses::zydis);
         if ( ImGui::CollapsingHeader("UniversalHookX") ) ImGui::TextWrapped(Spark::Licenses::universalHookX);
+        if ( ImGui::CollapsingHeader("JSON for Modern C++") ) ImGui::TextWrapped(Spark::Licenses::json);
         ImGui::TextWrapped("Thanks to Kavawuvi for their documentation of the Halo CE map and tag format.");
     }
 

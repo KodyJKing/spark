@@ -23,6 +23,7 @@ namespace Engine {
         char* getResourcePath();
         void* getData();
         std::string groupIDStr();
+        std::string classIdStr();
 
         template<typename T>
         T* getDataAs() {

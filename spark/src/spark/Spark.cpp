@@ -56,7 +56,7 @@ namespace Spark {
         registry.add(new HookLogMod());
         #endif
 
-        modLoader.loadAll(); // LoadLibrary's *.dll from the mods directory (e.g. smc64.dll), calling spark_registerMod() for each.
+        // modLoader.loadAll(); // LoadLibrary's *.dll from the mods directory (e.g. smc64.dll), calling spark_registerMod() for each.
         registry.initAll(halo1);
 
         Engine::Decomp::install(halo1);

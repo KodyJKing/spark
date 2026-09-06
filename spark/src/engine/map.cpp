@@ -7,6 +7,12 @@ namespace Engine {
     static const uintptr_t relocatedMapBaseOffset = 0x2D9CE10U;
     static const uintptr_t mapBaseOffset = 0x2EA3410U;
 
+    int64_t mapRelocationOffset() {
+        uint64_t relocatedMapBase = *(uint64_t*) ( dllBase() + relocatedMapBaseOffset );
+        uint64_t mapBase = *(uint64_t*) ( dllBase() + mapBaseOffset );
+        return relocatedMapBase - mapBase;
+    }
+
     uint64_t translateMapAddress( uint32_t address ) {
         uint64_t relocatedMapBase = *(uint64_t*) ( dllBase() + relocatedMapBaseOffset );
         uint64_t mapBase = *(uint64_t*) ( dllBase() + mapBaseOffset );

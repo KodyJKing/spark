@@ -9,6 +9,7 @@
 #include "Interpretations.hpp"
 #include "memory/Memory.hpp"
 #include "mods/devtools/cheatengine/Messages.hpp"
+#include "mods/devtools/dissect/DissectTag.hpp"
 
 namespace Mod::DevTools {
 
@@ -242,7 +243,8 @@ namespace Mod::DevTools {
 
                         auto inspectOnLeftClick = [&]() {
                             if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
-                                setInspectTag( tag );
+                                // setInspectTag( tag );
+                                Mod::DevTools::DissectTag::openWindow(tag->tagID);
                             }
                         };
 
