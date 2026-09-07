@@ -64,7 +64,7 @@ namespace Engine::TagSchema {
                 return "Tag not found";
             }
             case PrimitiveTypeRef::StructureReference: {
-                uint32_t address = Memory::safeRead<uint32_t>(context.structureBase + offset).value_or(0);
+                uint32_t address = Memory::safeRead<uint32_t>(context.structureBase + offset + 4).value_or(0);
                 if (address == 0) return "<not allocated>";
                 uintptr_t relocatedAddress = getRelocatedAddress(context, address);
                 int64_t finalOffset = relocatedAddress - context.structureBase;
@@ -73,6 +73,14 @@ namespace Engine::TagSchema {
             }
             default:
                 return "Not implemented";
+        }
+    }
+
+    // Delete a field from a structure.
+    void Structure::deleteField(Field* field) {
+        auto it = std::find_if(fields.begin(), fields.end(), [&](const Field& f) { return &f == field; });
+        if (it != fields.end()) {
+            fields.erase(it);
         }
     }
 

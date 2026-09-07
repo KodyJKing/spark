@@ -22,7 +22,20 @@ namespace Engine::TagSchema {
         {PrimitiveTypeRef::Enumeration, "Enumeration"}
     })
 
-    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(TypeRef, primitive, name)
+    // TypeRef::name is a fixed char buffer rather than std::string, so it needs manual (de)serialization.
+    static void to_json(nlohmann::json& j, const TypeRef& type) {
+        j = nlohmann::json{
+            {"primitive", type.primitive},
+            {"name", std::string(type.name)}
+        };
+    }
+
+    static void from_json(const nlohmann::json& j, TypeRef& type) {
+        j.at("primitive").get_to(type.primitive);
+        std::string name = j.at("name").get<std::string>();
+        std::strncpy(type.name, name.c_str(), sizeof(type.name) - 1);
+        type.name[sizeof(type.name) - 1] = '\0';
+    }
 
     // Field::name is a fixed char buffer rather than std::string, so it needs manual (de)serialization.
     static void to_json(nlohmann::json& j, const Field& field) {

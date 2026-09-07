@@ -1,4 +1,5 @@
 #include "DissectTag.hpp"
+#include "RenderContext.hpp"
 
 #include "engine/tags/schema/schema.hpp"
 #include "engine/halo1.hpp"
@@ -11,6 +12,15 @@
 #include <fstream>
 #include <sstream>
 #include <algorithm>
+
+#define DEBUG_DISSECT_TAG 1
+
+#ifdef DEBUG_DISSECT_TAG
+#include <iostream>
+#define DEBUG_LOG(msg) std::cout << "[DissectTag] " << msg << std::endl;
+#else
+#define DEBUG_LOG(msg)
+#endif
 
 namespace Mod::DevTools::DissectTag {
 
@@ -45,17 +55,6 @@ namespace Mod::DevTools::DissectTag {
         initialized = true;
         loadSchemas();
     }
-
-    struct RenderContext {
-        Engine::Tag* tag;
-        TagSchema* schema;
-        void* structureBase;
-        Structure* structure;
-        Field* field;
-        size_t structureSize;
-        
-        bool* structureModified;
-    };
 
     struct WindowState {
         uint32_t currentTagId;
@@ -103,13 +102,13 @@ namespace Mod::DevTools::DissectTag {
         }
     }
 
-    void renderTypeInput(Field& field) {
+    void renderTypeInput(RenderContext& context) {
         ImGui::SetNextItemWidth(ImGui::GetFontSize() * 8);
-        if (ImGui::BeginCombo("##Type", PrimitiveTypeRefNames[static_cast<int>(field.type.primitive)])) {
+        if (ImGui::BeginCombo("##Type", PrimitiveTypeRefNames[static_cast<int>(context.field->type.primitive)])) {
             for (int i = 0; i <= static_cast<int>(PrimitiveTypeRef::Enumeration); ++i) {
-                bool isSelected = (static_cast<int>(field.type.primitive) == i);
+                bool isSelected = (static_cast<int>(context.field->type.primitive) == i);
                 if (ImGui::Selectable(PrimitiveTypeRefNames[i], isSelected)) {
-                    field.type.primitive = static_cast<PrimitiveTypeRef>(i);
+                    context.field->type.primitive = static_cast<PrimitiveTypeRef>(i);
                 }
                 if (isSelected)
                     ImGui::SetItemDefaultFocus();
@@ -118,55 +117,137 @@ namespace Mod::DevTools::DissectTag {
         }
     }
 
-    void renderField(TagSchema& schema, void* structureBase, Structure& structure, Field& field, bool& structureModified);
+    void renderStructure(RenderContext& context);
 
-    void renderStructure(TagSchema& schema, void* structureBase, Structure& structure, size_t size);
+    void renderSizeInput(Structure& structure) {
+        ImGui::SetNextItemWidth(ImGui::GetFontSize() * 8);
+        ImGui::InputScalar("Size", ImGuiDataType_U64, &structure.size, nullptr, nullptr, "%08X");
+        ImGui::SameLine();
+        if (ImGui::Button("+")) {
+            structure.size += 4;
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("-")) {
+            structure.size -= 4;
+        }
+    }
 
-    // void renderSubstructure(TagSchema& schema, void* structureBase, Field& field, bool& structureModified) {
-    //     // Find structure with this name.
-    //     if (!schema.structures.count(field.name)) {
-    //         ImGui::Text("Substructure not found: %s", field.name);
-    //         return;
-    //     }
-    //     Structure& substructure = schema.structures.at(field.name);
+    void renderSubstructure(RenderContext& context) {        
+        ImGui::Indent();
 
-    //     ImGui::Indent();
-    //     renderStructure(schema, structureBase, substructure, structureModified);
-    //     ImGui::Unindent();
-    // }
+        char* structureName = context.field->type.name;
+        
+        // Structure name editor
+        ImGui::SetNextItemWidth(ImGui::GetFontSize() * 8);
+        ImGui::InputText("Structure", structureName, sizeof(context.field->type.name));
+        ImGui::SameLine();
 
-    void renderField(TagSchema& schema, void* structureBase, Structure& structure, Field& field, bool& structureModified) {
-        ImGui::PushID(&field);
+        // Find structure with this name.
+        if (!context.schema->structures.count(structureName)) {
+            ImGui::Text("Substructure not found: %s", structureName);
+
+            if (ImGui::Button("Create Substructure")) {
+                Structure newStructure{};
+                newStructure.name = structureName;
+                newStructure.size = 256;
+                context.schema->structures[structureName] = newStructure;
+                *context.structureModified = true;
+            }
+        } else {
+            Engine::BlockPointer* blockPointer = reinterpret_cast<Engine::BlockPointer*>((uintptr_t) context.structureBase + context.field->offset);
+            
+            if (blockPointer->count == 0) {
+                ImGui::Text("Block is empty for this tag.");
+                ImGui::Unindent();
+                return;
+            }
+
+            Structure& substructure = context.schema->structures.at(structureName);
+            
+            ImGuiStorage* storage = ImGui::GetStateStorage();
+            int index = storage->GetInt(ImGui::GetID(substructure.name.c_str()), 0);
+        
+            uintptr_t baseAddress = reinterpret_cast<uintptr_t>(blockPointer->get<void*>(0));
+            void* blockBase = reinterpret_cast<void*>(baseAddress + index * substructure.size);
+
+            if (!Memory::isAllocated(baseAddress)) {
+                ImGui::Text("Invalid block base pointer: %p", blockBase);
+                ImGui::Unindent();
+                return;
+            }
+    
+            RenderContext subcontext = context;
+            subcontext.field = context.field;
+            subcontext.structureBase = blockBase;
+            subcontext.structureSize = substructure.size ? substructure.size : 256;
+            subcontext.structure = &substructure;
+
+            renderSizeInput(substructure);
+            
+            ImGui::SameLine();
+
+            // Index editor
+            ImGui::SetNextItemWidth(ImGui::GetFontSize() * 8);
+            ImGui::InputInt("Index", &index);
+
+            if (index >= blockPointer->count) {
+                index = 0;
+            } else if (index < 0) {
+                index = blockPointer->count - 1;
+            }
+
+            storage->SetInt(ImGui::GetID(substructure.name.c_str()), index);
+
+            ImGui::Separator();
+
+            char headerLabel[256];
+            snprintf(headerLabel, sizeof(headerLabel), "##Content %s", structureName);
+            if (ImGui::CollapsingHeader(headerLabel)) {
+                ImGui::Indent();
+                renderStructure(subcontext);
+                ImGui::Unindent();
+            }
+        }
+
+        ImGui::Unindent();
+    }
+
+    void renderField(RenderContext& context) {
+        ImGui::PushID(context.field);
 
         // Offset editor
         ImGui::SetNextItemWidth(ImGui::GetFontSize() * 8);
-        ImGui::InputScalar("##Offset", ImGuiDataType_U64, &field.offset, nullptr, nullptr, "%08X");
+        ImGui::InputScalar("##Offset", ImGuiDataType_U64, &context.field->offset, nullptr, nullptr, "%08X");
         ImGui::SameLine();
         
         ImGui::SetNextItemWidth(ImGui::GetFontSize() * 8);
-        ImGui::InputText("##Name", field.name, sizeof(field.name));
+        ImGui::InputText("##Name", context.field->name, sizeof(context.field->name));
         ImGui::SameLine();
         
-        renderTypeInput(field);
+        renderTypeInput(context);
         ImGui::SameLine();
 
         auto relocationOffset = Engine::mapRelocationOffset();
-        auto value = field.readString({.relocationOffset = relocationOffset, .structureBase = reinterpret_cast<uintptr_t>(structureBase)});
+        auto value = context.field->readString({.relocationOffset = relocationOffset, .structureBase = reinterpret_cast<uintptr_t>(context.structureBase)});
         ImGui::Text("%s", value.c_str());
         
         ImGui::SameLine();
         if (ImGui::Button("x")) {
-            deleteFieldFromStructure(structure, &field);
-            structureModified = true;
+            context.structure->deleteField(context.field);
+            *context.structureModified = true;
+        }
+
+        if (context.field->type.primitive == PrimitiveTypeRef::StructureReference) {
+            renderSubstructure(context);
         }
 
         ImGui::PopID();
     }
 
     // Render a single byte of unknown data on the same line.
-    void renderUnknown(void* structureBase, size_t offset, Structure& structure, bool& structureModified) {
+    void renderUnknown(const RenderContext& context, size_t offset) {
         ImGui::SetNextItemWidth(ImGui::GetFontSize() * 2);
-        uint8_t* bytePointer = reinterpret_cast<uint8_t*>(structureBase) + offset;
+        uint8_t* bytePointer = reinterpret_cast<uint8_t*>(context.structureBase) + offset;
         ImGui::Text("%02X", *bytePointer);
 
         // If the user right clicks this byte, create a field here. Populate as a uint8_t field.
@@ -177,10 +258,11 @@ namespace Mod::DevTools::DissectTag {
             newField.type.primitive = PrimitiveTypeRef::Uint8;
             newField.offset = offset;
             newField.bitOffset = 0;
+            snprintf(newField.type.name, sizeof(newField.type.name), "Struct_%X", offset);
             // Add the new field to the structure
             // This requires access to the structure, which is now available as an argument.
-            structure.fields.push_back(newField);
-            structureModified = true;
+            context.structure->fields.push_back(newField);
+            *context.structureModified = true;
         }
     }
 
@@ -196,11 +278,10 @@ namespace Mod::DevTools::DissectTag {
         return &tagSchemas.schemas.at(groupId);
     }
 
-    void renderStructure(TagSchema& schema, void* structureBase, Structure& structure, size_t size) {
-        #define UNKNOWN_ROW_LENGTH 16
+    void renderStructure(RenderContext& context) {
+        #define UNKNOWN_ROW_LENGTH 32
         size_t head = 0;
         size_t column = UNKNOWN_ROW_LENGTH;
-        bool structureModified = false;
         
         auto renderUnknownCell = [&]() {
             // Stripe columns in groups of 4
@@ -214,7 +295,7 @@ namespace Mod::DevTools::DissectTag {
             } else {
                 ImGui::SameLine();
             }
-            renderUnknown(structureBase, head, structure, structureModified);
+            renderUnknown(context, head);
             head++;
             column++;
 
@@ -223,31 +304,32 @@ namespace Mod::DevTools::DissectTag {
             }
         };
 
-        std::sort(structure.fields.begin(), structure.fields.end(), [](const Field& a, const Field& b) {
+        std::sort(context.structure->fields.begin(), context.structure->fields.end(), [](const Field& a, const Field& b) {
             return a.offset < b.offset;
         });
 
-        auto fieldCount = structure.fields.size();
+        auto fieldCount = context.structure->fields.size();
         for (size_t i = 0; i < fieldCount; i++) {
-            auto& field = structure.fields[i];
+            auto& field = context.structure->fields[i];
             
             while (head < field.offset) {
                 renderUnknownCell();
-                if (structureModified) break;
+                if (*context.structureModified) break;
             }
 
-            if (structureModified) break;
-            renderField(schema, structureBase, structure, field, structureModified);
+            if (*context.structureModified) break;
+            RenderContext subcontext = context.withField(&field);
+            renderField(subcontext);
 
-            if (structureModified) break;
+            if (*context.structureModified) break;
 
             head += Engine::TagSchema::PrimitiveTypeRefSizes[static_cast<size_t>(field.type.primitive)];
             column = UNKNOWN_ROW_LENGTH;
         }
 
-        while (head < size) {
+        while (head < context.structureSize) {
             renderUnknownCell();
-            if (structureModified) break;
+            if (*context.structureModified) break;
         }
     }
 
@@ -269,7 +351,23 @@ namespace Mod::DevTools::DissectTag {
         
         auto& mainStructure = schema->mainStructure;
 
-        renderStructure(*schema, tag->getData(), mainStructure, size);
+        bool structureModified = false;
+
+        context.schema = schema;
+        context.structureBase = tag->getData();
+        context.structure = &mainStructure;
+        context.structureModified = &structureModified;
+        if (mainStructure.size) {
+            context.structureSize = mainStructure.size;
+        } else if (size) {
+            context.structureSize = size;
+        } else {
+            context.structureSize = 256;
+        }
+
+        renderSizeInput(mainStructure);
+
+        renderStructure(context);
     }
 
     void render() {

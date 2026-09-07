@@ -30,6 +30,7 @@ namespace Mod::DevTools {
         GROUP_ID("Biped", "bipd")
         GROUP_ID("Scenenery", "scen")
         GROUP_ID("Device", "devi")
+        GROUP_ID("Equipment", "eqip")
         GROUP_ID("Effect", "effe")
         GROUP_ID("Contrail", "cont")
         GROUP_ID("Particle", "part")

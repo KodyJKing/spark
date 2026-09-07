@@ -40,7 +40,7 @@ namespace Engine::TagSchema {
         4, // Float
         32, // TagString
         4, // TagReference
-        4, // StructureReference
+        12, // StructureReference
         2 // Enumeration
     };
 
@@ -49,7 +49,8 @@ namespace Engine::TagSchema {
      */
     struct TypeRef {
         PrimitiveTypeRef primitive;
-        std::string name;
+        // std::string name;
+        char name[256];
     };
 
     struct Field {
@@ -67,6 +68,8 @@ namespace Engine::TagSchema {
         std::string name;
         size_t size;
         std::vector<Field> fields;
+
+        void deleteField(Field* field);
     };
 
     struct EnumerationEntry {
