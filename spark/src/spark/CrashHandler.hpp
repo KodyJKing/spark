@@ -6,4 +6,7 @@ namespace Spark::CrashHandler {
     // forever so the process stays alive for a debugger to attach.
     void install();
     void uninstall();
+
+    void setStatusInt(const char* name, int value);
+    void incrementStatusInt(const char* name, int delta);
 }

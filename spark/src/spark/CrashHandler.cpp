@@ -17,8 +17,19 @@
 #pragma comment(lib, "dbghelp.lib")
 #pragma comment(lib, "psapi.lib")
 
+#define ENABLE_CRASH_HANDLER_STATUS 1
+
+#if ENABLE_CRASH_HANDLER_STATUS
+    #include <unordered_map>
+    static std::unordered_map<std::string, int> s_statusInts;
+#endif
+
+// #ifdef _DEBUG
+#define ENABLE_CRASH_HANDLER 1
+// #endif
+
 #ifdef _DEBUG
-    #define ENABLE_CRASH_HANDLER 1
+#define ENABLE_CRASH_HANDLER_DEV_MODE 1
 #endif
 
 namespace Spark::CrashHandler {
@@ -27,6 +38,15 @@ static void*                          s_vehHandle = nullptr;
 static std::unordered_map<DWORD,bool> s_decisions; // true = stop, false = ignore
 static std::mutex                     s_mutex;
 static std::filesystem::path          s_decisionsPath;
+
+static void printStatus() {
+    #if ENABLE_CRASH_HANDLER_STATUS
+    for (auto& [key, value] : s_statusInts) {
+        printf("[CrashHandler] %s: %d\n", key.c_str(), value);
+    }
+    fflush(stdout);
+    #endif
+}
 
 // File format: one entry per line, '+HEXCODE' = stop, '-HEXCODE' = ignore, '#' = comment
 static void loadDecisions() {
@@ -146,16 +166,10 @@ static void suspendOtherThreads(DWORD tid, DWORD pid) {
     CloseHandle(snap);
 }
 
-static LONG WINAPI handler(EXCEPTION_POINTERS* ep) {
-    DWORD     code = ep->ExceptionRecord->ExceptionCode;
-    DWORD     pid  = GetCurrentProcessId();
-    DWORD     tid  = GetCurrentThreadId();
-    ULONG_PTR rip  = ep->ContextRecord->Rip;
-
-    std::unique_lock<std::mutex> lock(s_mutex);
-
+static bool getDecisionForCode(DWORD code, DWORD tid, ULONG_PTR rip) {
     auto it = s_decisions.find(code);
     if (it == s_decisions.end()) {
+        #ifdef ENABLE_CRASH_HANDLER_DEV_MODE
         // First time seeing this code — ask the user.
         char msg[320];
         snprintf(msg, sizeof(msg),
@@ -170,11 +184,26 @@ static LONG WINAPI handler(EXCEPTION_POINTERS* ep) {
         bool stop = (choice == IDYES);
         s_decisions[code] = stop;
         saveDecisions();
-        if (!stop) return EXCEPTION_CONTINUE_SEARCH;
-    } else if (!it->second) {
-        // Previously decided to ignore.
-        return EXCEPTION_CONTINUE_SEARCH;
+        return stop;
+        #else
+        // Default to ignoring outside of dev mode.
+        return false;
+        #endif
+    } else {
+        return it->second;
     }
+}
+
+static LONG WINAPI handler(EXCEPTION_POINTERS* ep) {
+    DWORD     code = ep->ExceptionRecord->ExceptionCode;
+    DWORD     pid  = GetCurrentProcessId();
+    DWORD     tid  = GetCurrentThreadId();
+    ULONG_PTR rip  = ep->ContextRecord->Rip;
+
+    std::unique_lock<std::mutex> lock(s_mutex);
+
+    bool stop = getDecisionForCode(code, tid, rip);
+    if (!stop) return EXCEPTION_CONTINUE_SEARCH;
 
     lock.unlock();
 
@@ -184,6 +213,7 @@ static LONG WINAPI handler(EXCEPTION_POINTERS* ep) {
     printf("[CrashHandler]   RIP: 0x%016llX\n", (unsigned long long)rip);
     fflush(stdout);
 
+    printStatus();
     printStackTrace(ep->ContextRecord);
 
     std::cout << "[CrashHandler] Suspending all other threads — attach a debugger now." << std::endl;
@@ -226,6 +256,18 @@ void uninstall() {
         s_vehHandle = nullptr;
         std::cout << "[CrashHandler] VEH removed" << std::endl;
     }
+    #endif
+}
+
+void setStatusInt(const char* name, int value) {
+    #if ENABLE_CRASH_HANDLER_STATUS
+    s_statusInts[name] = value;
+    #endif
+}
+
+void incrementStatusInt(const char* name, int delta) {
+    #if ENABLE_CRASH_HANDLER_STATUS
+    s_statusInts[name] += delta;
     #endif
 }
 
