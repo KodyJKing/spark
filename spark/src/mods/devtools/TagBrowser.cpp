@@ -11,6 +11,8 @@
 #include "mods/devtools/cheatengine/Messages.hpp"
 #include "mods/devtools/dissect/DissectTag.hpp"
 
+#define ENABLE_TAG_CLONING 1
+
 namespace Mod::DevTools {
 
     struct GroupID {
@@ -96,16 +98,21 @@ namespace Mod::DevTools {
 
         ImGui::Begin("Tag Browser", &showTagBrowser, ImGuiWindowFlags_AlwaysAutoResize);
         
-            //////////////////////////////////////////////////////////////////////////
-            // Pagination
-
+        
+        //////////////////////////////////////////////////////////////////////////
+        // Pagination
+        
+            uint32_t totalTags = Engine::getTagArraySize();
             static int tagsPerPage = 50;
             static int page = 0;
+            uint32_t numPages = (totalTags + tagsPerPage - 1) / tagsPerPage;
             ImGui::InputInt("Page", &page);
             if (ImGui::IsWindowHovered())
                 page -= (int) ImGui::GetIO().MouseWheel;
             if (page < 0) 
                 page = 0;
+            if (page >= numPages)
+                page = numPages - 1;
             ImGui::SameLine();
             ImGui::InputInt("Page size", &tagsPerPage);
             if (tagsPerPage < 1) 
@@ -236,6 +243,8 @@ namespace Mod::DevTools {
 
                 auto tag = Engine::getTag(index);
                 if (Engine::tagExists(tag)) {
+                    ImGui::PushID(index);
+                    
                     auto path = tag->getResourcePath();
                     if (!Engine::validTagPath(path)) {
                         ImGui::Text("%04d NULL", index);
@@ -296,10 +305,20 @@ namespace Mod::DevTools {
                         if (ImGui::IsItemHovered()) ImGui::SetTooltip("Right click to copy path to clipboard");
                         if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) ImGui::SetClipboardText( path );
                         inspectOnLeftClick();
+
+                        #if ENABLE_TAG_CLONING
+                        ImGui::SameLine();
+                        if (ImGui::Button("Clone")) {
+                            cloneTagNaive(tag);
+                        }
+                        #endif
                     }
+                    
+                    ImGui::PopID();
                 } else {
                     ImGui::Text("%04d NULL", index);
                 }
+
             };
 
             //////////////////////////////////////////////////////////////////////////

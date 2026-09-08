@@ -1,6 +1,7 @@
 #include "map.hpp"
 #include "common.hpp"
 #include "memory/Memory.hpp"
+#include "memory/Allocator.hpp"
 
 namespace Engine {
 
@@ -25,7 +26,21 @@ namespace Engine {
         return (uint32_t) ( absoluteAddress - ( relocatedMapBase - mapBase ) );
     }
 
-        char* getMapName() {
+    bool canTranslateToMapAddress( uint64_t absoluteAddress ) {
+        auto relativeAddress = translateToMapAddress( absoluteAddress );
+        auto absoluteAddressCheck = translateMapAddress( relativeAddress );
+        return absoluteAddressCheck == absoluteAddress;
+    }
+
+    void* allocateMapMemory(size_t size) {
+        return (void*) Memory::allocBlockNear(mapRelocationOffset(), size);
+    }
+
+    void freeMapMemory(void* address) {
+        Memory::freeBlock((uintptr_t) address);
+    }
+
+    char* getMapName() {
         MapHeader* header = getMapHeader();
         if ( !header ) return nullptr;
         return header->mapName;
