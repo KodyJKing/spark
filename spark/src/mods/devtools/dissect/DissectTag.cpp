@@ -1,5 +1,5 @@
 #include "DissectTag.hpp"
-#include "RenderContext.hpp"
+#include "types.hpp"
 
 #include "engine/tags/schema/schema.hpp"
 #include "engine/halo1.hpp"
@@ -12,6 +12,7 @@
 #include <fstream>
 #include <sstream>
 #include <algorithm>
+#include <functional>
 
 #define DEBUG_DISSECT_TAG 1
 
@@ -21,6 +22,8 @@
 #else
 #define DEBUG_LOG(msg)
 #endif
+
+#define MAX_CLAIMED_BYTES_TO_TRACK 1048576
 
 namespace Mod::DevTools::DissectTag {
 
@@ -56,16 +59,11 @@ namespace Mod::DevTools::DissectTag {
         loadSchemas();
     }
 
-    struct WindowState {
-        uint32_t currentTagId;
-        bool open;
-    };
-
     std::map<uint32_t, WindowState> windowStates;
     
     void openWindow(uint32_t tagId) {
         if (windowStates.find(tagId) == windowStates.end()) {
-            windowStates[tagId] = WindowState{tagId, true};
+            windowStates[tagId] = WindowState{tagId};
         }
     }
 
@@ -82,6 +80,12 @@ namespace Mod::DevTools::DissectTag {
     std::string toHex(uint32_t value) {
         char buffer[9];
         snprintf(buffer, sizeof(buffer), "%08X", value);
+        return std::string(buffer);
+    }
+
+    std::string toHex(uint64_t value) {
+        char buffer[17];
+        snprintf(buffer, sizeof(buffer), "%016llX", value);
         return std::string(buffer);
     }
 
@@ -136,11 +140,39 @@ namespace Mod::DevTools::DissectTag {
         ImGui::Indent();
 
         char* structureName = context.field->type.name;
+        static char editStructureName[256];
+        
         
         // Structure name editor
         ImGui::SetNextItemWidth(ImGui::GetFontSize() * 8);
         ImGui::InputText("Structure", structureName, sizeof(context.field->type.name));
+        if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
+            strncpy(editStructureName, structureName, sizeof(editStructureName));
+            ImGui::OpenPopup("Edit Structure Name");
+        }
         ImGui::SameLine();
+
+        if (ImGui::BeginPopupModal("Edit Structure Name", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+            editStructureName[sizeof(editStructureName) - 1] = '\0';
+            ImGui::InputText("Structure Name", editStructureName, sizeof(editStructureName));
+            if (ImGui::Button("OK")) {
+                // Update structure name.
+                context.schema->renameStructure(structureName, editStructureName);
+                
+                // Point this field at the new structure name.
+                strncpy(structureName, editStructureName, sizeof(context.field->type.name));
+                structureName[sizeof(context.field->type.name) - 1] = '\0';
+
+                Beep(750, 300);
+                
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Cancel")) {
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
+        }
 
         // Find structure with this name.
         if (!context.schema->structures.count(structureName)) {
@@ -239,8 +271,9 @@ namespace Mod::DevTools::DissectTag {
 
         ImGui::SameLine();
         if (ImGui::Button("Copy Address")) {
-            uintptr_t address = reinterpret_cast<uintptr_t>(context.structureBase) + context.field->offset;
-            ImGui::SetClipboardText(std::to_string(address).c_str());
+            uint64_t address = reinterpret_cast<uintptr_t>(context.structureBase) + context.field->offset;
+            std::string addressStr = toHex(address);
+            ImGui::SetClipboardText(addressStr.c_str());
         }
 
         if (context.field->type.primitive == PrimitiveTypeRef::StructureReference) {
@@ -288,26 +321,44 @@ namespace Mod::DevTools::DissectTag {
         #define UNKNOWN_ROW_LENGTH 32
         size_t head = 0;
         size_t column = UNKNOWN_ROW_LENGTH;
+
+        WindowState& windowState = *context.windowState;
+        ClaimedBytes& claimedBytes = windowState.claimedBytes;
         
         auto renderUnknownCell = [&]() {
+            bool usedColor = false;
+            uint32_t color;
+            
             // Stripe columns in groups of 4
             auto group = column / 4;
             if (group & 1) {
-                ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(128, 128, 128, 255));
+                color = IM_COL32(128, 128, 128, 255);
+                usedColor = true;
             }
             
-            if (column >= UNKNOWN_ROW_LENGTH) {
-                column = 0;
-            } else {
-                ImGui::SameLine();
+            uintptr_t absoluteAddress = reinterpret_cast<uintptr_t>(context.structureBase) + head;
+            if (windowState.isStructureClaimed(absoluteAddress)) {
+                color = IM_COL32(64, 64, 128, 255);
+                usedColor = true;
             }
+            if (windowState.isClaimed(absoluteAddress)) {
+                color = IM_COL32(32, 32, 64, 255);
+                usedColor = true;
+            }
+
+            if (usedColor) ImGui::PushStyleColor(ImGuiCol_Text, color);
+            
+            if (column >= UNKNOWN_ROW_LENGTH)
+                column = 0;
+            else
+                ImGui::SameLine();
+
             renderUnknown(context, head);
+            
             head++;
             column++;
 
-            if (group & 1) {
-                ImGui::PopStyleColor();
-            }
+            if (usedColor) ImGui::PopStyleColor();
         };
 
         std::sort(context.structure->fields.begin(), context.structure->fields.end(), [](const Field& a, const Field& b) {
@@ -339,9 +390,8 @@ namespace Mod::DevTools::DissectTag {
         }
     }
 
-    void renderTagDetails(Engine::Tag* tag) {
-        RenderContext context;
-        context.tag = tag;
+    void renderTagDetails(RenderContext context) {
+        auto tag = context.tag;
         
         auto groupId = tag->classIdStr();
         ImGui::Text("Group ID: \"%s\"", groupId.c_str());
@@ -370,6 +420,28 @@ namespace Mod::DevTools::DissectTag {
         } else {
             context.structureSize = 256;
         }
+
+        context.windowState->baseAddress = reinterpret_cast<uintptr_t>(context.structureBase);
+
+        size_t bytesToTrack = size < MAX_CLAIMED_BYTES_TO_TRACK ? size : MAX_CLAIMED_BYTES_TO_TRACK;
+        context.windowState->claimedBytes.resize(bytesToTrack);
+        context.windowState->structureClaimedBytes.resize(bytesToTrack);
+
+        if (context.windowState->tick % 60 == 0) {
+            auto relocationOffset = Engine::mapRelocationOffset();
+            Engine::TagSchema::Context evalContext = {relocationOffset, reinterpret_cast<uintptr_t>(context.structureBase)};
+            schema->claimBytes(evalContext, context.windowState->claimedBytes, true);
+            schema->claimBytes(evalContext, context.windowState->structureClaimedBytes, false);
+        }
+
+        size_t totalClaimed = 0;
+        for (bool claimed : context.windowState->structureClaimedBytes) 
+            if (claimed) ++totalClaimed;
+        ImGui::Text("Total Claimed Bytes: %zu", totalClaimed);
+        totalClaimed = 0;
+        for (bool claimed : context.windowState->claimedBytes) 
+            if (claimed) ++totalClaimed;
+        ImGui::Text("Total Labeled Bytes: %zu", totalClaimed);
 
         renderSizeInput(mainStructure);
 
@@ -403,8 +475,13 @@ namespace Mod::DevTools::DissectTag {
             if (!tagExists) {
                 ImGui::Text("Tag not found.");
             } else {
-                renderTagDetails(tag);
+                RenderContext context;
+                context.windowState = &windowState;
+                context.tag = tag;
+                renderTagDetails(context);
             }
+
+            windowState.tick++;
             
             ImGui::End();
         }

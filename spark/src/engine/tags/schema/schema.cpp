@@ -15,6 +15,8 @@
 #define LOG(x)
 #endif
 
+#define CLAIM_BYTES_MAX_BLOCK_ITERATIONS 1024
+
 namespace Engine::TagSchema {
 
     std::string hex(uintptr_t value) {
@@ -26,15 +28,22 @@ namespace Engine::TagSchema {
     std::string signedHex(intptr_t value) {
         char buffer[18]; // sign + 16 hex digits + null terminator
         if (value < 0) {
-            snprintf(buffer, sizeof(buffer), "-%016" PRIXPTR, -value);
+            snprintf(buffer, sizeof(buffer), "-%X", -value);
         } else {
-            snprintf(buffer, sizeof(buffer), "+%016" PRIXPTR, value);
+            snprintf(buffer, sizeof(buffer), "+%X8", value);
         }
         return std::string(buffer);
     }
 
     uintptr_t getRelocatedAddress(const Context& context, uintptr_t address) {
         return context.relocationOffset + address;
+    }
+
+    uintptr_t getStructureFieldAddress(const Context& context, Field& structureField) {
+        size_t offset = structureField.offset;
+        uint32_t address = Memory::safeRead<uint32_t>(context.structureBase + offset + 4).value_or(0);
+        if (address == 0) return 0;
+        return getRelocatedAddress(context, address);
     }
 
     std::string Field::readString(const Context& context) {
@@ -58,6 +67,25 @@ namespace Engine::TagSchema {
                 return std::to_string(*reinterpret_cast<const int32_t*>(context.structureBase + offset));
             case PrimitiveTypeRef::Float:
                 return std::to_string(*reinterpret_cast<const float*>(context.structureBase + offset));
+            case PrimitiveTypeRef::Vec3:
+                return std::to_string(*reinterpret_cast<const float*>(context.structureBase + offset)) + ", " +
+                       std::to_string(*reinterpret_cast<const float*>(context.structureBase + offset + 4)) + ", " +
+                       std::to_string(*reinterpret_cast<const float*>(context.structureBase + offset + 8));
+            case PrimitiveTypeRef::Vec4:
+                return std::to_string(*reinterpret_cast<const float*>(context.structureBase + offset)) + ", " +
+                       std::to_string(*reinterpret_cast<const float*>(context.structureBase + offset + 4)) + ", " +
+                       std::to_string(*reinterpret_cast<const float*>(context.structureBase + offset + 8)) + ", " +
+                       std::to_string(*reinterpret_cast<const float*>(context.structureBase + offset + 12));
+            case PrimitiveTypeRef::Matrix3x3:
+                return std::to_string(*reinterpret_cast<const float*>(context.structureBase + offset)) + ", " +
+                       std::to_string(*reinterpret_cast<const float*>(context.structureBase + offset + 4)) + ", " +
+                       std::to_string(*reinterpret_cast<const float*>(context.structureBase + offset + 8)) + "; " +
+                       std::to_string(*reinterpret_cast<const float*>(context.structureBase + offset + 12)) + ", " +
+                       std::to_string(*reinterpret_cast<const float*>(context.structureBase + offset + 16)) + ", " +
+                       std::to_string(*reinterpret_cast<const float*>(context.structureBase + offset + 20)) + "; " +
+                       std::to_string(*reinterpret_cast<const float*>(context.structureBase + offset + 24)) + ", " +
+                       std::to_string(*reinterpret_cast<const float*>(context.structureBase + offset + 28)) + ", " +
+                       std::to_string(*reinterpret_cast<const float*>(context.structureBase + offset + 32));
             case PrimitiveTypeRef::TagString: {
                 // TagString is stored as a fixed-size array of 32 bytes. Don't assume null-termination.
                 const char* str = reinterpret_cast<const char*>(context.structureBase + offset);
@@ -73,11 +101,10 @@ namespace Engine::TagSchema {
                 return "Tag not found";
             }
             case PrimitiveTypeRef::StructureReference: {
-                uint32_t address = Memory::safeRead<uint32_t>(context.structureBase + offset + 4).value_or(0);
-                if (address == 0) return "<not allocated>";
-                uintptr_t relocatedAddress = getRelocatedAddress(context, address);
+                uintptr_t relocatedAddress = getStructureFieldAddress(context, *this);
+                if (relocatedAddress == 0) return "<not allocated>";
                 int64_t finalOffset = relocatedAddress - context.structureBase;
-                std::string description = "Structure at offset " + hex(relocatedAddress) + "(" + signedHex(finalOffset) + ")";
+                std::string description = "Structure at " + hex(relocatedAddress) + "(" + signedHex(finalOffset) + ")";
                 return description;
             }
             default:
@@ -137,6 +164,72 @@ namespace Engine::TagSchema {
         if (it != fields.end()) {
             fields.erase(it);
         }
+    }
+
+    void TagSchema::renameStructure(const std::string& oldName, const std::string& newName) {
+        auto it = structures.find(oldName);
+        if (it != structures.end()) {
+            Structure structure = it->second;
+            structure.name = newName;
+            structures.erase(it);
+            structures[newName] = structure;
+        }
+    }
+
+    void structureClaimBytes(TagSchema& schema, Structure& structure, Context& context, ClaimedBytes& claimedBytes, uintptr_t baseAddress, bool fieldOnly) {
+        size_t claimedBytesSize = claimedBytes.size();
+        auto claim = [&](size_t address) {
+            size_t offset = address - baseAddress;
+            if (offset >= claimedBytesSize) return;
+            claimedBytes[offset] = true;
+        };
+
+        if (!fieldOnly) {
+            for (size_t i = 0; i < structure.size; ++i) {
+                claim(context.structureBase + i);
+            }
+        }
+        
+        for (Field& field : structure.fields) {
+            switch (field.type.primitive) {
+                case PrimitiveTypeRef::Bit: {
+                    claim(context.structureBase + field.offset);
+                    break;
+                }
+                case PrimitiveTypeRef::StructureReference: {
+                    // Get referenced structure and claim its bytes.
+                    if (!schema.structures.count(field.type.name)) break;
+                    Structure& referencedStructure = schema.structures[field.type.name];
+
+                    BlockPointer* blockPointer = (BlockPointer*)(context.structureBase + field.offset);
+                    uintptr_t blockBaseAddress = getStructureFieldAddress(context, field);
+
+                    size_t iterations = blockPointer->count;
+                    if (iterations > CLAIM_BYTES_MAX_BLOCK_ITERATIONS)
+                        iterations = CLAIM_BYTES_MAX_BLOCK_ITERATIONS;
+                    
+                    for (size_t i = 0; i < iterations; i++) {
+                        Context subContext = context;
+                        subContext.structureBase = blockBaseAddress + i * referencedStructure.size;
+                        structureClaimBytes(schema, referencedStructure, subContext, claimedBytes, baseAddress, fieldOnly);
+                    }
+
+                    break;
+                }
+                default: {
+                    const size_t fieldSize = PrimitiveTypeRefSizes[static_cast<size_t>(field.type.primitive)];
+                    for (size_t i = 0; i < fieldSize; ++i) {
+                        claim(context.structureBase + field.offset + i);
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
+    void TagSchema::claimBytes(Context& context, ClaimedBytes& claimedBytes, bool fieldOnly) {
+        std::fill(claimedBytes.begin(), claimedBytes.end(), false);
+        structureClaimBytes(*this, mainStructure, context, claimedBytes, context.structureBase, fieldOnly);
     }
 
 }

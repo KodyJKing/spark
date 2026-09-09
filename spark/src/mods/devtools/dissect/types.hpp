@@ -1,13 +1,36 @@
 #pragma once
 
-#include "engine/tags/schema/schema.hpp"
 #include "engine/halo1.hpp"
+#include "engine/tags/schema/schema.hpp"
+
+#include <vector>
+#include <cstdint>
 
 namespace Mod::DevTools::DissectTag {
-
     using namespace Engine::TagSchema;
 
+    struct WindowState {
+        uint32_t currentTagId;
+        bool open = true;
+        bool hideClaimedBytes = true;
+        
+        uintptr_t baseAddress;
+
+        ClaimedBytes claimedBytes = std::vector<bool>(4096);
+        bool isClaimed(uintptr_t address) const {
+            return address >= baseAddress && address < baseAddress + claimedBytes.size() && claimedBytes[address - baseAddress];
+        }
+
+        ClaimedBytes structureClaimedBytes = std::vector<bool>(4096);
+        bool isStructureClaimed(uintptr_t address) const {
+            return address >= baseAddress && address < baseAddress + structureClaimedBytes.size() && structureClaimedBytes[address - baseAddress];
+        }
+
+        uint64_t tick = 0;
+    };
+
     struct RenderContext {
+        WindowState* windowState;
         Engine::Tag* tag;
         TagSchema* schema;
         void* structureBase;

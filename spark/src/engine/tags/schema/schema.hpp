@@ -6,6 +6,8 @@
 
 namespace Engine::TagSchema {
 
+    using ClaimedBytes = std::vector<bool>;
+
     struct Context {
         int64_t relocationOffset;
         uintptr_t structureBase;
@@ -16,6 +18,9 @@ namespace Engine::TagSchema {
         Uint8, Uint16, Uint32, Uint64,
         Int, Int8, Int16, Int32, Int64,
         Float,
+        Vec3,
+        Vec4,
+        Matrix3x3,
         TagString,
         TagReference,
         StructureReference,
@@ -27,6 +32,7 @@ namespace Engine::TagSchema {
         "Uint8", "Uint16", "Uint32", "Uint64",
         "Int", "Int8", "Int16", "Int32", "Int64",
         "Float",
+        "Vec3", "Vec4", "Matrix3x3",
         "TagString",
         "TagReference",
         "StructureReference",
@@ -38,6 +44,9 @@ namespace Engine::TagSchema {
         1, 2, 4, 8, // Uint8, Uint16, Uint32, Uint64
         4, 1, 2, 4, 8, // Int, Int8, Int16, Int32, Int64
         4, // Float
+        12, // Vec3
+        16, // Vec4
+        36, // Matrix3x3
         32, // TagString
         4, // TagReference
         12, // StructureReference
@@ -65,6 +74,7 @@ namespace Engine::TagSchema {
         void writeString(const Context& context, const std::string& value);
     };
 
+    struct TagSchema;
     struct Structure {
         std::string name;
         size_t size;
@@ -90,6 +100,16 @@ namespace Engine::TagSchema {
 
         std::map<std::string, Enumeration> enumerations;
         std::map<std::string, Structure> structures;
+
+        /*
+         * Renames a structure, but does not update any references to it within other structures.
+         */
+        void renameStructure(const std::string& oldName, const std::string& newName);
+
+        /**
+         * Marks the bytes claimed by this tag schema within the given context.
+         */
+        void claimBytes(Context& context, ClaimedBytes& claimedBytes, bool fieldOnly);
     };
 
     struct TagSchemaCollection {
