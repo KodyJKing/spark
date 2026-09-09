@@ -237,6 +237,12 @@ namespace Mod::DevTools::DissectTag {
             *context.structureModified = true;
         }
 
+        ImGui::SameLine();
+        if (ImGui::Button("Copy Address")) {
+            uintptr_t address = reinterpret_cast<uintptr_t>(context.structureBase) + context.field->offset;
+            ImGui::SetClipboardText(std::to_string(address).c_str());
+        }
+
         if (context.field->type.primitive == PrimitiveTypeRef::StructureReference) {
             renderSubstructure(context);
         }

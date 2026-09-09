@@ -6,6 +6,15 @@
 
 #include <cinttypes>
 
+#define DEBUG_TAG_SCHEMA 1
+
+#ifdef DEBUG_TAG_SCHEMA
+#include <iostream>
+#define LOG(x) std::cout << "[Engine::TagSchema] " << x << std::endl;
+#else
+#define LOG(x)
+#endif
+
 namespace Engine::TagSchema {
 
     std::string hex(uintptr_t value) {
@@ -73,6 +82,52 @@ namespace Engine::TagSchema {
             }
             default:
                 return "Not implemented";
+        }
+    }
+
+    void Field::writeString(const Context& context, const std::string& value) {
+        try {
+            switch (type.primitive) {
+            case PrimitiveTypeRef::Uint8:
+                *reinterpret_cast<uint8_t*>(context.structureBase + offset) = static_cast<uint8_t>(std::stoi(value));
+                break;
+            case PrimitiveTypeRef::Uint16:
+                *reinterpret_cast<uint16_t*>(context.structureBase + offset) = static_cast<uint16_t>(std::stoi(value));
+                break;
+            case PrimitiveTypeRef::Uint32:
+                *reinterpret_cast<uint32_t*>(context.structureBase + offset) = static_cast<uint32_t>(std::stoul(value));
+                break;
+            case PrimitiveTypeRef::Int8:
+                *reinterpret_cast<int8_t*>(context.structureBase + offset) = static_cast<int8_t>(std::stoi(value));
+                break;
+            case PrimitiveTypeRef::Int16:
+                *reinterpret_cast<int16_t*>(context.structureBase + offset) = static_cast<int16_t>(std::stoi(value));
+                break;
+            case PrimitiveTypeRef::Int32:
+                *reinterpret_cast<int32_t*>(context.structureBase + offset) = static_cast<int32_t>(std::stoi(value));
+                break;
+            case PrimitiveTypeRef::Float:
+                *reinterpret_cast<float*>(context.structureBase + offset) = std::stof(value);
+                break;
+            case PrimitiveTypeRef::TagString: {
+                char* str = reinterpret_cast<char*>(context.structureBase + offset);
+                strncpy(str, value.c_str(), 32);
+                break;
+            }
+            case PrimitiveTypeRef::TagReference: {
+                // Try parsing as a tag-handle
+                uint32_t tagHandle = static_cast<uint32_t>(std::stoul(value));
+                *reinterpret_cast<uint32_t*>(context.structureBase + offset) = tagHandle;
+                // Todo: Try parsing as a tag path...
+            }
+            default:
+                LOG("Unsupported field type for writing string: " << static_cast<int>(type.primitive));
+                break;
+            }
+        }
+        catch (const std::exception& e) {
+            // Handle any conversion errors or other exceptions.
+            LOG("Error writing string to field: " << e.what());
         }
     }
 

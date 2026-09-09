@@ -46,10 +46,13 @@ namespace Engine {
         *(Tag**) ( dllBase() + TAG_ARRAY_OFFSET ) = newArray;
     }
 
-    uint32_t getTagArraySize() {
+    uint32_t* getTagArraySizePtr() {
         void* tagArray = *(void**) ( dllBase() + TAG_ARRAY_OFFSET );
-        uint32_t tagArraySize = *(uint32_t*) ( (uintptr_t)tagArray - TAG_ARRAY_SIZE_OFFSET );
-        return tagArraySize;
+        return (uint32_t*) ( (uintptr_t)tagArray - TAG_ARRAY_SIZE_OFFSET );
+    }
+
+    uint32_t getTagArraySize() {
+        return *getTagArraySizePtr();
     }
 
     Tag* getTag( uint32_t tagID ) {
@@ -108,37 +111,79 @@ namespace Engine {
     //////////////////////////////////////////////////////
     // Tag allocation
 
-    bool wasTagArrayMoved() {
-        auto tag0 = getTag(0);
-        if (!tag0) return true;
-        auto resourcePath0 = tag0->getResourcePath();
-        auto nextTag = getTag(getTagArraySize());
-        return (uintptr_t)resourcePath0 != (uintptr_t)nextTag;
+    // Verify that resource path strings appear in a monotonically increasing order in memory.
+    bool verifyResourceStringMonotonicity() {
+        static bool cached = false;
+        static bool result = false;
+        if (cached) return result;
+        cached = true;
+
+        uint32_t tagCount = getTagArraySize();
+        if (tagCount == 0) return true;
+        const char* lastResourcePath = getTag(0)->getResourcePath();
+        for (uint32_t i = 1; i < tagCount; i++) {
+            const char* currentResourcePath = getTag(i)->getResourcePath();
+            if (currentResourcePath <= lastResourcePath) {
+                result = false;
+                return false;
+            }
+            lastResourcePath = currentResourcePath;
+        }
+        result = true;
+        return true;
     }
 
-    // Move tags array to a new location with space for new tags.
-    Tag* moveTagsArray() {
-        if (wasTagArrayMoved()) {
-            LOG("Tag array was already moved.");
-            return getTag(0);
+    bool moveResourceStrings() {
+        // Todo: Make this idempotent. This would need a mechanism to associate data with a single map-session.
+        
+        // 1. Measure the total length of all resource strings.
+        uint32_t tagCount = getTagArraySize();
+        size_t totalLength = 0;
+        for (uint32_t i = 0; i < tagCount; i++) {
+            Tag* tag = getTag(i);
+            if (!tag) continue;
+            const char* resourcePath = tag->getResourcePath();
+            if (!resourcePath) continue;
+            totalLength += strlen(resourcePath) + 1;
         }
         
-        LOG("Moving tags array to a new location with space for new tags.");
+        // 2. Allocate a contiguous block of memory for all resource strings.
+        char* newBlock = (char*) Engine::allocateMapMemory(totalLength);
+        if (!newBlock) return false;
 
-        auto size = getTagArraySize();
-        auto sizeBytes = size * sizeof(Tag);
-        void* newArray = malloc(sizeBytes);
-
-        if (!newArray) {
-            LOG("Failed to allocate new tags array.");
-            return nullptr;
+        // 3. Copy each resource string into the new block and update the tag pointers.
+        char* currentPosition = newBlock;
+        for (uint32_t i = 0; i < tagCount; i++) {
+            Tag* tag = getTag(i);
+            if (!tag) continue;
+            const char* resourcePath = tag->getResourcePath();
+            if (!resourcePath) continue;
+            size_t length = strlen(resourcePath) + 1;
+            memcpy(currentPosition, resourcePath, length);
+            tag->resourcePathAddress = translateToMapAddress((uint64_t)currentPosition);
+            currentPosition += length;
         }
 
-        // Copy existing tags to the new array.
-        memcpy(newArray, getTag(0), sizeBytes);
+        LOG("Moved resource strings to a contiguous block at address: " << (void*)newBlock);
 
-        setTagArray((Tag*) newArray);
-        return (Tag*) newArray;
+        return true;
+    }
+
+    bool hasRoomForTag(Tag* tag) {
+        auto tag0 = getTag(0);
+        if (!tag0) return false;
+        auto resource0 = tag0->getResourcePath();
+        if (!resource0) return false;
+        
+        uintptr_t tagEnd = (uintptr_t)tag + sizeof(Tag);
+        uintptr_t resourceStart = (uintptr_t)resource0;
+        return tagEnd <= resourceStart;
+    }
+
+    bool makeRoomForTag(Tag* tag) {
+        if (!tag) return false;
+        if (hasRoomForTag(tag)) return true;
+        return moveResourceStrings();
     }
 
     // Assumes tag data is contiguous in memory.
@@ -159,26 +204,34 @@ namespace Engine {
     }
 
     Tag* allocateTag(CreateTagOptions options) {
-        if (!moveTagsArray()) {
-            LOG("Cannot allocate tag. Failed to move tags array.");
+        if (!verifyResourceStringMonotonicity()) {
+            LOG("Resource strings are not in monotonically increasing order, cannot allocate tags on this map.");
             return nullptr;
         }
+
+        uint32_t* tagArraySizePtr = getTagArraySizePtr();
         
-        uint32_t tagCount = getTagArraySize();
+        uint32_t tagCount = *tagArraySizePtr;
         LOG("Current tag count: " << tagCount);
         if (tagCount == 0) return nullptr;
 
+        Tag* tag = getTag(tagCount);
+        if (!makeRoomForTag(tag))
+            return nullptr;
+        
         const char* resourcePath = allocateTagPath(options.resourcePath);
         LOG("Allocated resource path: " << resourcePath);
         if (!resourcePath)
             return nullptr;
 
-        Tag* tag = getTag(tagCount);
-        LOG("Allocating new tag at index " << tag);
+        LOG("Allocating new tag at " << tag);
+        tag->tagID = 0x7777 << 16 | (tagCount & 0xFFFF);
         tag->groupID = options.groupId;
         tag->parentGroupID = options.parentGroupId;
         tag->grandparentGroupID = options.grandparentGroupId;
         tag->resourcePathAddress = translateToMapAddress((uint64_t) resourcePath);
+
+        (*tagArraySizePtr)++;
 
         return tag;
     }
@@ -195,6 +248,12 @@ namespace Engine {
         if (!tagExists(tag)) return nullptr;
         if (dataSize == 0) dataSize = guessTagSize(tag);
 
+        void* oldData = tag->getData();
+        if (!oldData || !Memory::isAllocated(oldData)) {
+            LOG("Old tag data is not allocated, cannot clone tag.");
+            return nullptr;
+        }
+
         void* newData = allocateTagData(dataSize);
         if (!newData) return nullptr;
         
@@ -203,7 +262,8 @@ namespace Engine {
             return nullptr;
         }
 
-        memcpy(newData, tag->getData(), dataSize);
+        LOG("Cloning tag data from " << oldData << " to " << newData);
+        memcpy(newData, oldData, dataSize);
 
         // Create new path with " copy" appended
         char buffer[256];

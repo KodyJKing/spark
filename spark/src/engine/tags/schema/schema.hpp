@@ -62,6 +62,7 @@ namespace Engine::TagSchema {
         uint8_t bitOffset;
         
         std::string readString(const Context& context);
+        void writeString(const Context& context, const std::string& value);
     };
 
     struct Structure {
