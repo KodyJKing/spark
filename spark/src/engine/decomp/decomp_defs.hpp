@@ -8,3 +8,4 @@
 
 HOOK(transformVec,0xBA2F5C)
 HOOK(_lineTestVsEntityModel,0xB91C0C)
+HOOK(_drawModel,0xBF5D18)
