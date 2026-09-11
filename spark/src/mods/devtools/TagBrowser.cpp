@@ -45,6 +45,7 @@ namespace Mod::DevTools {
         GROUP_ID("Light", "ligh")
         GROUP_ID("BSP", "sbsp")
         GROUP_ID("Collision Model", "coll")
+        GROUP_ID("Model", "mod2")
         #undef GROUP_ID
     };
 

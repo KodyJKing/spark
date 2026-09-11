@@ -1,6 +1,7 @@
 #include "mods/devtools/DevWindow.hpp"
 #include "mods/devtools/ScriptConsole.hpp"
 #include "mods/devtools/dissect/DissectTag.hpp"
+#include "mods/devtools/inspectdx11/InspectDX11.hpp"
 #include "imgui.h"
 #include "engine/halo1.hpp"
 #include "memory/Memory.hpp"
@@ -111,6 +112,11 @@ namespace Mod::DevTools {
             showTagBrowser = !showTagBrowser;
         if (showTagBrowser)
             tagBrowser();
+
+        if (ImGui::Button("Inspect DX11")) 
+            InspectDX11::open();
+        InspectDX11::render();
+
 
         auto hscBoolToggle = [](const char* label) {
             bool value = (bool)(Engine::Scripting::readGlobal(label) & 0xFF);

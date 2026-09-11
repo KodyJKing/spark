@@ -5186,6 +5186,33 @@ halo1.dll+BE615D: F3 0F 59 3D 6B 99 D6 00  - mulss xmm7,[halo1.dll+194FAD0]
         <Byte>40</Byte>
       </After>
     </CodeEntry>
+    <CodeEntry>
+      <Description>Change of call qword ptr [r10+00000090]</Description>
+      <AddressString>halo1.dll+BF5E1B</AddressString>
+      <Before>
+        <Byte>20</Byte>
+        <Byte>44</Byte>
+        <Byte>8D</Byte>
+        <Byte>42</Byte>
+        <Byte>01</Byte>
+      </Before>
+      <Actual>
+        <Byte>41</Byte>
+        <Byte>FF</Byte>
+        <Byte>92</Byte>
+        <Byte>90</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+      </Actual>
+      <After>
+        <Byte>48</Byte>
+        <Byte>8B</Byte>
+        <Byte>CB</Byte>
+        <Byte>E8</Byte>
+        <Byte>96</Byte>
+      </After>
+    </CodeEntry>
   </CheatCodes>
   <UserdefinedSymbols/>
   <Structures StructVersion="2">
@@ -8496,6 +8523,16 @@ RCX = VertexBlockBase
     <DisassemblerComment>
       <Address>"halo1.dll"+BDB03B</Address>
       <Comment>Creates decal
+</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+BF5D18</Address>
+      <Comment>RCX and R9 always seem to point into a mod2::Geometry::Part, particularly at index and vertex buffer refs
+</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+BF5DF4</Address>
+      <Comment>r13 points into (but not at) a mod2::Geometry::Part, this is loading the address of its vertex buffer offset
 </Comment>
     </DisassemblerComment>
     <DisassemblerComment>
