@@ -13,6 +13,17 @@
  * and depth-tested against Halo's reversed depth buffer (GREATER_EQUAL, no
  * depth write) for correct occlusion against scene geometry.
  */
+
+ #define DEBUG_DX11_ESP 1
+
+ #ifdef DEBUG_DX11_ESP
+ #include <iostream>
+ #define LOG(x) std::cout << "[DX11ESP] " << x << std::endl;
+ #else
+ #define LOG(x)
+ #endif
+ 
+
 namespace Spark::Overlay::ESP::DX11 {
 
     // World-space vertices are transformed by the view-projection matrix in the constant buffer.
@@ -66,7 +77,9 @@ namespace Spark::Overlay::ESP::DX11 {
     static float  s_depthBias   = 0.0f;
 
     void init() {
+        LOG("Initializing DX11 ESP");
         ID3D11DeviceContext* context = Engine::getD3D11Context();
+        LOG("Got D3D11 context " << (void*) context);
         if (!context) return;
 
         ID3D11Device* device = nullptr;

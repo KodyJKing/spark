@@ -38,5 +38,6 @@ reversing/ghidra/*.lock~
 reversing/ghidra/*.zip
 reversing/ghidra/Halo MCC.rep/**
 reversing/ghidra_restic
+reversing/ghidra/versions
 
 tags/*/bitmaps
