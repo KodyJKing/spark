@@ -40,7 +40,8 @@ namespace Spark::Overlay {
         if ( ImGui::CollapsingHeader("Zydis") ) ImGui::TextWrapped(Spark::Licenses::zydis);
         if ( ImGui::CollapsingHeader("UniversalHookX") ) ImGui::TextWrapped(Spark::Licenses::universalHookX);
         if ( ImGui::CollapsingHeader("JSON for Modern C++") ) ImGui::TextWrapped(Spark::Licenses::json);
-        ImGui::TextWrapped("Thanks to Kavawuvi for their documentation of the Halo CE map and tag format.");
+        ImGui::TextWrapped("Thanks to Kavawuvi and the maintainers of C20 for their documentation of the Halo CE map and tag format.");
+        ImGui::TextWrapped("A special thanks to SaigoSm and the other early adopters of SMC64, the first Spark mod.");
     }
 
     void mainModWindow() {

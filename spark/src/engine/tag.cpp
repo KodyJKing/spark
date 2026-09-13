@@ -225,7 +225,7 @@ namespace Engine {
             return nullptr;
 
         LOG("Allocating new tag at " << tag);
-        tag->tagID = 0x7777 << 16 | (tagCount & 0xFFFF);
+        tag->tagID = 0xE117 << 16 | (tagCount & 0xFFFF);
         tag->groupID = options.groupId;
         tag->parentGroupID = options.parentGroupId;
         tag->grandparentGroupID = options.grandparentGroupId;

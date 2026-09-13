@@ -11,7 +11,7 @@
 #include "mods/devtools/cheatengine/Messages.hpp"
 #include "mods/devtools/dissect/DissectTag.hpp"
 
-// #define ENABLE_TAG_CLONING 1
+#define ENABLE_TAG_CLONING 1
 
 namespace Mod::DevTools {
 

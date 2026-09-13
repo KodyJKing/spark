@@ -451,11 +451,13 @@ namespace Mod::DevTools::DissectTag {
     void render() {
         initialize();
 
-        if (ImGui::Begin("Dissect Tag Schemas")) {
-            if (ImGui::Button("Save"))
-                saveSchemas();
+        if (windowStates.size() > 0) {
+            if (ImGui::Begin("Dissect Tag Schemas")) {
+                if (ImGui::Button("Save"))
+                    saveSchemas();
+            }
+            ImGui::End();
         }
-        ImGui::End();
         
         for (auto& [tagId, windowState] : windowStates) {
             auto tag = Engine::getTag(tagId);

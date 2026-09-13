@@ -1,6 +1,7 @@
 #include "mods/devtools/DevWindow.hpp"
 #include "mods/devtools/ScriptConsole.hpp"
 #include "mods/devtools/dissect/DissectTag.hpp"
+#include "mods/devtools/engineinfo/EngineInfo.hpp"
 #include "mods/devtools/inspectdx11/InspectDX11.hpp"
 #include "imgui.h"
 #include "engine/halo1.hpp"
@@ -116,6 +117,10 @@ namespace Mod::DevTools {
         if (ImGui::Button("Inspect DX11")) 
             InspectDX11::open();
         InspectDX11::render();
+
+        if (ImGui::Button("Engine Info"))
+            EngineInfo::open();
+        EngineInfo::render();
 
 
         auto hscBoolToggle = [](const char* label) {
