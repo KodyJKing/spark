@@ -72,11 +72,27 @@ namespace TagData {
        char data[0xAC] [[hidden]];
        BlockPointer<ModelGeometry> geometries @ THIS+0xD0;
     };
+    
+    struct BitmapGroupsSequence { char data[0x40] [[hidden]]; };
+    
+    struct BitmapData {
+        u32 class;
+        u16 width, height, depth;
+        u16 type, format, flags;
+        s16 regX, regY;
+        u16 minMapCount;
+        u16;
+        u32 dataOffset;
+        u32 dataSize;
+        u32 thisBitmapHandle;
+        u32 texCacheHandle;
+        u32 bufferSourceIndex; 
+    };
 
     struct Bitmap {
         char data[0x20] [[hidden]]; // Size not known.
-        BlockPointer<u32> unknown0 @ THIS+0x54;
-        BlockPointer<u32> unknown1 @ THIS+0x60;
+        BlockPointer<BitmapGroupsSequence> groupSequences @ THIS+0x54;
+        BlockPointer<BitmapData> bitmapData @ THIS+0x60;
     };
     
 }
