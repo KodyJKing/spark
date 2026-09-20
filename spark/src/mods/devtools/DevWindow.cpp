@@ -8,6 +8,7 @@
 #include "memory/Memory.hpp"
 #include "mods/devtools/Interpretations.hpp"
 #include "mods/devtools/TagBrowser.hpp"
+#include "mods/devtools/map_file/MapFileViewer.hpp"
 #include "utils/Strings.hpp"
 #include "spark/Spark.hpp"
 #include <string>
@@ -113,6 +114,11 @@ namespace Mod::DevTools {
             showTagBrowser = !showTagBrowser;
         if (showTagBrowser)
             tagBrowser();
+
+        if (ImGui::Button("Map File Viewer"))
+            showMapFileViewer = !showMapFileViewer;
+        if (showMapFileViewer)
+            mapFileViewer();
 
         if (ImGui::Button("Inspect DX11")) 
             InspectDX11::open();
