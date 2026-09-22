@@ -46,26 +46,18 @@
                 // Buffers should be re-discovered upon re-injection. (I'm thinking bookkeeping lives in named shared memory).
                 // While uninjected, custom tags will point at junk data (I have tested this, it't just ugly, doesn't crash)
 
-                // POD arena, not std::vector: layout must stay stable across rebuilds since the
-                // persisted object is reinterpreted by the next injected build. A live std::vector
-                // would couple every build to an identical STL ABI (Debug/Release layouts even differ).
-                struct Arena {
-                    uint8_t* data;
-                    size_t size;
-                    size_t capacity;
-                };
 
                 struct SparkBuffers {
-                    // Tags are never removed, so we just append to these buffers and hand out fixed offsets into them.
+                    // Tags are never removed during an inject-session, so we just append to these buffers and hand out fixed offsets into them.
                     // Callers must re-resolve offset->pointer at use time (append may move `data`) and pad appends for alignment.
-                    Arena textureBuffer;
-                    Arena vertexBuffer;
-                    Arena indexBuffer;
+                    std::vector<uint8_t> textureBuffer;
+                    std::vector<uint8_t> vertexBuffer;
+                    std::vector<uint8_t> indexBuffer;
                 };
 
                 struct SparkPersistedState {
-                    // Must be careful about leaving pointers DLL memory in SparkBuffers since it survives re-injection.
-                    SparkBuffers* buffers;
+                    // Where tag resource paths have been moved to (if they have).
+                    void* tagResourcePathBlock;
                 };
 
                 SparkBuffers* getSparkBuffers();
@@ -87,12 +79,14 @@
 
                     // Copy methods are only implemented for RuntimeMapFile.
 
-                    // Copy a tag from another map. Return the new tag handle.
-                    // Handles all copying defaults and returns a ready to use tag.
+                    // Copy (or patch) a tag from another map. Return the new tag handle.
+                    // Handles all copying details and returns a ready to use tag.
+                    //   - Note: Schema MUST be known for a tag to be copied/patched.
                     //   - Copies referenced tags if absent from the target map.
                     //   - Patches tags if already present.
                     //     - Leave tag data in place if same size.
                     //     - Reallocate if size differs.
+                    //     - Does no comparison, always copies even for unchanged data.
                     //   - Tags are matched (between maps) by their (groupId, path) tuple.
                     //   - Must be idempotent so re-injection during development doesn't break anything.
                     //   - New tags are left in place at uninjection time.
@@ -123,6 +117,13 @@
                     //   RawMapFiles use index-relative offsets.
                     //   RuntimeMapFiles use Spark buffer offsets.
                     virtual uint32_t copyIndexData(MapFile* sourceMap, ModelGeometryPart* source);
+
+                    // Adds a new entry to the tag array.
+                    // Returns handle to new tag.
+                    // RuntimeMapFile needs to move the block of tag-resource-path strings to make room.
+                    //   - This move must be idempotent.
+                    //   - See tags.cpp for current implementation.
+                    virtual uint32_t allocateTag();
                 };
 
                 class RawMapFile : public MapFile;

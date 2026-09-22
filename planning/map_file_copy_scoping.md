@@ -103,13 +103,38 @@ Decisions needed:
 - How complete/trustworthy the existing authored schemas are, and what cleanup
   they need.
 
-### 3.3 Copy semantics
+A tag can only be copied/patched if its schema is known. A missing schema
+**anywhere in the transitive closure hard-blocks the copy** — no partial or
+blind copying.
+
+### 3.3 Copy semantics (no comparison, always copy)
 
 Copy is **target-driven**: `RuntimeMapFile::copyTag(sourceMap, sourceHandle)`
 runs on the destination (the live map) and pulls from `sourceMap`. Only the
 runtime implementation copies; `RawMapFile` is read-only source (see §10).
 
-A generic copy should:
+There is **no comparison**: copy always writes, even for unchanged data.
+Idempotency comes from determinism — re-copying the same source yields the same
+bytes, so a re-inject re-establishes the same end state. This is simpler than
+reconciliation and needs no ownership bookkeeping or schema-normalized compare;
+the cost is re-copying on every inject, accepted as a dev/load-time cost and
+optimizable later if it proves slow.
+
+Per tag, matched between maps by `(groupId, path)`:
+- **Top-level tag** (the one the mod asked to copy) → always (re)copied/patched.
+- **Referenced tag, absent in target** → copied, then recurse into its references.
+- **Referenced tag, already present** → referenced as-is, not re-copied.
+- On patch: leave tag data in place if the size matches, reallocate if it differs.
+
+> **Open gap — dependency staleness.** Because side buffers are session-scoped
+> (§3.3a) and referenced tags are only copied when *absent*, a dependency Spark
+> created in a previous session is *present* on re-inject but its buffer data is
+> gone — it resolves its Spark-buffer offset against this session's empty buffer,
+> yielding garbage, and patching the top-level tag does not refresh a
+> dependency's buffers. Closing this means always re-copying the declared closure
+> (not "if absent"); deferred while near-term targets are shallow. See §9.
+
+The copy/patch traversal itself should:
 - Traverse the source tag via its schema.
 - Bulk-copy structures (not field-by-field) where layouts match.
 - Apply **fixups** after the bulk copy for anything that can't be copied
@@ -117,12 +142,11 @@ A generic copy should:
   cross-tag references, handles/IDs that must be re-issued in the destination.
 - Translate every relative pointer through the base model in §3.1: compute
   `sourcePtr - sourceBase`, then re-anchor onto `destBase`.
-- **Recursively copy referenced tags** that are absent from the target map, and
-  **patch tags that are already present** (leave data in place when the size
-  matches, reallocate when it differs). Tags are matched between maps by their
-  `(groupId, path)` tuple, which also makes the copy idempotent — a re-run
-  patches in place instead of duplicating.
 - Return a ready-to-use tag handle in the destination.
+
+Patching tag data does not by itself refresh engine/GPU-derived state, but that
+is handled: Spark manages the vertex/index buffers it detours the *binding* to,
+and forces texture reloads from CPU via an existing mechanism (§7).
 
 Bitmap pixel data and model vertex/index data are the notable "side buffers"
 that live outside the tag-data blob and need representation-specific handling
@@ -135,36 +159,26 @@ At runtime, copied side-buffer data does not go into the engine's map memory —
 it goes into Spark-owned buffers for texture, vertex, and index data. The engine
 is then detoured to consume them:
 
-- **Texture** buffer *mapping/loading* is detoured for any Spark-owned tag.
+- **Texture** buffer *mapping/loading* is detoured (redirect when the resource
+  resolves into a Spark buffer).
 - **Vertex/index** buffer *binding* is detoured (not mapping/loading).
 - `copyBitmapData` / `copyVertexData` / `copyIndexData` return offsets into
   these buffers (whereas `RawMapFile` would return map/vertex/index-relative
   offsets).
 
-The buffers are **append-only POD arenas** (`{ data, size, capacity }`), not
-live STL containers. Tags are never removed, so copy appends and hands out fixed
-offsets. Two consequences fall out of this:
+Tags are never removed, so the buffers are **append-only** and hand out fixed
+offsets. Detours **re-resolve offset→pointer at every use** (an append may move
+the backing store; offsets are stable, raw pointers are not), and each appended
+block is **padded/aligned** for GPU vertex/index binding and texture rows.
 
-- **Re-resolve offset→pointer at every use.** Offsets are stable across growth;
-  raw pointers are not (an append may `realloc`/move `data`). Detours must
-  compute `arena.data + offset` at use time, or reserve up front and not grow
-  while the engine holds a live pointer (texture streaming is the risk).
-- **Alignment.** Byte-granular storage isn't enough for GPU vertex/index binding
-  or texture rows; each appended block must be padded and its offset aligned.
-
-`getSparkBuffers()` exposes them. Only a small, fixed-size **`SparkPersistedState`**
-(a `SparkBuffers*` plus bookkeeping) lives in named shared memory (§3.4); the
-variable-size **buffer content stays in ordinary process memory**, not in the
-shared section. The persisted pointer stays valid across re-injection only
-because that content is **intentionally never destructed** — with Spark's
-`staticruntime "off"`, a deliberately-leaked allocation survives on the shared
-CRT heap and can even be grown/freed by the next injection. A static/global with
-a destructor would instead be freed at `DLL_PROCESS_DETACH` and dangle the
-pointer. `VirtualAlloc` is an equally valid, CRT-independent backing store.
-POD arenas (rather than `std::vector`) are deliberate: the persisted object is
-reinterpreted by the *next* injected build, so its layout must not depend on STL
-ABI — which differs across Debug/Release and toolset updates (§9). Concrete shape
-of both structs is TBD.
+`SparkBuffers` is **not persisted** — it is session-scoped, rebuilt each
+injection (content re-copied per §3.3) and released on uninject. That removes the
+earlier constraints entirely: no shared-memory placement, no STL-ABI concern, no
+"outlive DLL unload" requirement — so `SparkBuffers` can be plain owned storage
+(e.g. a `std::vector<uint8_t>` per buffer). One nuance: to preserve the tested
+"ugly but doesn't crash" state while uninjected, buffers may still be **leaked**
+(abandoned, not freed) on uninject so their addresses aren't immediately reused
+— a per-session leak that dies on process exit.
 
 ### 3.4 Inject / re-inject lifecycle & idempotency
 
@@ -172,20 +186,44 @@ This is a first-class requirement, not a nicety. During development the DLL is
 repeatedly uninjected and re-injected against a running game, and the pipeline
 must tolerate that:
 
-- **Persisted state** — `getPersistedState()` returns a `SparkPersistedState`
-  backed by **named shared memory** (small and fixed-size: a `SparkBuffers*`
-  plus bookkeeping). It survives uninject/re-inject cycles but *not* process
-  exit. Buffer *content* lives in ordinary process memory and must be
-  intentionally leaked (not destructed on unload) so the persisted pointer stays
-  valid — see §3.3a. This is how Spark reattaches to its buffers on re-injection.
-- **Idempotent copy** — re-running `copyTag` for the same source tag patches the
-  existing tag rather than duplicating it (in place if same size, reallocate if
-  different); `(groupId, path)` matching drives this.
+- **Persisted state is minimal** — `getPersistedState()` returns a
+  `SparkPersistedState` backed by **named shared memory**; it survives
+  uninject/re-inject cycles but *not* process exit. It no longer holds buffers.
+  Its one job is recording where the tag-resource-path block was relocated
+  (`tagResourcePathBlock`) so that relocation happens once and idempotently —
+  see §3.4a.
+- **Idempotent copy** — no bookkeeping needed: copy is deterministic and always
+  rewrites (§3.3), so a re-inject with no source changes re-produces the same
+  bytes. `(groupId, path)` matching locates the target and prevents duplicate
+  tag-array entries (present ⇒ patch, not add).
+- **Shared-section survival** — the named section holding `SparkPersistedState`
+  must survive the uninject gap: leak the section handle (handles are
+  process-owned, so they outlive DLL unload) or have the launcher hold one.
 - **New tags left in place at uninject time** — copied tags/data are not torn
   down on uninjection.
 - **Graceful while-uninjected behavior** — custom tags point at junk data while
-  uninjected; this has been tested to be visually ugly but *not* a crash, so it
-  is acceptable between sessions.
+  uninjected; tested to be visually ugly but *not* a crash, so acceptable
+  between sessions.
+
+### 3.4a Growing the tag array (`allocateTag` + string relocation)
+
+Adding a genuinely new tag needs a free slot at the end of the fixed-position
+tag array, but the block of tag-resource-path strings sits immediately after it.
+`RuntimeMapFile::allocateTag` makes room by **relocating that string block**
+(measure total length → allocate via `allocateMapMemory` → copy strings → repoint
+every tag's `resourcePathAddress`), freeing the original region for the tag array
+to grow into *in place* — the array base can't move without breaking every
+`tagID → address` computation. Current implementation: `moveResourceStrings` /
+`makeRoomForTag` in [engine/tag.cpp](engine/tag.cpp).
+
+Idempotency has two independent guards:
+- The **string move happens once per map-session**, guarded by
+  `tagResourcePathBlock`: if set, the block is already relocated → skip. (A naive
+  re-run would allocate a second block, leak the first, and double-repoint.)
+- **Tag addition** is guarded by `(groupId, path)` presence: a tag present from a
+  previous session is patched, not re-added, so it consumes no slot. The freed
+  region is therefore a fixed budget spent only by *genuinely new* distinct tags
+  across the map-session's life, not per inject.
 
 ---
 
@@ -199,12 +237,15 @@ the type nits.
   - Translate to/from a relative base (the §3.1 base enum).
   - Enumerate/find tags (by name/path, by group).
   - `copyTag(sourceMap, sourceHandle) -> destHandle` — the public entry point,
-    implemented on the **target** map; orchestrates defaults, dependency copy,
-    data copy, and fixups. Idempotent via `(groupId, path)` matching: absent
-    tags are copied, present tags are patched (in place if same size, reallocated
-    if different).
+    implemented on the **target** map; orchestrates dependency copy, data copy,
+    and fixups. No comparison — always rewrites (§3.3); `(groupId, path)` locates
+    the target. Refuses if any schema in the closure
+    is missing.
   - Internal, representation-specific side-buffer copy: `copyTagData(...)`,
     `copyBitmapData(...)`, `copyVertexData(...)`, `copyIndexData(...)`.
+  - `allocateTag() -> destHandle` — add a new entry to the target tag array;
+    on `RuntimeMapFile` this relocates the resource-string block to make room,
+    idempotently (§3.4a).
 
 - `RawMapFile : MapFile` — backed by a file buffer (folds in today's
   `Engine::MapFile::MapFile` capabilities). **Read-only source**: offsets are
@@ -218,11 +259,12 @@ the type nits.
 - `getRuntimeMap()` — returns the cached runtime map, refreshed on scenario
   load.
 
-- `getSparkBuffers()` — returns the Spark-managed texture/vertex/index buffers,
-  reattached from `SparkPersistedState` on injection (§3.4).
+- `getSparkBuffers()` — returns the Spark-managed texture/vertex/index buffers.
+  Session-scoped (not persisted); rebuilt each injection (§3.3a).
 
 - `getPersistedState()` — returns the named-shared-memory `SparkPersistedState`
-  (holds a pointer to `SparkBuffers`); survives re-injection, not process exit.
+  (records `tagResourcePathBlock` for idempotent string relocation, §3.4a);
+  survives re-injection, not process exit.
 
 - `getTagSchemas()` — returns the global schema collection, loaded from a
   `/schemas` location (see §6).
@@ -242,7 +284,8 @@ sequenced; within a phase, items can be parallelized.
 ### Phase 0 — Prerequisite decisions (blocking, owned by you)
 - Finalize the shape of the `TagSchema` types (the nits).
 - Finalize the shape of the `MapFile` interface + base enum.
-- Decide the `SparkBuffers` shape and its shared-memory bookkeeping (§3.3a).
+- Decide the `SparkPersistedState` shape (`tagResourcePathBlock`) and the
+  named-shared-memory scheme (§3.4).
 - Decide schema distribution & authoring workflow (§6).
 - Decide the engine resource-detour mechanism (§7).
 - Output: agreed interfaces. Everything below targets those.
@@ -264,30 +307,33 @@ sequenced; within a phase, items can be parallelized.
 - Milestone: `claimBytes`-style traversal fully covers a bitmap and a gbxmodel
   with no unclaimed/over-claimed bytes.
 
-### Phase 3 — SparkBuffers + lifecycle foundation
-- Stand up the Spark-managed texture/vertex/index buffers and the
-  `SparkPersistedState` in named shared memory, including reattach on
-  (re-)injection.
-- Establish the idempotency primitives: `(groupId, path)` lookup in the target
-  map, patch-vs-reallocate decision, "is this tag one of ours" flagging.
-- Milestone: buffers survive an uninject/re-inject cycle and are reattached
-  rather than reallocated.
+### Phase 3 — Tag-array growth + session buffers + lifecycle foundation
+- Make `allocateTag`'s resource-string relocation idempotent via
+  `SparkPersistedState.tagResourcePathBlock` in named shared memory, keeping the
+  section alive across the uninject gap (§3.4, §3.4a). Builds on
+  `moveResourceStrings` / `makeRoomForTag` in [engine/tag.cpp](engine/tag.cpp).
+- Stand up the session-scoped Spark texture/vertex/index buffers (append-only,
+  rebuilt each injection; §3.3a).
+- Establish the copy primitives: `(groupId, path)` lookup in the target map.
+- Milestone: add a new tag across an uninject/re-inject cycle without
+  double-moving the string block or duplicating the tag.
 
 ### Phase 4 — Generic tag-data copy
 - Implement schema-driven `copyTagData` on `RuntimeMapFile` (bulk copy +
   block-pointer fixups + base re-anchoring) for `RawMapFile → RuntimeMapFile`.
-- Implement recursive dependency copy and present-tag patching (matched by
-  `(groupId, path)`) plus a small set of custom field fixups (handles/IDs,
-  cross-tag refs).
-- Verify idempotency: copying the same tag twice patches in place on the second
-  run rather than duplicating.
+- Implement recursive dependency copy (top-level always patched; referenced tags
+  copied when absent) with **no comparison — always rewrite** (§3.3), plus a
+  small set of custom field fixups (handles/IDs, cross-tag refs). Hard-refuse if
+  any schema in the closure is missing.
+- Verify idempotency: a second copy re-produces the same bytes / same end state.
 - Milestone: copy a simple tag (no side buffers) from a `.map` into the running
   game and read it back correctly, repeatably.
 
 ### Phase 5 — Bitmaps end-to-end
 - Implement `copyBitmapData` into the Spark texture buffer.
-- Wire the texture mapping/loading detour (§7) so the engine consumes our
-  copied bitmap data for Spark-owned tags.
+- Wire the texture mapping/loading detour (§7), discriminating by whether the
+  bitmap resolves into a Spark buffer, and force the texture to reload from CPU
+  on patch.
 - Milestone: **load a bitmap from a `.map` by name and see it in-game**,
   surviving re-injection.
 
@@ -322,20 +368,23 @@ one combined file vs. one file per group, and versioning/compat expectations.
 
 ## 7. Engine resource detours
 
-To make the engine consume our copied data for Spark-owned tags, specific engine
-resource paths are detoured rather than patching map memory:
+To make the engine consume our copied data, specific engine resource paths are
+detoured rather than patching map memory. Detours discriminate by **whether the
+resource resolves into a Spark buffer** (a range/marker check on the offset the
+tag carries), not by any tag-ownership classification:
 
 - **Bitmaps** — detour the texture buffer *mapping/loading* path. Existing hooks
   `TextureCacheStartLoadingBitmap` / `CacheReadFile` (`spark/hook/HookTable.hpp`,
   currently stubbed in `SparkInputMod.cpp`) are the entry points: record the tag
   being loaded in `startLoadingBitmap`, and in `cacheReadFile` redirect the read
-  to our Spark buffer when the in-flight tag is one of ours.
+  to our Spark buffer when the bitmap resolves into one. On patch, an existing
+  mechanism forces the texture to reload from CPU so the new bytes reach the GPU.
 - **Gbxmodels** — detour the vertex/index buffer *binding* path (not
   mapping/loading) so bound geometry points at the Spark vertex/index buffers.
+  Spark manages these buffers, so a patch is reflected at bind time.
 
-Decisions needed: lifetime/threading of the "current tag" global; how a tag is
-flagged as "one of ours" (ties into the `(path, groupId)` bookkeeping); and the
-exact binding call to detour for geometry.
+Decisions needed: lifetime/threading of the "current tag" global, and the exact
+binding call to detour for geometry.
 
 ---
 
@@ -343,10 +392,11 @@ exact binding call to detour for geometry.
 
 1. Final `TagSchema` shape (the nits).
 2. Final `MapFile` interface + base enum.
-3. `SparkBuffers` / `SparkPersistedState` shape and the named-shared-memory
-   reattach scheme (§3.3a, §3.4). Correctness point: buffer content must outlive
-   DLL unload — with `staticruntime "off"` a deliberately-leaked heap allocation
-   suffices (or `VirtualAlloc`); a destructed static would dangle the pointer.
+3. `SparkPersistedState` shape (just `tagResourcePathBlock` today) and the
+   named-shared-memory scheme (§3.4, §3.4a). Correctness points: the section must
+   survive the uninject gap (leaked handle or keeper), and `allocateMapMemory`
+   (moved strings, new tag paths/data) must be process-lifetime, not DLL-scoped
+   — the engine dereferences it while Spark is uninjected.
 4. Schema distribution mechanism and override env var (§6).
 5. Engine resource-detour design — texture mapping/loading + vertex/index
    binding (§7).
@@ -354,10 +404,16 @@ exact binding call to detour for geometry.
    stay fully separate as today? (Affects how much of `map_file.hpp` is reused.)
 7. Destination allocation strategy for copied tags (reuse `allocateTag` /
    `allocateTagData`, or a Spark-managed arena?) — must support the
-   patch/reallocate path and not be destructed on DLL unload.
+   patch/reallocate path and be process-lifetime.
 8. `(groupId, path)` matching edge cases: path collisions and group aliases
    (e.g. `jpt!` is both Joint and Damage in `tag.hpp`), and how far dependency
    recursion goes.
+9. Resource-string relocation preconditions — `hasRoomForTag` assumes the string
+   block starts at `tag[0]`'s path and is contiguous/ascending
+   (`verifyResourceStringMonotonicity`). Decide behavior when that fails
+   (refuse? fall back?).
+10. Dependency staleness (§3.3) — whether/when to switch referenced-tag copy from
+    "if absent" to always re-copying the declared closure.
 
 ---
 
@@ -369,24 +425,35 @@ exact binding call to detour for geometry.
   texture placement; the base model must capture this precisely.
 - **Fixup completeness** — missing a handle/reference fixup produces a tag that
   reads fine but crashes on use. Needs targeted per-type tests.
-- **Lifecycle correctness** — non-idempotent copy or failed buffer re-discovery
-  leaks/duplicates data across re-injection, or dangles pointers. The
-  shared-memory bookkeeping is the crux and needs explicit re-inject tests.
-  Note this quietly depends on `staticruntime "off"`; flipping it to `"on"`
-  would turn the persisted pointer into a use-after-free.
-- **Persisted-state ABI** — the persisted object is reinterpreted by the *next*
-  injected build, so any STL type embedded in it couples all builds to one STL
-  ABI (Debug vs. Release `std::vector` layouts already differ). Mitigated by
-  keeping `SparkBuffers`/`SparkPersistedState` POD (append-only arenas).
-- **Stale pointers into buffers** — arena growth can move the backing store, and
-  buffer *contents* must never embed pointers into the DLL image (ASLR rebases
-  it). Detours must re-resolve offset→pointer at use; fixups must emit only
-  offsets or engine/map addresses. Appends may also race reads (loader vs.
-  render thread) — append only at safe points or synchronize.
-- **Detour scope creep** — the texture and geometry detours must apply *only* to
-  Spark-owned tags; misclassification corrupts stock rendering.
+- **String-relocation idempotency** — a re-run of `moveResourceStrings` without
+  the `tagResourcePathBlock` guard allocates a second block, leaks the first, and
+  double-repoints every `resourcePathAddress`. The guard + shared-section
+  survival are the crux; needs explicit re-inject tests.
+- **`allocateMapMemory` lifetime** — moved strings, new tag paths, and new tag
+  data are dereferenced by the engine *while Spark is uninjected*, so the
+  allocator must be process-lifetime. If it were DLL-scoped, uninject would turn
+  "ugly but safe" into a crash.
+- **Resource-string layout assumption** — the room/relocation math assumes the
+  string block is contiguous and ascending from `tag[0]`; a non-conforming map
+  silently miscomputes room (see §8 #9).
+- **Dependency staleness** — session-scoped buffers + "copy referenced tags only
+  if absent" leave a previously-created dependency pointing at this session's
+  empty buffer on re-inject (§3.3). Bounded while target closures are shallow;
+  fix is to re-copy the declared closure.
+- **Stale pointers into buffers** — append can move the backing store, and buffer
+  *contents* must never embed pointers into the DLL image (ASLR rebases it).
+  Detours must re-resolve offset→pointer at use; fixups must emit only offsets or
+  engine/map addresses. Appends may also race reads (loader vs. render thread) —
+  append only at safe points or synchronize.
+- **Detour scope creep** — the texture and geometry detours must redirect *only*
+  resources that resolve into a Spark buffer; misclassification corrupts stock
+  rendering.
 - **Type churn** — building on `TagSchema`/`MapFile` before the nits are
   settled would cause rework; Phase 0 gates this deliberately.
+- **Buffer orphaning (footnote, not a design constraint)** — append-only buffers
+  mean each dev-time edit + re-inject appends a fresh copy and orphans the old
+  bytes, growing the buffer per iteration until process exit. Acceptable for now;
+  an additive compaction/reset can be added if it ever bites.
 
 ---
 
