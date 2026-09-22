@@ -25,6 +25,8 @@ HOOK( ObjectSetScale, void, 0xB3BF34U, uint32_t /*entityHandle*/, float /*scale*
 HOOK( RenderPassenger, void, 0xB48F60U, uint64_t, uint16_t* /*param_2*/, uint32_t /*entityHandle*/ )
 HOOK( EntityVsEntityCollision, void, 0xB92130U, uint32_t /*flags*/, uint32_t /*otherEntityHandle*/, Vec3* /*pos*/, float /*radius*/, float /*param_5*/, float /*param_6*/, uint32_t /*entityHandle*/, void* /*p8*/)
 HOOK( ApplyInverseKinematics, void, 0xB3874CU, uint32_t /*entityHandle*/, char* /*markerName*/, uint32_t /*targetEntityHandle*/, char* /*targetMarkerName*/, Engine::Transform* /*boneTransforms*/ )
+HOOK( TextureCacheStartLoadingBitmap, uint64_t, 0xB52104U, void* /*bitmapData*/ )
+HOOK( CacheReadFile, short, 0xB7EC40U, uint64_t /*param_1*/, long /*dataOffset*/, uint32_t /*dataSize*/, void* /*buffer*/, bool** /*finishedOut*/, uint32_t /*bytesRead*/, int /*cacheFileId*/ )
 
 // Unused:
 // HOOK( UpdateCollision, uint16_t, 0xB93720U, int /*isPlayer*/, uint64_t /*param_2*/, float* /*param_3*/, float* /*param_4*/, float /*param_5*/, float /*param_6*/, uint32_t /*entityHandle*/, float* /*param_8*/, uint64_t* /*param_9*/, uint16_t, uint64_t* )

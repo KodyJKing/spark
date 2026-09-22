@@ -3,6 +3,7 @@
 #include "mods/devtools/dissect/DissectTag.hpp"
 #include "mods/devtools/engineinfo/EngineInfo.hpp"
 #include "mods/devtools/inspectdx11/InspectDX11.hpp"
+#include "mods/devtools/tag_injection/InjectBitmap.hpp"
 #include "imgui.h"
 #include "engine/halo1.hpp"
 #include "memory/Memory.hpp"
@@ -127,6 +128,8 @@ namespace Mod::DevTools {
         if (ImGui::Button("Engine Info"))
             EngineInfo::open();
         EngineInfo::render();
+
+        InjectBitmap::renderUI();
 
 
         auto hscBoolToggle = [](const char* label) {

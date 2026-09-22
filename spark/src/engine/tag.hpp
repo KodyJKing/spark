@@ -38,6 +38,7 @@ namespace Engine {
         ENTRY(BSP, sbsp),
         ENTRY(CollisionModel, coll),
         #undef ENTRY
+        GroupId_Invalid = 0xFFFFFF
     };
 
     // Thanks to Kavawuvi for documentation on the map format and tag structure.

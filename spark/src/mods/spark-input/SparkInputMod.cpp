@@ -74,4 +74,18 @@ void SparkInputMod::init() {
         }
         next();
     }, nullptr);
+
+    // Spark::TextureCacheStartLoadingBitmap::addHandler(modId_, +[](void*, auto next, void* bitmapData) {
+    //     uint32_t* pDataOffset = reinterpret_cast<uint32_t*>((uintptr_t)bitmapData + 0x18);
+    //     *pDataOffset += 1;
+    //     uint64_t result = next(bitmapData);
+    //     *pDataOffset -= 1;
+    //     return result;
+    // }, nullptr);
+
+    // Spark::CacheReadFile::addHandler(modId_, +[](void*, auto next, uint64_t param_1, long dataOffset, uint32_t dataSize, void* buffer, bool** finishedOut, uint32_t bytesRead, int cacheFileId) {
+    //     short result = next(param_1, dataOffset + 1, dataSize, buffer, finishedOut, bytesRead, cacheFileId);
+    //     return result;
+    // }, nullptr);
+
 }
