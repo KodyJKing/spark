@@ -3,7 +3,7 @@ project "spark"
     language "C++"
     cppdialect "C++20"
     systemversion "latest"
-    staticruntime "off"
+    staticruntime "off" -- REQUIRED for spark and every mod: shared CRT so heap/objects survive uninject and resolve across DLLs.
 
     targetdir ("../bin/" .. outputdir .. "/%{prj.name}")
     objdir ("../obj/" .. outputdir .. "/%{prj.name}")
