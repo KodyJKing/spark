@@ -8,7 +8,7 @@ x Update tag browser to use new map file API.
 
 x Implement RawMapFile
 
-- Update tag dissector to use new map file API.
+-> Update tag dissector to use new map file API.
     - Also clean up that fugly garbage.
 
 -? Stand alone tag browser app for map files.

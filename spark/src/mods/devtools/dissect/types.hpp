@@ -16,16 +16,6 @@ namespace Mod::DevTools::DissectTag {
         
         uintptr_t baseAddress;
 
-        ClaimedBytes claimedBytes = std::vector<bool>(4096);
-        bool isClaimed(uintptr_t address) const {
-            return address >= baseAddress && address < baseAddress + claimedBytes.size() && claimedBytes[address - baseAddress];
-        }
-
-        ClaimedBytes structureClaimedBytes = std::vector<bool>(4096);
-        bool isStructureClaimed(uintptr_t address) const {
-            return address >= baseAddress && address < baseAddress + structureClaimedBytes.size() && structureClaimedBytes[address - baseAddress];
-        }
-
         uint64_t tick = 0;
     };
 

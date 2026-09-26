@@ -29,8 +29,7 @@ namespace Mod::DevTools {
 
                 auto inspectOnLeftClick = [&]() {
                     if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
-                        // setInspectTag( tag );
-                        // Mod::DevTools::DissectTag::openWindow(tag->tagID);
+                        Mod::DevTools::DissectTag::openWindow(tag->tagID);
                     }
                 };
 

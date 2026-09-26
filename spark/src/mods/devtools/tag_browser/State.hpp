@@ -83,14 +83,6 @@ namespace Mod::DevTools {
             return pathStr.find(search) != std::string::npos;
         }
 
-        // Inspect
-        bool showInspectWindow = false;
-        Engine::Tag* inspectTag = nullptr;
-        inline void setInspectTag(Engine::Tag* tag) {
-            inspectTag = tag;
-            showInspectWindow = true;
-        }
-
         ///////////////////////////////////////////////
 
         bool tagExists(uint32_t handle) {

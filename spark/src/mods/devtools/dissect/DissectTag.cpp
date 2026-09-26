@@ -1,5 +1,5 @@
 #include "DissectTag.hpp"
-#include "types.hpp"
+#include "Types.hpp"
 
 #include "engine/tags/schema/schema.hpp"
 #include "engine/halo1.hpp"
@@ -13,6 +13,9 @@
 #include <sstream>
 #include <algorithm>
 #include <functional>
+
+#include "State.hpp"
+#include "Functions.hpp"
 
 #define DEBUG_DISSECT_TAG 1
 
@@ -29,81 +32,8 @@ namespace Mod::DevTools::DissectTag {
 
     using namespace Engine::TagSchema;
 
-    static const char* SCHEMA_FILE_PATH = "./tag_schema.json";
-
-    TagSchemaCollection tagSchemas;
-
-    void saveSchemas() {
-        std::ofstream file(SCHEMA_FILE_PATH);
-        if (!file.is_open())
-            return;
-        file << tagSchemas.toJsonString();
-    }
-
-    // Returns false if the file doesn't exist or couldn't be parsed.
-    bool loadSchemas() {
-        std::ifstream file(SCHEMA_FILE_PATH);
-        if (!file.is_open())
-            return false;
-        std::stringstream buffer;
-        buffer << file.rdbuf();
-        tagSchemas = TagSchemaCollection::fromJsonString(buffer.str());
-        return true;
-    }
-
-    bool initialized = false;
-    void initialize() {
-        if (initialized)
-            return;
-        initialized = true;
-        loadSchemas();
-    }
-
-    std::map<uint32_t, WindowState> windowStates;
-    
     void openWindow(uint32_t tagId) {
-        if (windowStates.find(tagId) == windowStates.end()) {
-            windowStates[tagId] = WindowState{tagId};
-        }
-    }
-
-    void clearClosedWindows() {
-        for (auto it = windowStates.begin(); it != windowStates.end(); ) {
-            if (!it->second.open) {
-                it = windowStates.erase(it);
-            } else {
-                ++it;
-            }
-        }
-    }
-
-    std::string toHex(uint32_t value) {
-        char buffer[9];
-        snprintf(buffer, sizeof(buffer), "%08X", value);
-        return std::string(buffer);
-    }
-
-    std::string toHex(uint64_t value) {
-        char buffer[17];
-        snprintf(buffer, sizeof(buffer), "%016llX", value);
-        return std::string(buffer);
-    }
-
-    size_t guessDataSize(Engine::Tag* tag) {
-        auto nextTag = tag + 1;
-        if (!Engine::tagExists(nextTag))
-            return 0;
-        void* dataPointer = tag->getData();
-        void* nextDataPointer = nextTag->getData();
-        return reinterpret_cast<uint8_t*>(nextDataPointer) - reinterpret_cast<uint8_t*>(dataPointer);
-    }
-
-    void deleteFieldFromStructure(Structure& structure, Field* field) {
-        auto it = std::find_if(structure.fields.begin(), structure.fields.end(),
-                               [&](const Field& f) { return strcmp(f.name, field->name) == 0 && f.offset == field->offset; });
-        if (it != structure.fields.end()) {
-            structure.fields.erase(it);
-        }
+        state.openWindow(tagId);
     }
 
     void renderTypeInput(RenderContext& context) {
@@ -307,14 +237,14 @@ namespace Mod::DevTools::DissectTag {
 
     TagSchema* getTagSchema(Engine::Tag* tag, bool createIfMissing = true) {
         auto groupId = tag->classIdStr();
-        if (tagSchemas.schemas.find(groupId) == tagSchemas.schemas.end()) {
+        if (state.tagSchemas.schemas.find(groupId) == state.tagSchemas.schemas.end()) {
             if (createIfMissing) {
-                tagSchemas.schemas[groupId] = TagSchema{.name = groupId, .groupId = groupId};
+                state.tagSchemas.schemas[groupId] = TagSchema{.name = groupId, .groupId = groupId};
             } else {
                 return nullptr;
             }
         }
-        return &tagSchemas.schemas.at(groupId);
+        return &state.tagSchemas.schemas.at(groupId);
     }
 
     void renderStructure(RenderContext& context) {
@@ -323,7 +253,6 @@ namespace Mod::DevTools::DissectTag {
         size_t column = UNKNOWN_ROW_LENGTH;
 
         WindowState& windowState = *context.windowState;
-        ClaimedBytes& claimedBytes = windowState.claimedBytes;
         
         auto renderUnknownCell = [&]() {
             bool usedColor = false;
@@ -337,14 +266,6 @@ namespace Mod::DevTools::DissectTag {
             }
             
             uintptr_t absoluteAddress = reinterpret_cast<uintptr_t>(context.structureBase) + head;
-            if (windowState.isStructureClaimed(absoluteAddress)) {
-                color = IM_COL32(64, 64, 128, 255);
-                usedColor = true;
-            }
-            if (windowState.isClaimed(absoluteAddress)) {
-                color = IM_COL32(32, 32, 64, 255);
-                usedColor = true;
-            }
 
             if (usedColor) ImGui::PushStyleColor(ImGuiCol_Text, color);
             
@@ -361,9 +282,7 @@ namespace Mod::DevTools::DissectTag {
             if (usedColor) ImGui::PopStyleColor();
         };
 
-        std::sort(context.structure->fields.begin(), context.structure->fields.end(), [](const Field& a, const Field& b) {
-            return a.offset < b.offset;
-        });
+        sortFields(*context.structure);
 
         auto fieldCount = context.structure->fields.size();
         for (size_t i = 0; i < fieldCount; i++) {
@@ -423,43 +342,23 @@ namespace Mod::DevTools::DissectTag {
 
         context.windowState->baseAddress = reinterpret_cast<uintptr_t>(context.structureBase);
 
-        size_t bytesToTrack = size < MAX_CLAIMED_BYTES_TO_TRACK ? size : MAX_CLAIMED_BYTES_TO_TRACK;
-        context.windowState->claimedBytes.resize(bytesToTrack);
-        context.windowState->structureClaimedBytes.resize(bytesToTrack);
-
-        if (context.windowState->tick % 60 == 0) {
-            auto relocationOffset = Engine::tagDataBase();
-            Engine::TagSchema::Context evalContext = {relocationOffset, reinterpret_cast<uintptr_t>(context.structureBase)};
-            schema->claimBytes(evalContext, context.windowState->claimedBytes, true);
-            schema->claimBytes(evalContext, context.windowState->structureClaimedBytes, false);
-        }
-
-        size_t totalClaimed = 0;
-        for (bool claimed : context.windowState->structureClaimedBytes) 
-            if (claimed) ++totalClaimed;
-        ImGui::Text("Total Claimed Bytes: %zu", totalClaimed);
-        totalClaimed = 0;
-        for (bool claimed : context.windowState->claimedBytes) 
-            if (claimed) ++totalClaimed;
-        ImGui::Text("Total Labeled Bytes: %zu", totalClaimed);
-
         renderSizeInput(mainStructure);
 
         renderStructure(context);
     }
 
     void render() {
-        initialize();
+        state.initialize();
 
-        if (windowStates.size() > 0) {
+        if (state.windowStates.size() > 0) {
             if (ImGui::Begin("Dissect Tag Schemas")) {
                 if (ImGui::Button("Save"))
-                    saveSchemas();
+                    state.saveSchemas();
             }
             ImGui::End();
         }
         
-        for (auto& [tagId, windowState] : windowStates) {
+        for (auto& [tagId, windowState] : state.windowStates) {
             auto tag = Engine::getTag(tagId);
             bool tagExists = Engine::tagExists(tag);
             
@@ -488,7 +387,7 @@ namespace Mod::DevTools::DissectTag {
             ImGui::End();
         }
 
-        clearClosedWindows();
+        state.clearClosedWindows();
     }
 
 }
