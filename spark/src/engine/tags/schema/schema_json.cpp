@@ -4,26 +4,21 @@
 
 namespace Engine::TagSchema {
 
-    NLOHMANN_JSON_SERIALIZE_ENUM(PrimitiveTypeRef, {
-        {PrimitiveTypeRef::Bit, "Bit"},
-        {PrimitiveTypeRef::Uint8, "Uint8"},
-        {PrimitiveTypeRef::Uint16, "Uint16"},
-        {PrimitiveTypeRef::Uint32, "Uint32"},
-        {PrimitiveTypeRef::Uint64, "Uint64"},
-        {PrimitiveTypeRef::Int, "Int"},
-        {PrimitiveTypeRef::Int8, "Int8"},
-        {PrimitiveTypeRef::Int16, "Int16"},
-        {PrimitiveTypeRef::Int32, "Int32"},
-        {PrimitiveTypeRef::Int64, "Int64"},
-        {PrimitiveTypeRef::Float, "Float"},
-        {PrimitiveTypeRef::Vec3, "Vec3"},
-        {PrimitiveTypeRef::Vec4, "Vec4"},
-        {PrimitiveTypeRef::Matrix3x3, "Matrix3x3"},
-        {PrimitiveTypeRef::TagString, "TagString"},
-        {PrimitiveTypeRef::TagReference, "TagReference"},
-        {PrimitiveTypeRef::StructureReference, "StructureReference"},
-        {PrimitiveTypeRef::Enumeration, "Enumeration"}
-    })
+    static void to_json(nlohmann::json& j, const PrimitiveTypeRef& e) {
+        switch (e) {
+            #define SCHEMA_FIELD_TYPE(name, size) case PrimitiveTypeRef::name: j = #name; return;
+            #include "type_defs.hpp"
+            #undef SCHEMA_FIELD_TYPE
+        }
+        j = nullptr;
+    }
+
+    static void from_json(const nlohmann::json& j, PrimitiveTypeRef& e) {
+        std::string name = j.get<std::string>();
+        #define SCHEMA_FIELD_TYPE(name_, size) if (name == #name_) { e = PrimitiveTypeRef::name_; return; }
+        #include "type_defs.hpp"
+        #undef SCHEMA_FIELD_TYPE
+    }
 
     // TypeRef::name is a fixed char buffer rather than std::string, so it needs manual (de)serialization.
     static void to_json(nlohmann::json& j, const TypeRef& type) {

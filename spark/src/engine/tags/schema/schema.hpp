@@ -14,43 +14,21 @@ namespace Engine::TagSchema {
     };
 
     enum class PrimitiveTypeRef {
-        Bit,
-        Uint8, Uint16, Uint32, Uint64,
-        Int, Int8, Int16, Int32, Int64,
-        Float,
-        Vec3,
-        Vec4,
-        Matrix3x3,
-        TagString,
-        TagReference,
-        StructureReference,
-        Enumeration
+        #define SCHEMA_FIELD_TYPE(name, size) name,
+        #include "type_defs.hpp"
+        #undef SCHEMA_FIELD_TYPE
     };
-
+    
     static const char* PrimitiveTypeRefNames[] = {
-        "Bit",
-        "Uint8", "Uint16", "Uint32", "Uint64",
-        "Int", "Int8", "Int16", "Int32", "Int64",
-        "Float",
-        "Vec3", "Vec4", "Matrix3x3",
-        "TagString",
-        "TagReference",
-        "StructureReference",
-        "Enumeration"
+        #define SCHEMA_FIELD_TYPE(name, size) #name,
+        #include "type_defs.hpp"
+        #undef SCHEMA_FIELD_TYPE
     };
 
     static const size_t PrimitiveTypeRefSizes[] = {
-        1, // Bit
-        1, 2, 4, 8, // Uint8, Uint16, Uint32, Uint64
-        4, 1, 2, 4, 8, // Int, Int8, Int16, Int32, Int64
-        4, // Float
-        12, // Vec3
-        16, // Vec4
-        36, // Matrix3x3
-        32, // TagString
-        4, // TagReference
-        12, // StructureReference
-        2 // Enumeration
+        #define SCHEMA_FIELD_TYPE(name, size) size,
+        #include "type_defs.hpp"
+        #undef SCHEMA_FIELD_TYPE
     };
 
     /**
@@ -105,11 +83,6 @@ namespace Engine::TagSchema {
          * Renames a structure, but does not update any references to it within other structures.
          */
         void renameStructure(const std::string& oldName, const std::string& newName);
-
-        /**
-         * Marks the bytes claimed by this tag schema within the given context.
-         */
-        void claimBytes(Context& context, ClaimedBytes& claimedBytes, bool fieldOnly);
     };
 
     struct TagSchemaCollection {
