@@ -2,11 +2,11 @@
 
 Status: draft for review
 Owner: —
-Related: `planning/todos.md` ("MapFile work"), `engine/map_file/`, `engine/tags/schema/`, `mods/devtools/dissect/`
+Related: `planning/todos.md` ("MapFile work"), `engine/map/`, `engine/tags/schema/`, `mods/devtools/dissect/`
 
 > This document is intentionally written at the level of **capabilities and
 > responsibilities**, not concrete signatures. The exact shape of the existing
-> `Engine::TagSchema` and `Engine::MapFile` types is expected to change (there
+> `Engine::TagSchema` and `Engine::Map` types is expected to change (there
 > are outstanding nits to resolve first), so the plan below refers to those
 > types by the *role* they play rather than their current fields. Any code
 > shown is illustrative pseudocode, not a committed API.
@@ -40,8 +40,8 @@ design as much as the copy mechanics do.
 
 Two independent access paths exist, with no shared abstraction:
 
-- **On-disk cache access** — `Engine::MapFile::MapFile`
-  (`engine/map_file/map_file.hpp`). Loads a `.map` from a file buffer and
+- **On-disk cache access** — `Engine::Map::MapFile`
+  (`engine/map/map_file.hpp`). Loads a `.map` from a file buffer and
   resolves the in-file pointer scheme (`translatePointer`,
   `translateVertexDataPointer`, `resolveBlock`, typed getters for effect /
   model / bitmap). Uses standalone overlay structs, deliberately *not* shared
@@ -248,7 +248,7 @@ the type nits.
     idempotently (§3.4a).
 
 - `RawMapFile : MapFile` — backed by a file buffer (folds in today's
-  `Engine::MapFile::MapFile` capabilities). **Read-only source**: offsets are
+  `Engine::Map::MapFile` capabilities). **Read-only source**: offsets are
   map/vertex/index-relative; copy methods are not implemented here.
 
 - `RuntimeMapFile : MapFile` — backed by the live process (folds in today's

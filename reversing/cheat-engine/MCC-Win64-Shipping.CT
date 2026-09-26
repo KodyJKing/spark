@@ -44,10 +44,31 @@
         <CheatEntry>
           <ID>6</ID>
           <Description>"mapBase"</Description>
-          <ShowAsHex>1</ShowAsHex>
-          <VariableType>Array of byte</VariableType>
-          <ByteLength>16</ByteLength>
+          <ShowAsSigned>0</ShowAsSigned>
+          <VariableType>String</VariableType>
+          <Length>12</Length>
+          <Unicode>0</Unicode>
+          <CodePage>0</CodePage>
+          <ZeroTerminate>1</ZeroTerminate>
           <Address>halo1.dll+2B22744</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>150</ID>
+              <Description>"tagHeader"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <ShowAsSigned>0</ShowAsSigned>
+              <VariableType>8 Bytes</VariableType>
+              <Address>halo1.dll+0x2EA3410</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>149</ID>
+              <Description>"relocatedTagHeader"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <ShowAsSigned>0</ShowAsSigned>
+              <VariableType>8 Bytes</VariableType>
+              <Address>halo1.dll+0x2D9CE10</Address>
+            </CheatEntry>
+          </CheatEntries>
         </CheatEntry>
         <CheatEntry>
           <ID>145</ID>
@@ -1113,22 +1134,6 @@ dealloc(newmem)
       <ShowAsSigned>0</ShowAsSigned>
       <VariableType>8 Bytes</VariableType>
       <Address>halo1.dll+02E5F788</Address>
-    </CheatEntry>
-    <CheatEntry>
-      <ID>149</ID>
-      <Description>"relocatedMapBase"</Description>
-      <ShowAsHex>1</ShowAsHex>
-      <ShowAsSigned>0</ShowAsSigned>
-      <VariableType>8 Bytes</VariableType>
-      <Address>halo1.dll+0x2D9CE10</Address>
-    </CheatEntry>
-    <CheatEntry>
-      <ID>150</ID>
-      <Description>"mapBase"</Description>
-      <ShowAsHex>1</ShowAsHex>
-      <ShowAsSigned>0</ShowAsSigned>
-      <VariableType>8 Bytes</VariableType>
-      <Address>halo1.dll+0x2EA3410</Address>
     </CheatEntry>
   </CheatEntries>
   <CheatCodes>

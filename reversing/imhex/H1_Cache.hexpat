@@ -31,11 +31,11 @@ namespace TagData {
         u16 type;
         u16 [[hidden]];
         u32 count;
+        u32 runtimeOffset;
         
-        // This padding doesn't exist in game. Are they transforming tag data post load? WTF!
-        char pad0[8] [[hidden]];
+        char pad0[4] [[hidden]];
         
-        u32 offset;
+        u32 offset; // Or bufferSourceIndex in at runtime.
         
         char raw[vertexSizes[type]*count] @ translateVertexDataPointer(offset);
         //Vertex<vertexSizes[type]> vertices[count] @ translateVertexDataPointer(offset) [[inline]];
@@ -72,27 +72,11 @@ namespace TagData {
        char data[0xAC] [[hidden]];
        BlockPointer<ModelGeometry> geometries @ THIS+0xD0;
     };
-    
-    struct BitmapGroupsSequence { char data[0x40] [[hidden]]; };
-    
-    struct BitmapData {
-        u32 class;
-        u16 width, height, depth;
-        u16 type, format, flags;
-        s16 regX, regY;
-        u16 minMapCount;
-        u16;
-        u32 dataOffset;
-        u32 dataSize;
-        u32 thisBitmapHandle;
-        u32 texCacheHandle;
-        u32 bufferSourceIndex; 
-    };
 
     struct Bitmap {
         char data[0x20] [[hidden]]; // Size not known.
-        BlockPointer<BitmapGroupsSequence> groupSequences @ THIS+0x54;
-        BlockPointer<BitmapData> bitmapData @ THIS+0x60;
+        BlockPointer<u32> unknown0 @ THIS+0x54;
+        BlockPointer<u32> unknown1 @ THIS+0x60;
     };
     
 }

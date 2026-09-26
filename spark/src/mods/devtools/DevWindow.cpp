@@ -3,13 +3,11 @@
 #include "mods/devtools/dissect/DissectTag.hpp"
 #include "mods/devtools/engineinfo/EngineInfo.hpp"
 #include "mods/devtools/inspectdx11/InspectDX11.hpp"
-#include "mods/devtools/tag_injection/InjectBitmap.hpp"
 #include "imgui.h"
 #include "engine/halo1.hpp"
 #include "memory/Memory.hpp"
 #include "mods/devtools/Interpretations.hpp"
 #include "mods/devtools/TagBrowser.hpp"
-#include "mods/devtools/map_file/MapFileViewer.hpp"
 #include "utils/Strings.hpp"
 #include "spark/Spark.hpp"
 #include <string>
@@ -116,11 +114,6 @@ namespace Mod::DevTools {
         if (showTagBrowser)
             tagBrowser();
 
-        if (ImGui::Button("Map File Viewer"))
-            showMapFileViewer = !showMapFileViewer;
-        if (showMapFileViewer)
-            mapFileViewer();
-
         if (ImGui::Button("Inspect DX11")) 
             InspectDX11::open();
         InspectDX11::render();
@@ -128,9 +121,6 @@ namespace Mod::DevTools {
         if (ImGui::Button("Engine Info"))
             EngineInfo::open();
         EngineInfo::render();
-
-        InjectBitmap::renderUI();
-
 
         auto hscBoolToggle = [](const char* label) {
             bool value = (bool)(Engine::Scripting::readGlobal(label) & 0xFF);

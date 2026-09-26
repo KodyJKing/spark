@@ -11,4 +11,9 @@ namespace Engine {
         uintptr_t unk2 = *reinterpret_cast<uintptr_t*>(unk1 + 0x10);
         return reinterpret_cast<void*>(unk2);
     }
+
+    void* getIndexDataPointer() {
+        // Todo. Should be getModelDataPointer() + vertexDataSize
+        return nullptr;
+    }
 }
