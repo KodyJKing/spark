@@ -1,0 +1,93 @@
+#pragma once
+
+#include <vector>
+#include <mutex>
+#include "engine/halo1.hpp"
+#include "engine/map/map_file.hpp"
+#include "engine/map/managed_map_file.hpp"
+
+#include "Constants.hpp"
+
+namespace Mod::DevTools {
+
+    inline static Engine::Map::RuntimeMapFile run;
+
+    inline static Engine::Map::ManagedMapFilePtr disk;
+
+    using Tag = Engine::Map::Tag;
+
+    class State {
+        public:
+        bool show = false;
+
+        Engine::Map::MapFile* getMap() {
+            if (!disk) {
+                const char* path = "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Halo The Master Chief Collection\\halo1\\maps\\b30.map";
+                disk = Engine::Map::ManagedMapFile::create(path);
+            }
+            if (disk) return disk.get();
+            return &run;
+        }
+        
+        // Pagination
+        int tagsPerPage = 50;
+        int page = 0;
+        uint32_t numPages() { return (totalTags() + tagsPerPage - 1) / tagsPerPage; }
+        uint32_t totalTags() { return getMap()->getTagCount(); }
+        void clampPage() {
+            if (page < 0) page = 0;
+            if (page >= numPages()) page = numPages() - 1;
+        }
+        
+        // Search
+        char search[512] = {0};
+        char lastSearch[512] = {0};
+        int groupIdFilter = 0;
+        int lastGroupIdFilter = 0;
+        std::vector<int> searchResults;
+        uint64_t lastSearchTick = 0;
+        std::mutex searchMutex;
+        bool hasSearch() { return search[0] != 0 || groupIdFilter != 0; }
+        bool searchChanged() { return strcmp(search, lastSearch) != 0 || groupIdFilter != lastGroupIdFilter; }
+        bool filterTag(Tag* tag) {
+            auto filterGroupID = ids[groupIdFilter].groupID;
+            if (
+                filterGroupID != GROUP_ID_ALL && 
+                filterGroupID != tag->groupID &&
+                filterGroupID != tag->parentGroupID &&
+                filterGroupID != tag->grandparentGroupID
+            ) 
+                return false;
+            if (search[0] == 0)
+                return true;
+            std::string pathStr = getMap()->getTagPath(tag);
+            return pathStr.find(search) != std::string::npos;
+        }
+
+        // Inspect
+        bool showInspectWindow = false;
+        Engine::Tag* inspectTag = nullptr;
+        inline void setInspectTag(Engine::Tag* tag) {
+            inspectTag = tag;
+            showInspectWindow = true;
+        }
+
+        ///////////////////////////////////////////////
+
+        bool tagExists(uint32_t handle) {
+            uint32_t i = handle & 0xFFFF;
+            return i < getMap()->getTagCount();
+        }
+
+        Tag* getTag(uint32_t handle) {
+            return getMap()->getTag(handle);
+        }
+
+        bool validTagPath(const char* path) {
+            return Engine::validTagPath(path);
+        }
+    };
+
+    inline static State state;
+
+};

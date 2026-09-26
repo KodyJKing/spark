@@ -5,27 +5,38 @@
 
 namespace Engine {
 
-    static const uintptr_t relocatedMapBaseOffset = 0x2D9CE10U;
-    static const uintptr_t mapBaseOffset = 0x2EA3410U;
+    static const uintptr_t tagHeaderBaseOffset = 0x2D9CE10U;
+    static const uintptr_t tagPointerOffsetOffset = 0x2EA3410U;
 
-    int64_t mapRelocationOffset() {
-        uint64_t relocatedMapBase = *(uint64_t*) ( dllBase() + relocatedMapBaseOffset );
-        uint64_t mapBase = *(uint64_t*) ( dllBase() + mapBaseOffset );
-        return relocatedMapBase - mapBase;
+    uint64_t tagHeaderBase() {
+        return *(uint64_t*) ( dllBase() + tagHeaderBaseOffset );
     }
 
+    uint64_t tagPointerOffset() {
+        return *(uint64_t*) ( dllBase() + tagPointerOffsetOffset );
+    }
+
+    uint64_t tagDataBase() {
+        uint64_t tagHeaderBase = *(uint64_t*) ( dllBase() + tagHeaderBaseOffset );
+        uint64_t tagPointerOffset = *(uint64_t*) ( dllBase() + tagPointerOffsetOffset );
+        return tagHeaderBase - tagPointerOffset;
+    }
+
+    // Misnomer, rename to translateTagDataPointer when not feeling lazy.
     uint64_t translateMapAddress( uint32_t address ) {
-        uint64_t relocatedMapBase = *(uint64_t*) ( dllBase() + relocatedMapBaseOffset );
-        uint64_t mapBase = *(uint64_t*) ( dllBase() + mapBaseOffset );
+        uint64_t relocatedMapBase = *(uint64_t*) ( dllBase() + tagHeaderBaseOffset );
+        uint64_t mapBase = *(uint64_t*) ( dllBase() + tagPointerOffsetOffset );
         return address + ( relocatedMapBase - mapBase );
     }
     
+    // Misnomer, rename to translateToTagDataPointer when not feeling lazy.
     uint32_t translateToMapAddress( uint64_t absoluteAddress ) {
-        uint64_t relocatedMapBase = *(uint64_t*) ( dllBase() + relocatedMapBaseOffset );
-        uint64_t mapBase = *(uint64_t*) ( dllBase() + mapBaseOffset );
+        uint64_t relocatedMapBase = *(uint64_t*) ( dllBase() + tagHeaderBaseOffset );
+        uint64_t mapBase = *(uint64_t*) ( dllBase() + tagPointerOffsetOffset );
         return (uint32_t) ( absoluteAddress - ( relocatedMapBase - mapBase ) );
     }
 
+    // Misnomer, rename to canTranslateToTagDataPointer when not feeling lazy.
     bool canTranslateToMapAddress( uint64_t absoluteAddress ) {
         auto relativeAddress = translateToMapAddress( absoluteAddress );
         auto absoluteAddressCheck = translateMapAddress( relativeAddress );
@@ -33,7 +44,7 @@ namespace Engine {
     }
 
     void* allocateMapMemory(size_t size) {
-        return (void*) Memory::allocBlockNear(mapRelocationOffset(), size);
+        return (void*) Memory::allocBlockNear(tagDataBase(), size);
     }
 
     void freeMapMemory(void* address) {

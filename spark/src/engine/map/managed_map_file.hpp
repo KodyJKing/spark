@@ -38,6 +38,10 @@ namespace Engine::Map {
             return raw.getPointerBase(b);
         }
 
+        TagDataHeader* getTagDataHeader() override {
+            return raw.getTagDataHeader();
+        }
+
         private:
         std::vector<uint8_t> buffer;
         RawMapFile raw;

@@ -259,7 +259,7 @@ namespace Mod::DevTools::DissectTag {
         renderTypeInput(context);
         ImGui::SameLine();
 
-        auto relocationOffset = Engine::mapRelocationOffset();
+        auto relocationOffset = Engine::tagDataBase();
         auto value = context.field->readString({.relocationOffset = relocationOffset, .structureBase = reinterpret_cast<uintptr_t>(context.structureBase)});
         ImGui::Text("%s", value.c_str());
         
@@ -428,7 +428,7 @@ namespace Mod::DevTools::DissectTag {
         context.windowState->structureClaimedBytes.resize(bytesToTrack);
 
         if (context.windowState->tick % 60 == 0) {
-            auto relocationOffset = Engine::mapRelocationOffset();
+            auto relocationOffset = Engine::tagDataBase();
             Engine::TagSchema::Context evalContext = {relocationOffset, reinterpret_cast<uintptr_t>(context.structureBase)};
             schema->claimBytes(evalContext, context.windowState->claimedBytes, true);
             schema->claimBytes(evalContext, context.windowState->structureClaimedBytes, false);

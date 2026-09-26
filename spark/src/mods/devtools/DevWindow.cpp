@@ -6,8 +6,7 @@
 #include "imgui.h"
 #include "engine/halo1.hpp"
 #include "memory/Memory.hpp"
-#include "mods/devtools/Interpretations.hpp"
-#include "mods/devtools/TagBrowser.hpp"
+#include "mods/devtools/tag_browser/TagBrowser.hpp"
 #include "utils/Strings.hpp"
 #include "spark/Spark.hpp"
 #include <string>
@@ -24,41 +23,6 @@ namespace Mod::DevTools {
         if (ImGui::IsKeyPressed(ImGuiKey_GraveAccent, false)) {
             teleportToCrosshair();
         }
-    }
-
-    void renderInterpretObjectFields() {
-        ImGui::BeginChild("##Interpret Object Fields", ImVec2(0, 0), ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY);
-        static char addressInput[255] = {0};
-        ImGui::InputText("Address", addressInput, sizeof(addressInput));
-        uintptr_t pointerValue = 0;
-        try   { pointerValue = std::stoull(addressInput, nullptr, 16); }
-        catch (...) { pointerValue = 0; }
-        Engine::Entity* entity = (Engine::Entity*)pointerValue;
-        if (entity && Memory::isAllocated((uintptr_t)entity)) {
-            ImGui::Text("Interpreting object fields %p", (void*)entity);
-            ImGui::Separator();
-            ImGui::Begin("Object Field Interpretations");
-            interpretPointer(entity);
-            ImGui::End();
-        } else {
-            ImGui::Text("Entity not found for handle %X", pointerValue);
-        }
-        ImGui::EndChild();
-    }
-
-    void renderInterpretU32() {
-        ImGui::BeginChild("##Interpret U32", ImVec2(0, 0), ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY);
-        static char u32input[255] = {0};
-        ImGui::InputText("U32 Input", u32input, sizeof(u32input));
-        uint32_t value = 0;
-        try   { value = std::stoul(u32input, nullptr, 16); }
-        catch (...) { value = 0; }
-        if (value) {
-            ImGui::Text("Interpretations of %X:", value);
-            ImGui::Separator();
-            interpretations(value);
-        }
-        ImGui::EndChild();
     }
 
     void renderTranslateMapAddress() {
@@ -110,9 +74,8 @@ namespace Mod::DevTools {
         }
 
         if (ImGui::Button("Tag Browser"))
-            showTagBrowser = !showTagBrowser;
-        if (showTagBrowser)
-            tagBrowser();
+            Mod::DevTools::showTagBrowserWindow();
+        tagBrowser();
 
         if (ImGui::Button("Inspect DX11")) 
             InspectDX11::open();
@@ -145,8 +108,6 @@ namespace Mod::DevTools {
 
         if (ImGui::CollapsingHeader("Tools")) {
             renderTranslateMapAddress();
-            renderInterpretU32();
-            renderInterpretObjectFields();
         }
 
         Mod::DevTools::DissectTag::render();

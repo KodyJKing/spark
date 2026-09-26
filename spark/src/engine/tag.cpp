@@ -85,7 +85,7 @@ namespace Engine {
         return tag && Memory::isAllocated( (uintptr_t) tag->getData() ) && Memory::isAllocated( (uintptr_t) tag->getResourcePath() );
     }
 
-        bool validTagPath( const char* path ) {
+    bool validTagPath( const char* path ) {
         // Must match [a-zA-Z0-9_ \.\\-]+
         // Must be atleast 3 characters long.
         // Also must contain atleast one backslash.

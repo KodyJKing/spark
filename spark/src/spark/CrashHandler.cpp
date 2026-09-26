@@ -18,7 +18,7 @@
 #pragma comment(lib, "psapi.lib")
 
 #ifdef _DEBUG
-    #define ENABLE_CRASH_HANDLER 1
+    // #define ENABLE_CRASH_HANDLER 1
 #endif
 
 namespace Spark::CrashHandler {

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "tag_data_types.hpp"
+#include "memory/Memory.hpp"
 
 namespace Engine::Map {
     
@@ -21,14 +22,29 @@ namespace Engine::Map {
             return (CacheHeader*)getPointerBase(PointerBase_Map);
         }
 
-        inline TagDataHeader* getTagDataHeader() {
-            return (TagDataHeader*)getPointerBase(PointerBase_Tags);
+        inline uint32_t getTagCount() {
+            TagDataHeader* h = getTagDataHeader();
+            if (!h) return 0;
+            return h ? h->tagCount : 0;
         }
 
-        inline Tag* getTag(uint32_t i) {
+        inline Tag* getTag(uint32_t handle) {
+            uint32_t i = handle & 0xFFFF;
             TagDataHeader* tagHeader = this->getTagDataHeader();
-            void* base = (char*) tagHeader + tagHeader->tagArray.offset;
+            if (!tagHeader) return nullptr;
+            if (i >= tagHeader->tagCount) return nullptr;
+            void* base = fromRelative(tagHeader->tagArray);
             return ((Tag*)base) + i;
+        }
+
+        inline char* getTagPath(Tag* t) {
+            if (!t) return nullptr;
+            return (char*) fromRelative(t->path);
+        }
+
+        inline void* getTagData(Tag* t) {
+            if (!t) return nullptr;
+            return fromRelative(t->data);
         }
 
         inline uint32_t getVertexDataSize() {
@@ -38,6 +54,8 @@ namespace Engine::Map {
 
         // Gets base ptr for a section of the map file
         virtual void* getPointerBase(PointerBase b) = 0;
+
+        virtual TagDataHeader* getTagDataHeader() = 0;
         
         private:
     };
@@ -49,6 +67,7 @@ namespace Engine::Map {
         RawMapFile(CacheHeader* cache) : cache(cache) {}
 
         void* getPointerBase(PointerBase b) override;
+        TagDataHeader* getTagDataHeader() override;
 
         private:
         CacheHeader* cache = nullptr;
@@ -57,8 +76,9 @@ namespace Engine::Map {
     class RuntimeMapFile : public MapFile {
         public:
 
-        
         void* getPointerBase(PointerBase b) override;
+        TagDataHeader* getTagDataHeader() override;
+
         // // Copies tag from another map.
         // // Handles allocation of tag, copying 
         // uint32_t copyTag(MapFile* sourceMap, uint32_t sourceTagHandle);

@@ -5,7 +5,6 @@
 #include "engine/halo1.hpp"
 #include "halomcc/HaloMCC.hpp"
 #include "memory/Memory.hpp"
-#include "mods/devtools/cheatengine/Messages.hpp"
 #include "utils/ImGuiUtils.hpp"
 #include <string>
 
@@ -134,10 +133,6 @@ namespace Mod::DevTools {
         }
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("Copy pointer to clipboard (Shift+C)");
         if (copyHotkeyDown) ImGui::PopStyleColor();
-
-        ImGui::SameLine();
-        if (ImGui::Button("browse"))
-            CE::Messages::openHexView((uintptr_t)highlightEntity);
 
         ImGui::SameLine();
         ImGui::Checkbox("anchor", &espSettings.anchorHighlight);

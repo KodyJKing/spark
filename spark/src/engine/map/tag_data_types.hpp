@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 
 namespace Engine::Map {
 
@@ -28,9 +29,11 @@ namespace Engine::Map {
         uint32_t parentGroupID; 
         uint32_t grandparentGroupID;
         uint32_t tagID; 
-        Pointer<PointerBase_Tags> resourcePathAddress; 
-        Pointer<PointerBase_Map> dataAddress;
-        char pad_0018[8]; 
+        Pointer<PointerBase_Tags> path; 
+        Pointer<PointerBase_Tags> data;
+        char pad_0018[8];
+
+        std::string groupIdString();
     };
 
     struct TagDataHeader {
