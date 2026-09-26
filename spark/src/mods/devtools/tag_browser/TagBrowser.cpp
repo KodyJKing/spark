@@ -15,6 +15,21 @@ namespace Mod::DevTools {
         state.show = true;
     }
 
+    void fileUI() {
+        if (state.isFileOpen()) {
+            auto fileName = state.getFileName();
+            ImGui::Text("File: %s", fileName.c_str());
+            ImGui::SameLine();
+            if (ImGui::Button("Close File")) {
+                state.closeFile();
+            }
+        } else {
+            if (ImGui::Button("Open File")) {
+                state.openFileDialog();
+            }
+        }
+    }
+
     void tagBrowser() {
         if (!state.show) return;
 
@@ -31,6 +46,12 @@ namespace Mod::DevTools {
         ImGui::SameLine();
         ImGui::InputInt("Page size", &state.tagsPerPage);
         if (state.tagsPerPage < 1) state.tagsPerPage = 1;
+
+        //////////////////////////////////////////////////////////////////////////
+        ImGui::SameLine();
+        ImGui::Spacing();
+        ImGui::SameLine();
+        fileUI();
 
         //////////////////////////////////////////////////////////////////////////
         // Search

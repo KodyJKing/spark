@@ -7,7 +7,6 @@
 #include "engine/halo1.hpp"
 #include "engine/rendering/index.hpp"
 #include "engine/map/map_file.hpp"
-#include "engine/map/managed_map_file.hpp"
 
 #include "utils/ImGuiUtils.hpp"
 #include "imgui.h"
@@ -57,7 +56,6 @@ namespace {
         ImGui::Text("...");
     });
     
-    Engine::Map::ManagedMapFilePtr fileMap;
     REGISTER_WIDGET(Map_File, []() {
         Engine::Map::RuntimeMapFile map;
 
@@ -72,14 +70,6 @@ namespace {
         };
 
         renderMapData(&map, "Runtime Map");
-
-        // C:\Program Files (x86)\Steam\steamapps\common\Halo The Master Chief Collection\halo1\maps\b30.map
-        if (fileMap == nullptr) {
-            const char* path = "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Halo The Master Chief Collection\\halo1\\maps\\b30.map";
-            fileMap = Engine::Map::ManagedMapFile::create(path);
-        }
-
-        renderMapData(fileMap.get(), "File Map");
     });
 }
 

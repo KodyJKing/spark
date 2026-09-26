@@ -11,6 +11,9 @@ namespace Engine::Map {
 
     class ManagedMapFile : public MapFile {
         public:
+        const std::filesystem::path& getFilePath() const {
+            return filePath;
+        }
 
         static std::shared_ptr<ManagedMapFile> create(std::filesystem::path f) {
             auto map = std::make_shared<ManagedMapFile>();
@@ -20,6 +23,7 @@ namespace Engine::Map {
 
             auto size = file.tellg();
             file.seekg(0);
+            map->filePath = f;
             map->buffer.resize(static_cast<size_t>(size));
             if (!file.read(reinterpret_cast<char*>(map->buffer.data()), size)) return nullptr;
 
@@ -44,6 +48,7 @@ namespace Engine::Map {
 
         private:
         std::vector<uint8_t> buffer;
+        std::filesystem::path filePath;
         RawMapFile raw;
     };
 

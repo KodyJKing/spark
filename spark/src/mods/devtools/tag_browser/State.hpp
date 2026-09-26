@@ -5,6 +5,7 @@
 #include "engine/halo1.hpp"
 #include "engine/map/map_file.hpp"
 #include "engine/map/managed_map_file.hpp"
+#include "utils/FileUtils.hpp"
 
 #include "Constants.hpp"
 
@@ -20,13 +21,31 @@ namespace Mod::DevTools {
         public:
         bool show = false;
 
+        // Map
         Engine::Map::MapFile* getMap() {
-            if (!disk) {
-                const char* path = "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Halo The Master Chief Collection\\halo1\\maps\\b30.map";
-                disk = Engine::Map::ManagedMapFile::create(path);
-            }
             if (disk) return disk.get();
             return &run;
+        }
+
+        void openFileDialog() {
+            OPENFILENAME ofn;
+            FileUtils::pickFile([](const wchar_t* path) {
+                disk = Engine::Map::ManagedMapFile::create(path);
+            }, ofn);
+        }
+
+        void closeFile() {
+            disk.reset();
+        }
+
+        bool isFileOpen() {
+            return disk != nullptr;
+        }
+
+        const std::string getFileName() {
+            if (!disk) return "";
+            std::filesystem::path filePath = disk->getFilePath().filename();
+            return filePath.string();
         }
         
         // Pagination
