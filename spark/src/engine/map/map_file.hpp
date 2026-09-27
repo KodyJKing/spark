@@ -52,6 +52,16 @@ namespace Engine::Map {
             return h ? h->vertexDataSize : 0;
         }
 
+        inline size_t guessTagDataSize(uint32_t tagHandle) {
+            uint32_t nextTagHandle = tagHandle + 1;
+            Tag* currentTag = getTag(tagHandle);
+            Tag* nextTag = getTag(nextTagHandle);
+            if (!currentTag || !nextTag) return 0;
+            void* currentData = getTagData(currentTag);
+            void* nextData = getTagData(nextTag);
+            return (uintptr_t)nextData - (uintptr_t)currentData;
+        }
+
         // Gets base ptr for a section of the map file
         virtual void* getPointerBase(PointerBase b) = 0;
 

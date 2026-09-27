@@ -1,6 +1,5 @@
 #include "mods/devtools/DevWindow.hpp"
 #include "mods/devtools/ScriptConsole.hpp"
-#include "mods/devtools/dissect/DissectTag.hpp"
 #include "mods/devtools/engineinfo/EngineInfo.hpp"
 #include "mods/devtools/inspectdx11/InspectDX11.hpp"
 #include "imgui.h"
@@ -110,7 +109,6 @@ namespace Mod::DevTools {
             renderTranslateMapAddress();
         }
 
-        Mod::DevTools::DissectTag::render();
     }
 
     void renderPauseMenuTabs() {

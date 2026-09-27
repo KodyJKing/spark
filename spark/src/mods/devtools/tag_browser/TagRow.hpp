@@ -3,6 +3,8 @@
 #include "engine/halo1.hpp"
 #include "imgui.h"
 #include "utils/ImGuiUtils.hpp"
+#include "mods/devtools/dissect/DissectTag.hpp"
+#include "mods/devtools/dissect/new/DissectTagNew.hpp"
 
 namespace Mod::DevTools {
 
@@ -29,7 +31,8 @@ namespace Mod::DevTools {
 
                 auto inspectOnLeftClick = [&]() {
                     if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
-                        Mod::DevTools::DissectTag::openWindow(tag->tagID);
+                        // Mod::DevTools::DissectTag::openWindow(tag->tagID);
+                        Mod::DevTools::DissectTagNew::openWindow(state.getMap(), tag->tagID);
                     }
                 };
 

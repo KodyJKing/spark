@@ -53,39 +53,47 @@ namespace Engine::TagSchema {
                 bool bit = bytes & (1 << bitOffset);
                 return std::to_string(bit);
             }
+
+            #define CONVERT(type, adjustedOffset) std::to_string(*reinterpret_cast<const type*>(context.structureBase + offset + adjustedOffset))
+
             case PrimitiveTypeRef::Uint8:
-                return std::to_string(*reinterpret_cast<const uint8_t*>(context.structureBase + offset));
+                return CONVERT(uint8_t, 0);
             case PrimitiveTypeRef::Uint16:
-                return std::to_string(*reinterpret_cast<const uint16_t*>(context.structureBase + offset));
+                return CONVERT(uint16_t, 0);
             case PrimitiveTypeRef::Uint32:
-                return std::to_string(*reinterpret_cast<const uint32_t*>(context.structureBase + offset));
+                return CONVERT(uint32_t, 0);
             case PrimitiveTypeRef::Int8:
-                return std::to_string(*reinterpret_cast<const int8_t*>(context.structureBase + offset));
+                return CONVERT(int8_t, 0);
             case PrimitiveTypeRef::Int16:
-                return std::to_string(*reinterpret_cast<const int16_t*>(context.structureBase + offset));
+                return CONVERT(int16_t, 0);
             case PrimitiveTypeRef::Int32:
-                return std::to_string(*reinterpret_cast<const int32_t*>(context.structureBase + offset));
+                return CONVERT(int32_t, 0);
+
+            #define FLOAT(adjustedOffset) CONVERT(float, adjustedOffset)
             case PrimitiveTypeRef::Float:
-                return std::to_string(*reinterpret_cast<const float*>(context.structureBase + offset));
+                return FLOAT(0);
             case PrimitiveTypeRef::Vec3:
-                return std::to_string(*reinterpret_cast<const float*>(context.structureBase + offset)) + ", " +
-                       std::to_string(*reinterpret_cast<const float*>(context.structureBase + offset + 4)) + ", " +
-                       std::to_string(*reinterpret_cast<const float*>(context.structureBase + offset + 8));
+                return FLOAT(0) + ", " +
+                       FLOAT(4) + ", " +
+                       FLOAT(8);
             case PrimitiveTypeRef::Vec4:
-                return std::to_string(*reinterpret_cast<const float*>(context.structureBase + offset)) + ", " +
-                       std::to_string(*reinterpret_cast<const float*>(context.structureBase + offset + 4)) + ", " +
-                       std::to_string(*reinterpret_cast<const float*>(context.structureBase + offset + 8)) + ", " +
-                       std::to_string(*reinterpret_cast<const float*>(context.structureBase + offset + 12));
+                return FLOAT(0) + ", " +
+                       FLOAT(4) + ", " +
+                       FLOAT(8) + ", " +
+                       FLOAT(12);
             case PrimitiveTypeRef::Matrix3x3:
-                return std::to_string(*reinterpret_cast<const float*>(context.structureBase + offset)) + ", " +
-                       std::to_string(*reinterpret_cast<const float*>(context.structureBase + offset + 4)) + ", " +
-                       std::to_string(*reinterpret_cast<const float*>(context.structureBase + offset + 8)) + "; " +
-                       std::to_string(*reinterpret_cast<const float*>(context.structureBase + offset + 12)) + ", " +
-                       std::to_string(*reinterpret_cast<const float*>(context.structureBase + offset + 16)) + ", " +
-                       std::to_string(*reinterpret_cast<const float*>(context.structureBase + offset + 20)) + "; " +
-                       std::to_string(*reinterpret_cast<const float*>(context.structureBase + offset + 24)) + ", " +
-                       std::to_string(*reinterpret_cast<const float*>(context.structureBase + offset + 28)) + ", " +
-                       std::to_string(*reinterpret_cast<const float*>(context.structureBase + offset + 32));
+                return FLOAT(0) + ", " +
+                       FLOAT(4) + ", " +
+                       FLOAT(8) + "; " +
+                       FLOAT(12) + ", " +
+                       FLOAT(16) + ", " +
+                       FLOAT(20) + "; " +
+                       FLOAT(24) + ", " +
+                       FLOAT(28) + ", " +
+                       FLOAT(32);
+            #undef FLOAT
+            #undef CONVERT
+            
             case PrimitiveTypeRef::TagString: {
                 // TagString is stored as a fixed-size array of 32 bytes. Don't assume null-termination.
                 const char* str = reinterpret_cast<const char*>(context.structureBase + offset);

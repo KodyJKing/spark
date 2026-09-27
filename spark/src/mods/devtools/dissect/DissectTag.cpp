@@ -72,7 +72,6 @@ namespace Mod::DevTools::DissectTag {
         char* structureName = context.field->type.name;
         static char editStructureName[256];
         
-        
         // Structure name editor
         ImGui::SetNextItemWidth(ImGui::GetFontSize() * 8);
         ImGui::InputText("Structure", structureName, sizeof(context.field->type.name));

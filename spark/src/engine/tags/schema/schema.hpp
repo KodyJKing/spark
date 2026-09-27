@@ -6,8 +6,6 @@
 
 namespace Engine::TagSchema {
 
-    using ClaimedBytes = std::vector<bool>;
-
     struct Context {
         uint64_t relocationOffset;
         uintptr_t structureBase;
