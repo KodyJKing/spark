@@ -133,6 +133,13 @@ namespace Engine::Map {
             case Type::I64: return CONVERT(int64_t);
             case Type::F32: return CONVERT(float);
             case Type::F64: return CONVERT(double);
+            case Type::BlockPointer: {
+                void* structureBase = parent.address;
+                StructureRef ref = getBlockElement(0);
+                int64_t offset = (char*)ref.address - (char*)structureBase;
+                std::string description = "Block at offset 0x" + Strings::toHex(offset);
+                return description;
+            }
             #undef CONVERT
             default:
                 // LOG("Unsupported field type");
@@ -170,4 +177,45 @@ namespace Engine::Map {
         parent.node->fields.erase(node->offset);
         context->schema->fields.erase(node->id);
     }
+
+    StructureNode* FieldRef::getBlockPointerType() {
+        if (!valid()) {
+            LOG("FieldRef is not valid");
+            return nullptr;
+        }
+        if (node->type.type != Type::BlockPointer) {
+            LOG("FieldRef is not a block pointer");
+            return nullptr;
+        }
+        if (!context->schema->structures.contains(node->type.ref)) {
+            LOG("Block pointer type not found in schema");
+            return &NullStructure;
+        }
+        return &context->schema->structures[node->type.ref];
+    }
+
+    StructureRef FieldRef::getBlockElement(size_t index) {
+        if (!valid()) {
+            LOG("FieldRef is not valid");
+            return StructureRef{nullptr};
+        }
+        if (node->type.type != Type::BlockPointer) {
+            LOG("FieldRef is not a block");
+            return StructureRef{nullptr};
+        }
+
+        StructureNode* structNode = getBlockPointerType();
+        if (!structNode) {
+            LOG("Block pointer type not found");
+            return StructureRef{nullptr};
+        }
+
+        BlockPointer* blockPointer = (BlockPointer*)address;
+        void* blockBase = context->mapFile->fromRelative(blockPointer->data);
+
+        void* elementAddress = (char*)blockBase + index * structNode->size;
+
+        return StructureRef{context, structNode, elementAddress};
+    }
+
 }

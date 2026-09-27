@@ -6,6 +6,8 @@
 #include "engine/map/schema/reference.hpp"
 #include "engine/map/schema/schema.hpp"
 
+#include "Hints.hpp"
+
 namespace Mod::DevTools::DissectTagNew {
 
     using namespace Engine::Map;
@@ -16,6 +18,8 @@ namespace Mod::DevTools::DissectTagNew {
         
         // This should *probably* be a smart-pointer.
         MapFile* map = nullptr;
+
+        Hints::HintCache hintCache;
 
         inline Tag* getTag() const {
             return map->getTag(tagId);
@@ -34,9 +38,17 @@ namespace Mod::DevTools::DissectTagNew {
         }
     };
 
+    struct RenderContext {
+        WindowState* windowState;
+        void* tagStart;
+        void* tagEnd;
+    };
+
     struct State {
 
         Schema schema;
+
+        float hintThreshold = 0.25f;
 
         ///////////////////////////
         // Windows

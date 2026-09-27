@@ -26,6 +26,15 @@ namespace Engine::Map {
         return &structures[structureId];
     }
 
+    StructureNode* Schema::structureByName(const std::string& name) {
+        for (auto& [id, structNode] : structures) {
+            if (std::string(structNode.name) == name) {
+                return &structNode;
+            }
+        }
+        return nullptr;
+    }
+
     Id Schema::createField(std::string name, FieldNode** nodeOut) {
         Id fieldId = createId();
         FieldNode node = {};

@@ -19,7 +19,7 @@ namespace Engine::Map {
 
     struct BlockPointer {
         uint32_t count;
-        Pointer<PointerBase_Map> data;
+        Pointer<PointerBase_Tags> data;
         uint32_t bullshit;
     };
 

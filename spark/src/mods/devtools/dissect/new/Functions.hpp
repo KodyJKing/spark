@@ -7,9 +7,29 @@
 
 #include "imgui.h"
 
+#define DEBUG
+
+#ifdef DEBUG
+#include "utils/Debugging.hpp"
+#include <iostream>
+#define LOG(X) std::cout << "[DissectTagNew] " << X << std::endl;
+#else
+#define LOG(X)
+#endif
+
+
 namespace Mod::DevTools::DissectTagNew {
 
     using namespace Engine::Map;
+
+    inline void renderRowAddress(uintptr_t address) {
+        ImGui::NewLine();
+        ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(128, 128, 128, 255));
+        ImGui::Text("%p", (void*)address);
+        ImGui::SameLine();
+        ImGui::PopStyleColor();
+    }
+
 
     inline void renderTypePicker(Type* type) {
         if (!type) return;

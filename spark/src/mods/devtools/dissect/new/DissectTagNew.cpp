@@ -1,111 +1,22 @@
 #include "DissectTagNew.hpp"
 
+#include "Constants.hpp"
 #include "State.hpp"
 #include "Functions.hpp"
+#include "Hints.hpp"
+#include "Untyped.hpp"
 
 #include "engine/map/schema/reference.hpp"
 #include "engine/tags/tag_group_id.hpp"
 
 #include "imgui.h"
 
-#define DEBUG
-
-#ifdef DEBUG
-#include "utils/Debugging.hpp"
-#include <iostream>
-#define LOG(X) std::cout << "[DissectTagNew] " << X << std::endl;
-#else
-#define LOG(X)
-#endif
-
 namespace Mod::DevTools::DissectTagNew {
 
     using namespace Engine::Map;
-
-    constexpr size_t kMaxDisplayableSize = 4096 << 2;
-    constexpr size_t kBytesPerRow = 16;
     
     void openWindow(MapFile* map, uint32_t tagId) {
         state.openWindow(map, tagId);
-    }
-
-    void renderRowAddress(uintptr_t address) {
-        ImGui::NewLine();
-        ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(128, 128, 128, 255));
-        ImGui::Text("%p", (void*)address);
-        ImGui::SameLine();
-        ImGui::PopStyleColor();
-    }
-
-    void renderUntypedRow(StructureRef& structure, uint8_t* address, size_t length) {
-        if (length == 0) {
-            return;
-        }
-        
-        bool error = false;
-        size_t originalLength = length;
-        if (length >= kMaxDisplayableSize) {
-            error = true;
-            length = kMaxDisplayableSize;
-        }
-
-        if (error) {
-            ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 0, 0, 255));
-        }
-
-        renderRowAddress((uintptr_t)address);
-        
-        // Pad for 0x4 byte alignment
-        size_t pad = (uintptr_t)address & 0x3;
-        for (size_t i = 0; i < pad; ++i) {
-            ImGui::Text("  ");
-            ImGui::SameLine();
-        }
-        
-        for (size_t i = 0; i < length; ++i) {
-            uint8_t* byteAddress = address + i;
-            
-            bool stripe = ((uintptr_t)byteAddress) >> 2 & 1;
-            if (stripe) {
-                ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(100, 100, 100, 255));
-            }
-
-            ImGui::Text("%02X", *byteAddress);
-
-            // Tooltip
-            if (ImGui::IsItemHovered()) {
-                ImGui::BeginTooltip();
-                ImGui::Text("Address: %p", (void*)byteAddress);
-                ImGui::Text("Offset: 0x%zx", i);
-                ImGui::Text("Value: 0x%02X", *byteAddress);
-                if (originalLength != length) {
-                    ImGui::Text("Bad length provided: 0x%zx", originalLength);
-                }
-                ImGui::EndTooltip();
-            }
-
-            // On right click, create a new field here.
-            if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
-                LOG("Creating new field at address: " << (void*)byteAddress);
-                structure.createFieldAt(byteAddress);
-            }
-
-            ImGui::SameLine();
-
-            if (stripe) {
-                ImGui::PopStyleColor();
-            }
-
-            bool overflow = i % kBytesPerRow == kBytesPerRow - 1;
-            bool isFinal = i == length - 1;
-            if (overflow && !isFinal) {
-                renderRowAddress((uintptr_t)(address + i + 1));
-            }
-        }
-
-        if (error) {
-            ImGui::PopStyleColor();
-        }
     }
 
     void renderField(FieldRef& field) {
@@ -140,13 +51,7 @@ namespace Mod::DevTools::DissectTagNew {
         ImGui::SameLine();
     }
 
-    void renderStructure(StructureRef& structure, size_t fallbackSize = 0) {
-        #ifdef DEBUG
-        if (ImGui::Button("Debug")) {
-            Debugging::debug();
-        }
-        #endif
-        
+    void renderStructure(RenderContext& renderCtx, StructureRef& structure, size_t fallbackSize = 0) {
         if (!structure.valid()) {
             ImGui::Text("[invalid structure]");
             return;
@@ -162,13 +67,29 @@ namespace Mod::DevTools::DissectTagNew {
         auto fieldRefs = structure.getFieldRefs();
         for (auto& fieldRef : fieldRefs) {
             uintptr_t newHead = (uintptr_t)fieldRef.address + fieldRef.size();
-            renderUntypedRow(structure, (uint8_t*)head, (uintptr_t)fieldRef.address - head);
+            renderUntypedRow(renderCtx, structure, (uint8_t*)head, (uintptr_t)fieldRef.address - head);
             renderField(fieldRef);
             head = newHead;
         }
-        renderUntypedRow(structure, (uint8_t*)head, structSize - (head - (uintptr_t)structure.address));
+        renderUntypedRow(renderCtx, structure, (uint8_t*)head, structSize - (head - (uintptr_t)structure.address));
 
         ImGui::PopID();
+    }
+
+    void windowHeader() {
+        if (ImGui::CollapsingHeader("Options")) {
+            // Slider for hint threshold
+            ImGui::Text("Hint Threshold");
+            ImGui::SameLine();
+            ImGui::SliderFloat("##HintThreshold", &state.hintThreshold, 0.01f, 1.0f);
+
+            ImGui::SameLine();
+            #ifdef DEBUG
+            if (ImGui::Button("Start Debugging")) {
+                Debugging::debug();
+            }
+            #endif
+        }
     }
 
     void renderWindow(WindowState& window) {
@@ -177,6 +98,7 @@ namespace Mod::DevTools::DissectTagNew {
         auto tag = window.getTag();
         auto path = window.map->getTagPath(tag);
         ImGui::Begin(path, &window.isOpen);
+        windowHeader();
         if (!tag) {
             ImGui::Text("[invalid tag]");
         } else {
@@ -185,9 +107,13 @@ namespace Mod::DevTools::DissectTagNew {
             if (!ref.valid()) {
                 ImGui::Text("[invalid structure reference]");
             } else {
-                size_t fallbackSize = window.map->guessTagDataSize(tag->tagID);
-                ImGui::Text("Estimated tag data size: %zu", fallbackSize);
-                renderStructure(ref, fallbackSize);
+                size_t guessedSize = window.map->guessTagDataSize(tag->tagID);
+
+                void* tagData = window.map->getTagData(tag);
+                RenderContext renderCtx = { &window, tagData, (uint8_t*)tagData + guessedSize };
+
+                ImGui::Text("Estimated tag data size: %zu", guessedSize);
+                renderStructure(renderCtx, ref, guessedSize);
             }
         }
 

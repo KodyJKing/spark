@@ -8,8 +8,14 @@ x Update tag browser to use new map file API.
 
 x Implement RawMapFile
 
+x Implement Schema driven tag data traversal.
+
 -> Update tag dissector to use new map file API.
-    - Also clean up that fugly garbage.
+    x Also clean up that fugly garbage.
+    - Expandable substructures (block-pointer and inline).
+    - Create structure.
+    - Rename structure.
+    - Cleanup unused nodes.
 
 -? Stand alone tag browser app for map files.
 -? Stand alone tag dissector app for map files.

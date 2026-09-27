@@ -20,20 +20,25 @@ namespace Engine::Map {
     };
 
     struct SchemaNode {
-        Id id;
-        char name[256];
+        Id id = NullId;
+        char name[256] = "";
+
+        // NullId is reserved for read-only placeholder nodes.
+        inline bool readonly() const { return id == NullId; }
     };
 
     struct StructureNode : public SchemaNode {
-        size_t size;
+        size_t size = 0;
         // Pair of field offset and field ID, used to keep fields sorted by offset
         std::map<size_t, Id> fields;
         TagGroupId groupId = GroupId_Invalid;
     };
 
+    static inline StructureNode NullStructure = StructureNode{};
+
     struct FieldNode : public SchemaNode {
-        TypeRef type;
-        size_t offset;
+        TypeRef type = { Type::U32, NullId };
+        size_t offset = 0;
     };
 
     struct Schema {
@@ -42,6 +47,8 @@ namespace Engine::Map {
 
         StructureNode* structureForGroupId(uint32_t groupId);
         StructureNode* createStructureForGroupId(uint32_t groupId);
+
+        StructureNode* structureByName(const std::string& name);
 
         Id createField(std::string name, FieldNode** nodeOut = nullptr);
     };
