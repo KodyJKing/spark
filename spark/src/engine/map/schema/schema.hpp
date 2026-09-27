@@ -25,6 +25,8 @@ namespace Engine::Map {
 
         // NullId is reserved for read-only placeholder nodes.
         inline bool readonly() const { return id == NullId; }
+
+        bool assertWritable(const char* errorMsg);
     };
 
     struct StructureNode : public SchemaNode {
@@ -50,7 +52,7 @@ namespace Engine::Map {
 
         StructureNode* structureByName(const std::string& name);
 
-        Id createField(std::string name, FieldNode** nodeOut = nullptr);
+        Id createField(std::string name, FieldNode** nodeOut = nullptr, Type type = Type::U32);
+        Id createStructure(std::string name, StructureNode **nodeOut);
     };
-
 }

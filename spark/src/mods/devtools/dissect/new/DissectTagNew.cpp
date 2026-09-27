@@ -5,21 +5,34 @@
 #include "Functions.hpp"
 #include "Hints.hpp"
 #include "Untyped.hpp"
+#include "Substructure.hpp"
 
 #include "engine/map/schema/reference.hpp"
 #include "engine/tags/tag_group_id.hpp"
+#include "engine/map/schema/functions.hpp"
 
 #include "imgui.h"
 
 namespace Mod::DevTools::DissectTagNew {
 
     using namespace Engine::Map;
-    
+
     void openWindow(MapFile* map, uint32_t tagId) {
         state.openWindow(map, tagId);
     }
 
-    void renderField(FieldRef& field) {
+    void tryRenderBlock(RenderContext& renderCtx, FieldRef& field) {
+        if (field.is(Type::BlockPointer)) {
+            StructureRef blockElement = field.getBlockElement(0);
+            renderSubstructure(renderCtx, blockElement, field, 0x100);
+        }
+    }
+    
+    void renderFieldChildren(RenderContext& renderCtx, FieldRef& field) {
+        tryRenderBlock(renderCtx, field);
+    }
+
+    void renderField(RenderContext& renderCtx, FieldRef& field) {
         if (!field.valid()) {
             ImGui::Text("[invalid field reference]");
             return;
@@ -47,13 +60,19 @@ namespace Mod::DevTools::DissectTagNew {
 
         ImGui::PopID();
 
-        // renderRowAddress has the sole responsibility of creating new lines.
+        // Only renderRowAddress may create new lines.
         ImGui::SameLine();
-    }
 
+        renderFieldChildren(renderCtx, field);
+    }
+    
     void renderStructure(RenderContext& renderCtx, StructureRef& structure, size_t fallbackSize = 0) {
         if (!structure.valid()) {
             ImGui::Text("[invalid structure]");
+            return;
+        }
+        if (!structure.allocated()) {
+            ImGui::Text("[unallocated memory]");
             return;
         }
 
@@ -68,7 +87,7 @@ namespace Mod::DevTools::DissectTagNew {
         for (auto& fieldRef : fieldRefs) {
             uintptr_t newHead = (uintptr_t)fieldRef.address + fieldRef.size();
             renderUntypedRow(renderCtx, structure, (uint8_t*)head, (uintptr_t)fieldRef.address - head);
-            renderField(fieldRef);
+            renderField(renderCtx, fieldRef);
             head = newHead;
         }
         renderUntypedRow(renderCtx, structure, (uint8_t*)head, structSize - (head - (uintptr_t)structure.address));
@@ -107,10 +126,13 @@ namespace Mod::DevTools::DissectTagNew {
             if (!ref.valid()) {
                 ImGui::Text("[invalid structure reference]");
             } else {
-                size_t guessedSize = window.map->guessTagDataSize(tag->tagID);
+                size_t guessedTotalSize = window.map->guessTagDataSize(tag->tagID);
+                size_t guessedSize = Engine::Map::guessSizeFromFirstBlockElement(ref);
+                if (guessedSize == 0) 
+                    guessedSize = guessedTotalSize;
 
                 void* tagData = window.map->getTagData(tag);
-                RenderContext renderCtx = { &window, tagData, (uint8_t*)tagData + guessedSize };
+                RenderContext renderCtx = { &window, tagData, (uint8_t*)tagData + guessedTotalSize };
 
                 ImGui::Text("Estimated tag data size: %zu", guessedSize);
                 renderStructure(renderCtx, ref, guessedSize);

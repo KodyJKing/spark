@@ -9,20 +9,8 @@
 namespace Mod::DevTools::DissectTagNew {
 
     inline void renderUntypedRow(RenderContext& renderCtx, StructureRef& structure, uint8_t* address, int32_t length) {
-        if (length <= 0) {
-            return;
-        }
-        
-        bool error = false;
-        size_t originalLength = length;
-        if (length >= kMaxDisplayableSize) {
-            error = true;
-            length = kMaxDisplayableSize;
-        }
-
-        if (error) {
-            ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 0, 0, 255));
-        }
+        if (length <= 0) return;
+        if (length >= kMaxDisplayableSize) length = kMaxDisplayableSize;
 
         renderRowAddress((uintptr_t)address);
         
@@ -42,38 +30,26 @@ namespace Mod::DevTools::DissectTagNew {
             if (stripe) ImGui::PushStyleColor(ImGuiCol_Text, stripeColor);
 
             // Compute scores
+            Hints::HintCache& hintCache = renderCtx.windowState->hintCache;
             Hints::HintContext hintCtx = {
                 renderCtx.tagStart,
                 renderCtx.tagEnd,
                 structure
             };
-            
-            float* scores = renderCtx.windowState->hintCache.getScores(hintCtx, byteAddress);
-            bool hasNotableScore = false;
-            for (int i = 0; i < static_cast<int>(Hints::TypeCount); ++i) {
-                if (scores[i] >= state.hintThreshold) {
-                    hasNotableScore = true;
-                    break;
-                }
-            }
-            if (hasNotableScore) {
-                ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 64, 255));
-            }
+            bool hintColored = hintCache.colorAddress(hintCtx, byteAddress, state.hintThreshold);
 
             ImGui::Text("%02X", *byteAddress);
-
-            // Tooltip
             bool showTooltip = ImGui::IsItemHovered();
 
-            // On right click, create a new field here.
-            if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
+            if (ImGui::IsItemClicked(ImGuiMouseButton_Right) && !structure.node->readonly()) {
                 LOG("Creating new field at address: " << (void*)byteAddress);
-                structure.createFieldAt(byteAddress);
+                Type suggested = hintCache.suggestedType(hintCtx, byteAddress, state.hintThreshold);
+                structure.createFieldAt(byteAddress, suggested);
             }
 
             ImGui::SameLine();
 
-            if (hasNotableScore) ImGui::PopStyleColor();
+            if (hintColored) ImGui::PopStyleColor();
             if (stripe) ImGui::PopStyleColor();
 
             if (showTooltip) {
@@ -84,16 +60,11 @@ namespace Mod::DevTools::DissectTagNew {
                 ImGui::EndTooltip();
             }
 
-
             bool overflow = (offset + pad) % kBytesPerRow == kBytesPerRow - 1;
             bool isFinal = i == length - 1;
             if (overflow && !isFinal) {
                 renderRowAddress((uintptr_t)(address + i + 1));
             }
-        }
-
-        if (error) {
-            ImGui::PopStyleColor();
         }
     }
 

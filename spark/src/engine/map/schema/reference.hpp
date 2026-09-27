@@ -25,7 +25,9 @@ namespace Engine::Map {
 
         bool valid() const;
 
-        void createFieldAt(void* address);
+        bool allocated() const;
+
+        void createFieldAt(void* address, Type type = Type::U32);
         void insertField(Id id);
     };
 
@@ -44,8 +46,11 @@ namespace Engine::Map {
 
         void deleteField();
 
+        bool createStructure();
         StructureNode* getBlockPointerType();
         StructureRef getBlockElement(size_t index);
+
+        bool is(Type type);
     };
 
 }

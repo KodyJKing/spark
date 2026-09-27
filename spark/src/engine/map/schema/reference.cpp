@@ -4,6 +4,7 @@
 #include "type.hpp"
 
 #include "utils/Strings.hpp"
+#include "memory/Memory.hpp"
 
 #define DEBUG_REFERENCE
 
@@ -21,6 +22,10 @@ namespace Engine::Map {
 
     bool StructureRef::valid() const {
         return context != nullptr && address != nullptr;
+    }
+
+    bool StructureRef::allocated() const {
+        return Memory::isAllocated(address);
     }
 
     bool FieldRef::valid() const {
@@ -91,9 +96,12 @@ namespace Engine::Map {
         node->fields[field.offset] = id;
     }
 
-    void StructureRef::createFieldAt(void* address) {
+    void StructureRef::createFieldAt(void* address, Type type) {
         if (!valid()) {
             LOG("StructureRef is not valid");
+            return;
+        }
+        if (!node->assertWritable("Cannot create field on read-only structure")) {
             return;
         }
         
@@ -102,7 +110,7 @@ namespace Engine::Map {
         std::string fieldName = "field_0x" + Strings::toHex(offset);
 
         FieldNode* fieldNode = nullptr;
-        Id fieldId = schema->createField(fieldName, &fieldNode);
+        Id fieldId = schema->createField(fieldName, &fieldNode, type);
         if (!fieldNode) {
             LOG("Failed to create field node");
             return;
@@ -178,7 +186,22 @@ namespace Engine::Map {
         context->schema->fields.erase(node->id);
     }
 
-    StructureNode* FieldRef::getBlockPointerType() {
+    bool FieldRef::createStructure() {
+        if (!valid()) {
+            LOG("FieldRef is not valid");
+            return false;
+        }
+        StructureNode* newNode = nullptr;
+        Id newId = context->schema->createStructure("", &newNode);
+        if (newId != NullId) {
+            node->type.ref = newId;
+            return true;
+        }
+        return false;
+    }
+
+    StructureNode *FieldRef::getBlockPointerType()
+    {
         if (!valid()) {
             LOG("FieldRef is not valid");
             return nullptr;
@@ -216,6 +239,14 @@ namespace Engine::Map {
         void* elementAddress = (char*)blockBase + index * structNode->size;
 
         return StructureRef{context, structNode, elementAddress};
+    }
+
+    bool FieldRef::is(Type type) {
+        if (!valid()) {
+            LOG("FieldRef is not valid");
+            return false;
+        }
+        return node->type.type == type;
     }
 
 }

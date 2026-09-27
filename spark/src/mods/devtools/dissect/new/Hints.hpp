@@ -8,6 +8,8 @@
 #include <vector>
 #include <algorithm>
 
+#include "memory/Memory.hpp"
+
 namespace Mod::DevTools::DissectTagNew::Hints {
 
     using namespace Engine::Map;
@@ -27,6 +29,7 @@ namespace Mod::DevTools::DissectTagNew::Hints {
     ) {
         BlockPointer* blockPointer = reinterpret_cast<BlockPointer*>(address);
         void* blockBase = ctx.structure.context->mapFile->fromRelative(blockPointer->data);
+        if (!Memory::isAllocated(blockBase)) return 0.0f;
         bool isWithinTag = blockBase >= ctx.tagStart && blockBase < ctx.tagEnd;
         if (!isWithinTag) return 0.0f;
         bool isEmpty = blockPointer->count == 0;
@@ -125,13 +128,20 @@ namespace Mod::DevTools::DissectTagNew::Hints {
         void* address,
         float* scores
     ) {
+        if (!Memory::isAllocated(address)) {
+            for (int i = 0; i < static_cast<int>(TypeCount); ++i) {
+                scores[i] = 0.0f;
+            }
+            return;
+        }
+        
         for (int i = 0; i < static_cast<int>(TypeCount); ++i) {
             computeScore(ctx, address, scores[i], static_cast<Type>(i));
         }
         softmax(scores, static_cast<int>(TypeCount));
     }
 
-    void renderHints(HintContext ctx, void* address, float notableThreshold) {
+    inline void renderHints(HintContext ctx, void* address, float notableThreshold) {
         ImGui::BeginChild("Hints", ImVec2(0, 0), 1 | ImGuiChildFlags_AlwaysAutoResize | ImGuiChildFlags_AutoResizeY );
         // Render probability distribution for each type.
         float scores[static_cast<int>(TypeCount)];
@@ -176,7 +186,7 @@ namespace Mod::DevTools::DissectTagNew::Hints {
     struct HintCache {
         std::vector<float> scores;
         std::unordered_map<void*, size_t> cache;
-        float* getScores(HintContext& ctx, void* address) {
+        inline float* getScores(HintContext& ctx, void* address) {
             auto it = cache.find(address);
             if (it != cache.end()) {
                 return &scores[it->second];
@@ -188,7 +198,35 @@ namespace Mod::DevTools::DissectTagNew::Hints {
             computeTypeScoreDistribution(ctx, address, newScores);
             return newScores;
         }
-    };
 
+        inline bool colorAddress(HintContext& hintCtx, void* address, float notableThreshold) {
+            float* scores = getScores(hintCtx, address);
+            bool hasNotableScore = false;
+            for (int i = 0; i < static_cast<int>(Hints::TypeCount); ++i) {
+                if (scores[i] >= notableThreshold) {
+                    hasNotableScore = true;
+                    break;
+                }
+            }
+            if (hasNotableScore) {
+                ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 64, 255));
+            }
+            return hasNotableScore;
+        }
+    
+        inline Type suggestedType(HintContext& hintCtx, void* address, float notableThreshold) {
+            float* scores = getScores(hintCtx, address);
+            int bestIndex = 0;
+            float bestScore = scores[0];
+            for (int i = 1; i < static_cast<int>(TypeCount); ++i) {
+                if (scores[i] > bestScore && scores[i] >= notableThreshold) {
+                    bestScore = scores[i];
+                    bestIndex = i;
+                }
+            }
+            if (bestScore < notableThreshold) return Type::U32;
+            return static_cast<Type>(bestIndex);
+        }
+    };
 
 }
