@@ -70,6 +70,8 @@ namespace Engine::Map {
         uint16_t scenarioType;
         char pad1[2];
         uint32_t checksum;
+        uint32_t unused[485];
+        char footerMagic[4]; // Should be "toof"
     };
 
 }

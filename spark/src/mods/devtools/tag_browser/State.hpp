@@ -9,6 +9,11 @@
 
 #include "Constants.hpp"
 
+namespace Engine::Map {
+    bool movePathStrings(RuntimeMapFile* map);
+}
+
+
 namespace Mod::DevTools {
 
     inline static Engine::Map::RuntimeMapFile run;
@@ -21,6 +26,8 @@ namespace Mod::DevTools {
         public:
         bool show = false;
 
+        std::string currentFilePath;
+
         // Map
         Engine::Map::MapFile* getMap() {
             if (disk) return disk.get();
@@ -29,8 +36,9 @@ namespace Mod::DevTools {
 
         void openFileDialog() {
             OPENFILENAME ofn;
-            FileUtils::pickFile([](const wchar_t* path) {
+            FileUtils::pickFile([&](const wchar_t* path) {
                 disk = Engine::Map::ManagedMapFile::create(path);
+                currentFilePath = Strings::convertWideString(path);
             }, ofn);
         }
 
@@ -46,6 +54,10 @@ namespace Mod::DevTools {
             if (!disk) return "";
             std::filesystem::path filePath = disk->getFilePath().filename();
             return filePath.string();
+        }
+
+        void debugMovePathStrings() {
+            Engine::Map::movePathStrings(&run);
         }
         
         // Pagination

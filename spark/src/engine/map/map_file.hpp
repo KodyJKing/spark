@@ -1,7 +1,17 @@
 #pragma once
 
+#include <cassert>
+
 #include "tag_data_types.hpp"
 #include "memory/Memory.hpp"
+
+#define DEBUG_MAP_FILE
+
+#ifdef DEBUG_MAP_FILE
+#define ASSERT(x, msg) assert((x) && msg)
+#else
+#define ASSERT(x, msg)
+#endif
 
 namespace Engine::Map {
     
@@ -15,7 +25,10 @@ namespace Engine::Map {
 
         template<PointerBase B>
         Pointer<B> toRelative(void* ptr) {
-            return { (char*)ptr - (char*)getPointerBase(B) };
+            int64_t offset = (char*)ptr - (char*)getPointerBase(B);
+            uint32_t offset32 = static_cast<uint32_t>(offset);
+            ASSERT(offset32 == offset, "Pointer offset does not fit in 32 bits");
+            return { offset32 };
         }
 
         inline CacheHeader* getCacheHeader() {

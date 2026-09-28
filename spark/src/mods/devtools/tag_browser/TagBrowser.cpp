@@ -31,31 +31,57 @@ namespace Mod::DevTools {
         }
     }
 
+    void menuBar() {
+        ImGui::BeginMenuBar();
+        if (ImGui::BeginMenu("File")) {
+            if (state.isFileOpen()) {
+                if (ImGui::MenuItem("Close")) {
+                    state.closeFile();
+                }
+            } else {
+                if (ImGui::MenuItem("Open")) {
+                    state.openFileDialog();
+                }
+            }
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("Debug")) {
+            if (ImGui::MenuItem("Move Path Strings")) {
+                state.debugMovePathStrings();
+            }
+            ImGui::EndMenu();
+        }
+
+        if (state.isFileOpen()) {
+            ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 64));
+            std::string tail = state.currentFilePath;
+            constexpr size_t maxTailLength = 40;
+            if (tail.size() > maxTailLength) tail = "..." + tail.substr(tail.size() - maxTailLength);
+            ImGui::Text(tail.c_str());
+            ImGui::PopStyleColor();
+        }
+
+        ImGui::EndMenuBar();
+    }
+
     void tagBrowser() {
         // Mod::DevTools::DissectTag::render();
         Mod::DevTools::DissectTagNew::render();
         
         if (!state.show) return;
 
-        ImGui::Begin("Tag Browser", &state.show, ImGuiWindowFlags_AlwaysAutoResize);
-        
+        ImGui::Begin("Tag Browser", &state.show, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_MenuBar);
+        menuBar();
+
         //////////////////////////////////////////////////////////////////////////
         // Pagination
         
-        uint32_t totalTags = state.totalTags();
-        uint32_t numPages = state.numPages();
         ImGui::InputInt("Page", &state.page);
         if (ImGui::IsWindowHovered()) state.page -= (int) ImGui::GetIO().MouseWheel;
         state.clampPage();
         ImGui::SameLine();
         ImGui::InputInt("Page size", &state.tagsPerPage);
         if (state.tagsPerPage < 1) state.tagsPerPage = 1;
-
-        //////////////////////////////////////////////////////////////////////////
-        ImGui::SameLine();
-        ImGui::Spacing();
-        ImGui::SameLine();
-        fileUI();
 
         //////////////////////////////////////////////////////////////////////////
         // Search

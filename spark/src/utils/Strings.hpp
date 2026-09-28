@@ -16,4 +16,6 @@ namespace Strings {
         ss << std::uppercase << std::hex << value;
         return ss.str();
     }
+
+    std::string convertWideString(const std::wstring & wideStr);
 }

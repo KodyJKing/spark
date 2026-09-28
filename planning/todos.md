@@ -12,17 +12,17 @@ x Implement Schema driven tag data traversal.
 
 -> Update tag dissector to use new map file API.
     x Also clean up that fugly garbage.
-    - Expandable substructures (block-pointer and inline).
-    - Create structure.
-    - Rename structure.
+    x Expandable substructures (block-pointer and inline).
+    x Create structure.
+    x Rename structure.
     - Cleanup unused nodes.
 
 -? Stand alone tag browser app for map files.
 -? Stand alone tag dissector app for map files.
 
 - Tag allocation in MapFile API.
-    - Implement (idempotent) tag path array relocation to make room for new tags.
-        - Store location of new tag path array after relocation in unused space in the runtime cache header.
+    x Implement (idempotent) tag path array relocation to make room for new tags.
+        x Store location of new tag path array after relocation in unused space in the runtime cache header.
 
 - Tag copying (first pass).
     - No support for texture or model data.
