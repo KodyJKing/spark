@@ -6,6 +6,8 @@
 #include "Functions.hpp"
 #include "imgui.h"
 
+#include <sstream>
+
 namespace Mod::DevTools::DissectTagNew {
 
     inline void renderUntypedRow(RenderContext& renderCtx, StructureRef& structure, uint8_t* address, int32_t length) {
@@ -20,6 +22,19 @@ namespace Mod::DevTools::DissectTagNew {
             ImGui::Text("  ");
             ImGui::SameLine();
         }
+
+        std::stringstream textRow;
+        auto printRowText = [&]() {
+            std::string row = textRow.str();
+            // ImGui::SameLine();
+            // ImGui::Text(" | %s", row.c_str());
+            textRow.str("");
+            textRow.clear();
+        };
+        auto pushRowChar = [&](char c) {
+            if (c < 32 || c > 126) c = '.';
+            textRow << c;
+        };
         
         for (size_t i = 0; i < length; ++i) {
             uint8_t* byteAddress = address + i;
@@ -40,6 +55,7 @@ namespace Mod::DevTools::DissectTagNew {
 
             ImGui::Text("%02X", *byteAddress);
             bool showTooltip = ImGui::IsItemHovered();
+            pushRowChar(static_cast<char>(*byteAddress));
 
             if (ImGui::IsItemClicked(ImGuiMouseButton_Right) && !structure.node->readonly()) {
                 LOG("Creating new field at address: " << (void*)byteAddress);
@@ -62,8 +78,11 @@ namespace Mod::DevTools::DissectTagNew {
 
             bool overflow = (offset + pad) % kBytesPerRow == kBytesPerRow - 1;
             bool isFinal = i == length - 1;
-            if (overflow && !isFinal) {
-                renderRowAddress((uintptr_t)(address + i + 1));
+            if (overflow) {
+                printRowText();
+                if (!isFinal) {
+                    renderRowAddress((uintptr_t)(address + i + 1));
+                }
             }
         }
     }

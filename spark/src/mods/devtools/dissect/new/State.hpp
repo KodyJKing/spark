@@ -3,10 +3,13 @@
 #include <cstdint>
 #include <map>
 
+#include "engine/map/schema/schema_file.hpp"
 #include "engine/map/schema/reference.hpp"
 #include "engine/map/schema/schema.hpp"
 
 #include "Hints.hpp"
+
+#include "utils/Utils.hpp"
 
 namespace Mod::DevTools::DissectTagNew {
 
@@ -46,7 +49,19 @@ namespace Mod::DevTools::DissectTagNew {
 
     struct State {
 
+        ///////////////////////////
+        // Schema
         Schema schema;
+        inline void loadSchema() {
+            static bool schemaLoaded = false;
+            if (schemaLoaded) return;
+            schema = Engine::Map::loadSchemaFromFile(Utils::getTagSchemaPath());
+            schemaLoaded = true;
+        }
+        inline void saveSchema() {
+            auto path = Utils::getTagSchemaPath();
+            Engine::Map::saveSchemaToFile(schema, path);
+        }
 
         float hintThreshold = 0.25f;
 
@@ -69,6 +84,10 @@ namespace Mod::DevTools::DissectTagNew {
             }
         }
 
+        inline void tick() {
+            loadSchema();
+            cleanupWindows();
+        }
         
     };
 

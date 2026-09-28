@@ -47,6 +47,7 @@ namespace Engine::Map {
         void deleteField();
 
         bool createStructure();
+        BlockPointer* getBlockPointer();
         StructureNode* getBlockPointerType();
         StructureRef getBlockElement(size_t index);
 

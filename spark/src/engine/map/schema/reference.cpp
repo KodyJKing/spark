@@ -148,6 +148,9 @@ namespace Engine::Map {
                 std::string description = "Block at offset 0x" + Strings::toHex(offset);
                 return description;
             }
+            case Type::TagString: {
+                return std::string((char*)address, 32);
+            }
             #undef CONVERT
             default:
                 // LOG("Unsupported field type");
@@ -174,6 +177,11 @@ namespace Engine::Map {
             LOG("Invalid type index: " << typeIndex);
             return 0;
         }
+
+        if (node->type.type == Type::Structure) {
+            // Todo.
+        }
+
         return TypeSizes[typeIndex];
     }
 
@@ -198,6 +206,18 @@ namespace Engine::Map {
             return true;
         }
         return false;
+    }
+
+    BlockPointer *FieldRef::getBlockPointer() {
+        if (!valid()) {
+            LOG("FieldRef is not valid");
+            return nullptr;
+        }
+        if (node->type.type != Type::BlockPointer) {
+            LOG("FieldRef is not a block pointer");
+            return nullptr;
+        }
+        return (BlockPointer*)address;
     }
 
     StructureNode *FieldRef::getBlockPointerType()

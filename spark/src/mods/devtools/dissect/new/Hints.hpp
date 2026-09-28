@@ -60,7 +60,7 @@ namespace Mod::DevTools::DissectTagNew::Hints {
         int alphaNumericCount = 0;
         char* value = reinterpret_cast<char*>(address);
         
-        std::string valueStr(value);
+        std::string valueStr(value, 32);
         size_t length = std::strlen(value);
         if (length < 4) return 0.0f;
 

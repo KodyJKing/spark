@@ -23,7 +23,29 @@ namespace Mod::DevTools::DissectTagNew {
 
     void tryRenderBlock(RenderContext& renderCtx, FieldRef& field) {
         if (field.is(Type::BlockPointer)) {
-            StructureRef blockElement = field.getBlockElement(0);
+
+            ImGui::PushID(field.address);
+            // Index
+            auto storage = ImGui::GetStateStorage();
+            std::string indexKey = "BlockIndex_" + std::to_string((uintptr_t)field.address);
+            ImGuiID indexId = ImGui::GetID(indexKey.c_str());
+            int index = storage->GetInt(indexId, 0);
+
+            
+            ImGui::SetNextItemWidth(ImGui::GetFontSize() * 8);
+            ImGui::InputInt("Index", &index, 1, 10);
+
+            BlockPointer* blockPointer = field.getBlockPointer();
+            if (index >= blockPointer->count) {
+                index = blockPointer->count - 1;
+            } else if (index < 0) {
+                index = 0;
+            }
+            
+            storage->SetInt(indexId, index);
+            ImGui::PopID();
+            
+            StructureRef blockElement = field.getBlockElement(index);
             renderSubstructure(renderCtx, blockElement, field, 0x100);
         }
     }
@@ -96,6 +118,9 @@ namespace Mod::DevTools::DissectTagNew {
     }
 
     void windowHeader() {
+        if(ImGui::Button("Save")) state.saveSchema();
+        ImGui::SameLine();
+        
         if (ImGui::CollapsingHeader("Options")) {
             // Slider for hint threshold
             ImGui::Text("Hint Threshold");
@@ -143,11 +168,10 @@ namespace Mod::DevTools::DissectTagNew {
     }
 
     void render() {
-        // Implement the rendering logic for the dissect tag window
+        state.tick();
         for (auto& [tagId, window] : state.windows) {
             renderWindow(window);
         }
-        state.cleanupWindows();
     }
     
 }

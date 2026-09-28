@@ -53,4 +53,10 @@ namespace Utils {
         return std::filesystem::path(path).parent_path() / "mods";
     }
 
+    std::filesystem::path getTagSchemaPath() {
+        char path[MAX_PATH];
+        GetModuleFileNameA(nullptr, path, MAX_PATH);
+        return std::filesystem::path(path).parent_path() / "tags.schema2.json";
+    }
+
 }
