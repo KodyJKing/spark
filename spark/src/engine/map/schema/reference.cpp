@@ -131,6 +131,8 @@ namespace Engine::Map {
 
         switch (node->type.type) {
             #define CONVERT(type) std::to_string(*(type*)address);
+            #define CONVERT3(type) std::to_string(*(type*)address) + ", " + std::to_string(*((type*)address + 1)) + ", " + std::to_string(*((type*)address + 2));
+            #define CONVERT4(type) std::to_string(*(type*)address) + ", " + std::to_string(*((type*)address + 1)) + ", " + std::to_string(*((type*)address + 2)) + ", " + std::to_string(*((type*)address + 3));
             case Type::U8: return CONVERT(uint8_t);
             case Type::U16: return CONVERT(uint16_t);
             case Type::U32: return CONVERT(uint32_t);
@@ -141,15 +143,30 @@ namespace Engine::Map {
             case Type::I64: return CONVERT(int64_t);
             case Type::F32: return CONVERT(float);
             case Type::F64: return CONVERT(double);
+            case Type::Vec3: return CONVERT3(float);
+            case Type::Vec4: return CONVERT4(float);
+            case Type::Matrix3x3: return CONVERT3(float) + "; " + CONVERT3(float) + "; " + CONVERT3(float);
             case Type::BlockPointer: {
                 void* structureBase = parent.address;
                 StructureRef ref = getBlockElement(0);
                 int64_t offset = (char*)ref.address - (char*)structureBase;
-                std::string description = "Block at offset 0x" + Strings::toHex(offset);
+                std::string structureName = std::string(ref.node->name);
+                if (structureName.empty()) structureName = "[unnamed]";
+                std::string description = structureName + " Block at offset 0x" + Strings::toHex(offset);
                 return description;
             }
             case Type::TagString: {
                 return std::string((char*)address, 32);
+            }
+            case Type::TagReference: {
+                TagReference* tagRef = (TagReference*)address;
+                char* path = (char*) context->mapFile->fromRelative(tagRef->path);
+                if (!Memory::isAllocated(path)) return "[invalid tag reference]";
+                std::string description = "[" + Strings::fourccToString(tagRef->groupID) + "] " + path;
+                return description;
+            }
+            case Type::Structure: {
+                return "[structure]";
             }
             #undef CONVERT
             default:
@@ -167,7 +184,7 @@ namespace Engine::Map {
         LOG("Not implemented: writeFromString");
     }
 
-    size_t FieldRef::size() const {
+    size_t FieldRef::size() {
         if (!valid()) {
             LOG("FieldRef is not valid");
             return 0;
@@ -179,10 +196,28 @@ namespace Engine::Map {
         }
 
         if (node->type.type == Type::Structure) {
-            // Todo.
+            StructureNode* structNode = this->getReferencedType();
+            if (structNode) {
+                return structNode->size;
+            } else {
+                LOG("Referenced structure type not found");
+                return 0;
+            }
         }
 
         return TypeSizes[typeIndex];
+    }
+
+    StructureNode *FieldRef::getReferencedType() {
+        if (!valid()) {
+            LOG("FieldRef is not valid");
+            return nullptr;
+        }
+        if (!context->schema->structures.contains(node->type.ref)) {
+            LOG("Referenced type not found in schema");
+            return &NullStructure;
+        }
+        return &context->schema->structures[node->type.ref];
     }
 
     void FieldRef::deleteField() {
@@ -194,13 +229,13 @@ namespace Engine::Map {
         context->schema->fields.erase(node->id);
     }
 
-    bool FieldRef::createStructure() {
+    bool FieldRef::createStructure(size_t size) {
         if (!valid()) {
             LOG("FieldRef is not valid");
             return false;
         }
         StructureNode* newNode = nullptr;
-        Id newId = context->schema->createStructure("", &newNode);
+        Id newId = context->schema->createStructure("", &newNode, size);
         if (newId != NullId) {
             node->type.ref = newId;
             return true;
@@ -220,23 +255,6 @@ namespace Engine::Map {
         return (BlockPointer*)address;
     }
 
-    StructureNode *FieldRef::getBlockPointerType()
-    {
-        if (!valid()) {
-            LOG("FieldRef is not valid");
-            return nullptr;
-        }
-        if (node->type.type != Type::BlockPointer) {
-            LOG("FieldRef is not a block pointer");
-            return nullptr;
-        }
-        if (!context->schema->structures.contains(node->type.ref)) {
-            LOG("Block pointer type not found in schema");
-            return &NullStructure;
-        }
-        return &context->schema->structures[node->type.ref];
-    }
-
     StructureRef FieldRef::getBlockElement(size_t index) {
         if (!valid()) {
             LOG("FieldRef is not valid");
@@ -247,7 +265,7 @@ namespace Engine::Map {
             return StructureRef{nullptr};
         }
 
-        StructureNode* structNode = getBlockPointerType();
+        StructureNode* structNode = getReferencedType();
         if (!structNode) {
             LOG("Block pointer type not found");
             return StructureRef{nullptr};
@@ -259,6 +277,23 @@ namespace Engine::Map {
         void* elementAddress = (char*)blockBase + index * structNode->size;
 
         return StructureRef{context, structNode, elementAddress};
+    }
+
+    StructureRef FieldRef::getStructure() {
+        if (!valid()) {
+            LOG("FieldRef is not valid");
+            return StructureRef{nullptr};
+        }
+        if (node->type.type != Type::Structure) {
+            LOG("FieldRef is not a structure");
+            return StructureRef{nullptr};
+        }
+        StructureNode* structNode = getReferencedType();
+        if (!structNode) {
+            LOG("Referenced structure type not found");
+            return StructureRef{nullptr};
+        }
+        return StructureRef{context, structNode, address};
     }
 
     bool FieldRef::is(Type type) {

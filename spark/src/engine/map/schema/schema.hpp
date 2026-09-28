@@ -53,7 +53,7 @@ namespace Engine::Map {
         StructureNode* structureByName(const std::string& name);
 
         Id createField(std::string name, FieldNode** nodeOut = nullptr, Type type = Type::U32);
-        Id createStructure(std::string name, StructureNode **nodeOut);
+        Id createStructure(std::string name, StructureNode **nodeOut, size_t size = 0x100);
 
         std::string toJsonString() const;
         static Schema fromJsonString(const std::string& json);

@@ -23,6 +23,15 @@ namespace Mod::DevTools::DissectTagNew::Hints {
     /////////////////////////////////////////////////////
     // Heuristic evals for different types. (Scores are normalized with softmax for classification.)
 
+    inline float _floatScore(float value) {
+        if (value == 0.0f) return 0.0f;
+        if (std::isnan(value)) return 0.0f;
+        int exponent;
+        std::frexp(value, &exponent);
+        if (exponent < -10 || exponent > 10) return 0.0f;
+        return 1.0f;
+    }
+
     inline float blockPointerScore(
         HintContext& ctx,
         void* address
@@ -45,12 +54,7 @@ namespace Mod::DevTools::DissectTagNew::Hints {
     ) {
         if (*reinterpret_cast<uint32_t*>(address) == 0x00000000) return 0.0f;
         float* value = reinterpret_cast<float*>(address);
-        if (std::isnan(*value)) return 0.0f;
-        int exponent;
-        std::frexp(*value, &exponent);
-        // Heuristic: prefer floats with exponents in a reasonable range.
-        if (exponent < -10 || exponent > 10) return 0.0f;
-        return 1.0f;
+        return _floatScore(*value);
     }
 
     inline float tagStringScore(
@@ -77,9 +81,43 @@ namespace Mod::DevTools::DissectTagNew::Hints {
         return ratio;
     }
 
+    inline float tagReferenceScore(
+        HintContext& ctx,
+        void* address
+    ) {
+        TagReference* tagRef = reinterpret_cast<TagReference*>(address);
+        Tag* tag = ctx.structure.context->mapFile->getTag(tagRef->tagID);
+        if (!Memory::isAllocated(tag)) return 0.0f;
+        bool samePath = tagRef->path.offset == tag->path.offset;
+        if (!samePath) return 0.0f;
+        return 1.0f;
+    }
+
+    inline float vecNScore(
+        HintContext& ctx,
+        void* address,
+        int dimension
+    ) {
+        if (dimension <= 0) return 0.0f;
+        float score = 1.0f;
+        float* value = reinterpret_cast<float*>(address);
+
+        float magnitudeSquared = 0.0f;
+        for (int i = 0; i < dimension; ++i) {
+            score *= _floatScore(value[i]);
+            magnitudeSquared += value[i] * value[i];
+        }
+        float isUnit = std::abs(magnitudeSquared - 1.0f) < 0.001;
+        if (isUnit) score *= 10.0f; // Very likely to be a vector if this passes.
+        return score;
+    }
+
     inline constexpr float blockPointerWeight = 10.0f;
     inline constexpr float floatWeight = 1.0f;
-    inline constexpr float tagStringWeight = 1.0f;
+    inline constexpr float tagStringWeight = 2.0f;
+    inline constexpr float tagReferenceWeight = 10.0f;
+    inline constexpr float vec3Weight = 1.5f;
+    inline constexpr float vec4Weight = 2.0f;
 
     inline void computeScore(
         HintContext& ctx,
@@ -96,6 +134,15 @@ namespace Mod::DevTools::DissectTagNew::Hints {
                 break;
             case Type::TagString:
                 score = tagStringScore(ctx, address) * tagStringWeight;
+                break;
+            case Type::TagReference:
+                score = tagReferenceScore(ctx, address) * tagReferenceWeight;
+                break;
+            case Type::Vec3:
+                score = vecNScore(ctx, address, 3) * vec3Weight;
+                break;
+            case Type::Vec4:
+                score = vecNScore(ctx, address, 4) * vec4Weight;
                 break;
             default:
                 score = 0.0f;
@@ -142,7 +189,6 @@ namespace Mod::DevTools::DissectTagNew::Hints {
     }
 
     inline void renderHints(HintContext ctx, void* address, float notableThreshold) {
-        ImGui::BeginChild("Hints", ImVec2(0, 0), 1 | ImGuiChildFlags_AlwaysAutoResize | ImGuiChildFlags_AutoResizeY );
         // Render probability distribution for each type.
         float scores[static_cast<int>(TypeCount)];
         computeTypeScoreDistribution(ctx, address, scores);
@@ -159,6 +205,8 @@ namespace Mod::DevTools::DissectTagNew::Hints {
 
         // Render as table
         if (!scorePairs.empty()) {
+            ImGui::BeginChild("Hints", ImVec2(0, 0), 1 | ImGuiChildFlags_AlwaysAutoResize | ImGuiChildFlags_AutoResizeY );
+
             ImGui::BeginTable("HintTable", 2);
             ImGui::TableSetupColumn("Type");
             ImGui::TableSetupColumn("Score");
@@ -178,9 +226,10 @@ namespace Mod::DevTools::DissectTagNew::Hints {
                 ImGui::PopStyleColor();
             }
             ImGui::EndTable();
+            
+            ImGui::EndChild();
         }
 
-        ImGui::EndChild();
     }
 
     struct HintCache {

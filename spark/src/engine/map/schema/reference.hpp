@@ -37,19 +37,20 @@ namespace Engine::Map {
         void* address;
         StructureRef parent;
 
-        std::string readAsString();
-        void writeFromString(const std::string& value);
-
         bool valid() const;
-
-        size_t size() const;
-
         void deleteField();
 
-        bool createStructure();
+        std::string readAsString();
+        void writeFromString(const std::string& value);
+        size_t size();
+        
+        bool createStructure(size_t size = 0x100);
+        StructureNode* getReferencedType();
+
         BlockPointer* getBlockPointer();
-        StructureNode* getBlockPointerType();
         StructureRef getBlockElement(size_t index);
+
+        StructureRef getStructure();
 
         bool is(Type type);
     };

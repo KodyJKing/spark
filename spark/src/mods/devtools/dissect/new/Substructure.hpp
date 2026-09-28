@@ -21,33 +21,32 @@ namespace Mod::DevTools::DissectTagNew {
         }
 
         ImGui::PushID(field.address);
-        // ImGui::NewLine();
         ImGui::Indent();
         ImGui::PushStyleColor(ImGuiCol_Header, IM_COL32(0, 0, 0, 0));
 
-        char buffer[256];
-        // snprintf(buffer, sizeof(buffer), "%s @%p", structure.node->name, structure.address);
-        snprintf(buffer, sizeof(buffer), "%s", structure.node->name);
-        
         ImGui::SameLine();
-        if (ImGui::CollapsingHeader(buffer)) {
+        if (ImGui::CollapsingHeader("##Substructure")) {
             if (structure.node->id == NullId) {
                 if (ImGui::Button("Create Structure")) {
-                    field.createStructure();
+                    // Use smaller size when creating inline structure to avoid jarring shifts.
+                    size_t size = field.is(Type::Structure) ? 0x4 : 0x100;
+                    field.createStructure(size);
                 }
             } else {
                 ImGui::SetNextItemWidth(ImGui::GetFontSize() * 16);
                 ImGui::InputText("Structure Name", structure.node->name, IM_ARRAYSIZE(structure.node->name));
-
                 ImGui::SameLine();
+
                 ImGui::SetNextItemWidth(ImGui::GetFontSize() * 16);
                 int size = structure.node->size;
                 ImGui::InputInt("Size", &size, 4, 16, ImGuiInputTextFlags_CharsHexadecimal);
                 structure.node->size = size > 4 ? size : 4;
+                ImGui::SameLine();
             }
     
             renderStructure(renderCtx, structure, fallbackSize);
         }
+        
         ImGui::PopStyleColor();
         ImGui::Unindent();
         ImGui::SameLine();

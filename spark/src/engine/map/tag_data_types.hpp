@@ -23,6 +23,13 @@ namespace Engine::Map {
         uint32_t bullshit;
     };
 
+    struct TagReference {
+        uint32_t groupID;
+        Pointer<PointerBase_Tags> path; 
+        uint32_t bullshit;
+        uint32_t tagID;
+    };
+
     struct Tag {
         public:
         uint32_t groupID; // Group ID's are fourcc's

@@ -15,19 +15,16 @@ namespace Mod::DevTools::DissectTagNew {
         if (length >= kMaxDisplayableSize) length = kMaxDisplayableSize;
 
         renderRowAddress((uintptr_t)address);
-        
-        // Pad for 0x4 byte alignment
-        size_t pad = (uintptr_t)address & 0b11;
-        for (size_t i = 0; i < pad; ++i) {
-            ImGui::Text("  ");
-            ImGui::SameLine();
-        }
 
         std::stringstream textRow;
         auto printRowText = [&]() {
             std::string row = textRow.str();
-            // ImGui::SameLine();
-            // ImGui::Text(" | %s", row.c_str());
+
+            if (!row.empty()) {
+                ImGui::Text(" | %s", row.c_str());
+                ImGui::SameLine();
+            }
+
             textRow.str("");
             textRow.clear();
         };
@@ -76,7 +73,7 @@ namespace Mod::DevTools::DissectTagNew {
                 ImGui::EndTooltip();
             }
 
-            bool overflow = (offset + pad) % kBytesPerRow == kBytesPerRow - 1;
+            bool overflow = offset % kBytesPerRow == kBytesPerRow - 1;
             bool isFinal = i == length - 1;
             if (overflow) {
                 printRowText();
@@ -85,6 +82,9 @@ namespace Mod::DevTools::DissectTagNew {
                 }
             }
         }
+
+        printRowText();
+
     }
 
 }

@@ -20,8 +20,14 @@ namespace Mod::DevTools::DissectTagNew {
     void openWindow(MapFile* map, uint32_t tagId) {
         state.openWindow(map, tagId);
     }
+    
+    void renderFieldChildren(RenderContext& renderCtx, FieldRef& field) {
 
-    void tryRenderBlock(RenderContext& renderCtx, FieldRef& field) {
+        if (field.is(Type::Structure)) {
+            StructureRef substructure = field.getStructure();
+            renderSubstructure(renderCtx, substructure, field, 0x100);
+        }
+        
         if (field.is(Type::BlockPointer)) {
 
             ImGui::PushID(field.address);
@@ -48,10 +54,7 @@ namespace Mod::DevTools::DissectTagNew {
             StructureRef blockElement = field.getBlockElement(index);
             renderSubstructure(renderCtx, blockElement, field, 0x100);
         }
-    }
-    
-    void renderFieldChildren(RenderContext& renderCtx, FieldRef& field) {
-        tryRenderBlock(renderCtx, field);
+
     }
 
     void renderField(RenderContext& renderCtx, FieldRef& field) {
@@ -65,7 +68,7 @@ namespace Mod::DevTools::DissectTagNew {
         ImGui::PushID(field.address);
 
         ImGui::SameLine();
-        ImGui::SetNextItemWidth(ImGui::GetFontSize() * 8);
+        ImGui::SetNextItemWidth(ImGui::GetFontSize() * 16);
         ImGui::InputText("##Name", field.node->name, 256);
 
         ImGui::SameLine();
@@ -160,6 +163,7 @@ namespace Mod::DevTools::DissectTagNew {
                 RenderContext renderCtx = { &window, tagData, (uint8_t*)tagData + guessedTotalSize };
 
                 ImGui::Text("Estimated tag data size: %zu", guessedSize);
+                ImGui::SameLine();
                 renderStructure(renderCtx, ref, guessedSize);
             }
         }

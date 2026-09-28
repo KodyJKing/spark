@@ -66,7 +66,7 @@ namespace Engine::Map {
         return fieldId;
     }
 
-    Id Schema::createStructure(std::string name, StructureNode** nodeOut) {
+    Id Schema::createStructure(std::string name, StructureNode** nodeOut, size_t size) {
         Id structureId = createId();
         StructureNode node;
         node.id = structureId;
@@ -75,7 +75,7 @@ namespace Engine::Map {
         } else {
             snprintf(node.name, sizeof(node.name), "%s", name.c_str());
         }
-        node.size = 0x100;
+        node.size = size;
         structures[structureId] = node;
         if (nodeOut) {
             *nodeOut = &structures[structureId];
