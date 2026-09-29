@@ -106,12 +106,11 @@ namespace Engine::Map {
         // // Handles allocation of tag, copying 
         // uint32_t copyTag(MapFile* sourceMap, uint32_t sourceTagHandle);
         
-        private:
+        void* allocate(size_t size);
+        void free(void *ptr);
+        Tag *allocateTag();
 
-        //  // Copy tag data to a destination buffer. Fix any pointers or tag references.
-        //  bool copyTagData(MapFile* sourceMap, uint32_t sourceTagHandle, void* dest, size_t size);
-
-        //  uint32_t allocateTag();
+    private:
     };
 
 }

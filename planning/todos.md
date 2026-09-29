@@ -1,3 +1,5 @@
+- Fix the LNK4217 warnings.
+
 x Investigate offset discrepency on VertexDataPointer. Is it an actual struct size difference or just two different fields?
 
 x Implement new map file API.
@@ -25,15 +27,24 @@ x Implement Schema driven tag data traversal.
         x Store location of new tag path array after relocation in unused space in the runtime cache header.
 
 - Tag copying (first pass).
-    - No support for texture or model data.
-    - No tag reference resolution yet.
+    ! No support for texture or model data.
+    ! No tag reference resolution yet.
     ! Copied tag won't be usable yet, but we can verify it looks right in the tag browser/dissector.
+    - Implement fixups for BlockPointer's after naive copy.
+    - Add "Copy Tag" button to tag browser (in external file mode).
+    - Copy "shotgun casing bitmap" from "a10".
+    - Verify blocks look correct in the tag browser/dissector.
 
 - Texture copying.
     - Copy texture data into dedicated arena for Spark textures.
     - Implement texture cache load detour for Spark tags.
     -? API to set texture data from raw buffer.
         ! Would allow use of Mario texture from ROM.
+        
+- Tag copying (second pass).
+    - Implement tag reference fixups.
+        - Recursively copy/patch referenced tags.
+            -? Allow dev to decide what to patch based off of allow/deny-list.
 
 - Model copying.
     - Copy model data into dedicated arenas for vertices and indices.
