@@ -6,13 +6,9 @@
 #include "engine/map/map_file.hpp"
 #include "engine/map/managed_map_file.hpp"
 #include "utils/FileUtils.hpp"
+#include "utils/Utils.hpp"
 
 #include "Constants.hpp"
-
-namespace Engine::Map {
-    bool movePathStrings(RuntimeMapFile* map);
-}
-
 
 namespace Mod::DevTools {
 
@@ -35,11 +31,10 @@ namespace Mod::DevTools {
         }
 
         void openFileDialog() {
-            OPENFILENAME ofn;
-            FileUtils::pickFile([&](const wchar_t* path) {
-                disk = Engine::Map::ManagedMapFile::create(path);
-                currentFilePath = Strings::convertWideString(path);
-            }, ofn);
+            // The file picker is causing the weird hang. Use a hard coded file for the moment.
+            auto path = Utils::getHalo1Directory() / "maps" / "d40.map";
+            disk = Engine::Map::ManagedMapFile::create(path);
+            currentFilePath = path.string();
         }
 
         void closeFile() {
@@ -56,9 +51,14 @@ namespace Mod::DevTools {
             return filePath.string();
         }
 
-        void debugMovePathStrings() {
-            Engine::Map::movePathStrings(&run);
+        void copyTagToRuntime(uint32_t handle) {
+            if (!isFileOpen()) return;
+            run.copyTag(disk.get(), handle);
         }
+
+        // Interaction
+        int selection = -1;
+        int hovered = -1;
         
         // Pagination
         int tagsPerPage = 50;

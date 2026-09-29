@@ -120,6 +120,8 @@ namespace Mod::DevTools {
             renderScriptConsoleTab();
             ImGui::EndTabItem();
         }
+
+        // ImGui::ShowDemoWindow();
     }
 
 } // namespace Mod::DevTools

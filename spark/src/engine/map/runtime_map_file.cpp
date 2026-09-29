@@ -1,8 +1,10 @@
-#include "map_file.hpp"
-#include "engine/common.hpp"
 #include "engine/rendering/model_data.hpp"
-#include "engine/map.hpp"
 #include "engine/tags/tag_group_id.hpp"
+#include "engine/common.hpp"
+#include "engine/map.hpp"
+#include "schema/schema_file.hpp"
+#include "map_file.hpp"
+#include "copy_tag.hpp"
 
 #include "utils/Strings.hpp"
 
@@ -116,7 +118,18 @@ namespace Engine::Map {
         return (TagDataHeader*) tagHeaderBase();
     }
 
-    void* RuntimeMapFile::allocate(size_t size) {
+    Tag *RuntimeMapFile::copyTag(MapFile *sourceMap, uint32_t sourceTagHandle) {
+        Schema* schema = getMainSchema();
+        return Engine::Map::copyTag(
+            schema,
+            sourceMap,
+            this,
+            sourceTagHandle
+        );
+    }
+
+    void *RuntimeMapFile::allocate(size_t size)
+    {
         // Todo: Use a Halo owned allocator so we don't need to free anything on quit-to-menu.
         return Engine::allocateMapMemory(size);
     }

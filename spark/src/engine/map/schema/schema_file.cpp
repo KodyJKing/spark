@@ -45,4 +45,5 @@ namespace Engine::Map {
         auto defaultSchemaPath = Utils::getTagSchemaPath();
         saveSchemaToFile(s_mainSchema, defaultSchemaPath);
     }
+    
 }

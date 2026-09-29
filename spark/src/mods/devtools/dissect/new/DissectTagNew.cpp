@@ -11,6 +11,8 @@
 #include "engine/tags/tag_group_id.hpp"
 #include "engine/map/schema/functions.hpp"
 
+#include "utils/Strings.hpp"
+
 #include "imgui.h"
 
 namespace Mod::DevTools::DissectTagNew {
@@ -144,7 +146,12 @@ namespace Mod::DevTools::DissectTagNew {
         if (!window.isOpen) return;
         auto tag = window.getTag();
         auto path = window.map->getTagPath(tag);
-        ImGui::Begin(path, &window.isOpen);
+
+        auto groupId = Strings::fourccToString(tag->groupID);
+        char title[256];
+        snprintf(title, sizeof(title), "[%s] %s - %p", groupId.c_str(), path, tag);
+        
+        ImGui::Begin(title, &window.isOpen);
         windowHeader();
         if (!tag) {
             ImGui::Text("[invalid tag]");

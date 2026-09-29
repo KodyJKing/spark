@@ -8,11 +8,12 @@ namespace FileUtils {
     // File callback type
     using FileCallback = std::function<void(const wchar_t*)>;
 
-    inline void pickFile(FileCallback callback, OPENFILENAME& ofn) {
+    inline void pickFile(FileCallback callback) {
         // Open Windows file picker dialog, and invoke the callback with the selected file path.
 
         wchar_t filePath[MAX_PATH] = {0};
-
+        
+        OPENFILENAME ofn;
         ZeroMemory(&ofn, sizeof(ofn));
         ofn.lStructSize = sizeof(ofn);
         ofn.lpstrFile = filePath;

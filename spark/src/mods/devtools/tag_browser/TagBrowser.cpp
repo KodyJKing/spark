@@ -46,9 +46,7 @@ namespace Mod::DevTools {
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("Debug")) {
-            if (ImGui::MenuItem("Move Path Strings")) {
-                state.debugMovePathStrings();
-            }
+            
             ImGui::EndMenu();
         }
 
