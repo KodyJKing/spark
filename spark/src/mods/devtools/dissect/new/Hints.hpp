@@ -86,7 +86,7 @@ namespace Mod::DevTools::DissectTagNew::Hints {
         void* address
     ) {
         TagReference* tagRef = reinterpret_cast<TagReference*>(address);
-        Tag* tag = ctx.structure.context->mapFile->getTag(tagRef->tagID);
+        Tag* tag = ctx.structure.context->mapFile->getTag(tagRef->tagHandle);
         if (!Memory::isAllocated(tag)) return 0.0f;
         bool samePath = tagRef->path.offset == tag->path.offset;
         if (!samePath) return 0.0f;

@@ -102,9 +102,8 @@ namespace Engine::Map {
         void* getPointerBase(PointerBase b) override;
         TagDataHeader* getTagDataHeader() override;
 
-        // // Copies tag from another map.
-        // // Handles allocation of tag, copying 
-        // uint32_t copyTag(MapFile* sourceMap, uint32_t sourceTagHandle);
+        // Copies tag from another map.
+        Tag* copyTag(MapFile* sourceMap, uint32_t sourceTagHandle);
         
         void* allocate(size_t size);
         void free(void *ptr);

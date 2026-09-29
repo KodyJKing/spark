@@ -32,7 +32,7 @@ namespace Mod::DevTools {
                 auto inspectOnLeftClick = [&]() {
                     if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
                         // Mod::DevTools::DissectTag::openWindow(tag->tagID);
-                        Mod::DevTools::DissectTagNew::openWindow(state.getMap(), tag->tagID);
+                        Mod::DevTools::DissectTagNew::openWindow(state.getMap(), tag->tagHandle);
                     }
                 };
 
@@ -42,7 +42,7 @@ namespace Mod::DevTools {
                 inspectOnLeftClick();
 
                 ImGui::SameLine();
-                sprintf_s( text, "%X", tag->tagID );
+                sprintf_s( text, "%X", tag->tagHandle );
                 ImGui::Text(text);
                 if (ImGui::IsItemHovered()) ImGui::SetTooltip("Right click to copy TagID to clipboard");
                 if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) ImGui::SetClipboardText( text );

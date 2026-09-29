@@ -95,7 +95,7 @@ namespace Engine::Map {
         newTag->grandparentGroupID = GroupId_Invalid;
 
         uint32_t newTagHandle = 0xE1170000 | (newIndex & 0xFFFF);
-        newTag->tagID = newTagHandle;
+        newTag->tagHandle = newTagHandle;
 
         return newTag;
     }

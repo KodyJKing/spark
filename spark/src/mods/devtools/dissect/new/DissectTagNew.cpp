@@ -149,12 +149,12 @@ namespace Mod::DevTools::DissectTagNew {
         if (!tag) {
             ImGui::Text("[invalid tag]");
         } else {
-            Context ctx = { window.map, &state.schema };
+            Context ctx = { window.map, state.schema };
             auto ref = window.getStructureRef(ctx);
             if (!ref.valid()) {
                 ImGui::Text("[invalid structure reference]");
             } else {
-                size_t guessedTotalSize = window.map->guessTagDataSize(tag->tagID);
+                size_t guessedTotalSize = window.map->guessTagDataSize(tag->tagHandle);
                 size_t guessedSize = Engine::Map::guessSizeFromFirstBlockElement(ref);
                 if (guessedSize == 0) 
                     guessedSize = guessedTotalSize;

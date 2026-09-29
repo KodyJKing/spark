@@ -5,6 +5,8 @@
 #include <iostream>
 #include "schema_file.hpp"
 
+#include "utils/Utils.hpp"
+
 namespace Engine::Map {
 
     Schema loadSchemaFromFile(const std::filesystem::path& filePath) {
@@ -27,5 +29,20 @@ namespace Engine::Map {
             return;
         }
         file << schema.toJsonString();
+    }
+
+    static Schema s_mainSchema;
+    static bool s_mainSchemaLoaded = false;
+    Schema* getMainSchema() {
+        if (s_mainSchemaLoaded) return &s_mainSchema;
+        auto defaultSchemaPath = Utils::getTagSchemaPath();
+        s_mainSchema = loadSchemaFromFile(defaultSchemaPath);
+        s_mainSchemaLoaded = true;
+        return &s_mainSchema;
+    }
+
+    void saveMainSchema() {
+        auto defaultSchemaPath = Utils::getTagSchemaPath();
+        saveSchemaToFile(s_mainSchema, defaultSchemaPath);
     }
 }

@@ -40,9 +40,9 @@ namespace Engine::Map {
             return nullptr;
         }
 
-        uint32_t toTagHandle = tag->tagID;
+        uint32_t toTagHandle = tag->tagHandle;
         memcpy(tag, fromTag, sizeof(Tag));
-        tag->tagID = toTagHandle;
+        tag->tagHandle = toTagHandle;
         tag->data = toMap->toRelative<PointerBase_Tags>(tagData);
         tag->path = toMap->toRelative<PointerBase_Tags>(toTagPath);
 

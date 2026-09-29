@@ -27,7 +27,7 @@ namespace Engine::Map {
         uint32_t groupID;
         Pointer<PointerBase_Tags> path; 
         uint32_t bullshit;
-        uint32_t tagID;
+        uint32_t tagHandle;
     };
 
     struct Tag {
@@ -35,7 +35,7 @@ namespace Engine::Map {
         uint32_t groupID; // Group ID's are fourcc's
         uint32_t parentGroupID; 
         uint32_t grandparentGroupID;
-        uint32_t tagID; 
+        uint32_t tagHandle; 
         Pointer<PointerBase_Tags> path; 
         Pointer<PointerBase_Tags> data;
         char pad_0018[8];

@@ -51,16 +51,15 @@ namespace Mod::DevTools::DissectTagNew {
 
         ///////////////////////////
         // Schema
-        Schema schema;
+        Schema* schema;
         inline void loadSchema() {
             static bool schemaLoaded = false;
             if (schemaLoaded) return;
-            schema = Engine::Map::loadSchemaFromFile(Utils::getTagSchemaPath());
+            schema = Engine::Map::getMainSchema();
             schemaLoaded = true;
         }
         inline void saveSchema() {
-            auto path = Utils::getTagSchemaPath();
-            Engine::Map::saveSchemaToFile(schema, path);
+            Engine::Map::saveMainSchema();
         }
 
         float hintThreshold = 0.25f;
