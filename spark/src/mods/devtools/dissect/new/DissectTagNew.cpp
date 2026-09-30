@@ -65,7 +65,7 @@ namespace Mod::DevTools::DissectTagNew {
             return;
         }
 
-        renderRowAddress((uintptr_t)field.address);
+        renderRowAddress((uintptr_t)field.address, (uintptr_t)field.parent.address);
 
         ImGui::PushID(field.address);
 

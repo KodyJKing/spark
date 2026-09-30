@@ -22,12 +22,14 @@ namespace Mod::DevTools::DissectTagNew {
 
     using namespace Engine::Map;
 
-    inline void renderRowAddress(uintptr_t address) {
+    inline void renderRowAddress(uintptr_t address, uintptr_t structureBase) {
         ImGui::NewLine();
         ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(128, 128, 128, 255));
         ImGui::Text("%p", (void*)address);
         ImGui::SameLine();
         ImGui::PopStyleColor();
+
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Offset %X", (address - structureBase));
     }
 
 

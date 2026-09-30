@@ -14,7 +14,7 @@ namespace Mod::DevTools::DissectTagNew {
         if (length <= 0) return;
         if (length >= kMaxDisplayableSize) length = kMaxDisplayableSize;
 
-        renderRowAddress((uintptr_t)address);
+        renderRowAddress((uintptr_t)address, (uintptr_t)structure.address);
 
         std::stringstream textRow;
         auto printRowText = [&]() {
@@ -78,7 +78,7 @@ namespace Mod::DevTools::DissectTagNew {
             if (overflow) {
                 printRowText();
                 if (!isFinal) {
-                    renderRowAddress((uintptr_t)(address + i + 1));
+                    renderRowAddress((uintptr_t)(address + i + 1), (uintptr_t)structure.address);
                 }
             }
         }
