@@ -18,68 +18,38 @@ namespace Engine::Map {
     // Abstract map file class
     class MapFile {
         public:
-        template<PointerBase B>
-        void* fromRelative(Pointer<B> p) {
-            return (char*)getPointerBase(B) + p.offset;
+
+        template<PointerBase B, typename T = void>
+        T* fromRelative(Pointer<B, T> p) {
+            return (T*)((char*)getPointerBase(B) + p.offset);
         }
 
-        template<PointerBase B>
-        Pointer<B> toRelative(void* ptr) {
+        template<PointerBase B, typename T = void>
+        Pointer<B, T> toRelative(void* ptr) {
             int64_t offset = (char*)ptr - (char*)getPointerBase(B);
             uint32_t offset32 = static_cast<uint32_t>(offset);
             ASSERT(offset32 == offset, "Pointer offset does not fit in 32 bits");
             return { offset32 };
         }
 
-        inline CacheHeader* getCacheHeader() {
-            return (CacheHeader*)getPointerBase(PointerBase_Map);
+        template<typename T>
+        T* getBlockElement(BlockPointerTyped<T>& block, size_t i) {
+            if (i >= block.count) return nullptr;
+            T* elements = (T*) fromRelative(block.data);
+            return (T*) &elements[i];
         }
 
-        inline uint32_t getTagCount() {
-            TagDataHeader* h = getTagDataHeader();
-            if (!h) return 0;
-            return h ? h->tagCount : 0;
-        }
-
-        inline Tag* getTag(uint32_t handle) {
-            uint32_t i = handle & 0xFFFF;
-            TagDataHeader* tagHeader = this->getTagDataHeader();
-            if (!tagHeader) return nullptr;
-            if (i >= tagHeader->tagCount) return nullptr;
-            void* base = fromRelative(tagHeader->tagArray);
-            return ((Tag*)base) + i;
-        }
-
-        inline char* getTagPath(Tag* t) {
-            if (!t) return nullptr;
-            return (char*) fromRelative(t->path);
-        }
-
-        inline void* getTagData(Tag* t) {
-            if (!t) return nullptr;
-            return fromRelative(t->data);
-        }
-
-        inline uint32_t getVertexDataSize() {
-            TagDataHeader* h = getTagDataHeader();
-            return h ? h->vertexDataSize : 0;
-        }
-
-        inline size_t guessTagDataSize(uint32_t tagHandle) {
-            uint32_t nextTagHandle = tagHandle + 1;
-            Tag* currentTag = getTag(tagHandle);
-            Tag* nextTag = getTag(nextTagHandle);
-            if (!currentTag || !nextTag) return 0;
-            void* currentData = getTagData(currentTag);
-            void* nextData = getTagData(nextTag);
-            return (uintptr_t)nextData - (uintptr_t)currentData;
-        }
+        CacheHeader* getCacheHeader();
+        uint32_t getTagCount();
+        Tag* getTag(uint32_t handle);
+        char* getTagPath(Tag* t);
+        void* getTagData(Tag* t);
+        uint32_t getVertexDataSize();
+        size_t guessTagDataSize(uint32_t tagHandle);
 
         // Gets base ptr for a section of the map file
         virtual void* getPointerBase(PointerBase b) = 0;
-
         virtual TagDataHeader* getTagDataHeader() = 0;
-        
         private:
     };
 

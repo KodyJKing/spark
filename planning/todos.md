@@ -1,5 +1,7 @@
 - Fix the LNK4217 warnings.
 
+- Convert all path and filenames to snake_case.
+
 x Investigate offset discrepency on VertexDataPointer. Is it an actual struct size difference or just two different fields?
 
 x Implement new map file API.

@@ -9,7 +9,7 @@
 namespace Debugging {
 
     inline void debug(DWORD timeout = 10000) {
-        #ifdef DEBUG
+        #ifdef _DEBUG
         if (IsDebuggerPresent()) {
             __debugbreak();
             return;
@@ -29,7 +29,7 @@ namespace Debugging {
     }
 
     inline bool debugAssert(bool condition, const char* message = "Assertion failed", bool warn = true) {
-        #ifdef DEBUG
+        #ifdef _DEBUG
         if (!condition) {
             printf("%s\n", message);
             debug();

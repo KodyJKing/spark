@@ -1,8 +1,33 @@
 #include "copy_tag.hpp"
 #include "get_tag_data_size.hpp"
+#include "../bitmap.hpp"
 
-namespace Engine::Map {
+namespace Engine::Map::Spark {
 
+    bool copyBitmapFixup(
+        MapFile* fromMap,
+        MapFile* toMap,
+        SparkBitmap* toBitmap,
+        uint32_t toBitmapTagHandle
+    );
+
+    bool applyTypedFixups(
+        MapFile* fromMap,
+        RuntimeMapFile* toMap,
+        Tag* tag
+    ) {
+        if (!tag) return false;
+
+        void* tagData = toMap->getTagData(tag);
+
+        switch(tag->groupID) {
+            case GroupId_Bitmap: return copyBitmapFixup(fromMap, toMap, (SparkBitmap*) tagData, tag->tagHandle);
+        }
+
+        return true;
+    }
+
+    // Todo: If a tag already exists with same groupId and path, patch it rather than allocating a new tag.
     Tag* copyTag(
         Schema* schema,
         MapFile* fromMap,
@@ -45,6 +70,8 @@ namespace Engine::Map {
         tag->tagHandle = toTagHandle;
         tag->data = toMap->toRelative<PointerBase_Tags>(tagData);
         tag->path = toMap->toRelative<PointerBase_Tags>(toTagPath);
+
+        applyTypedFixups(fromMap, toMap, tag);
 
         return tag;
     }

@@ -12,16 +12,19 @@ namespace Engine::Map {
         PointerBase_Indices,
     };
 
-    template<PointerBase B>
+    template<PointerBase B, typename T = void>
     struct Pointer {
         uint32_t offset;
     };
 
-    struct BlockPointer {
+    template<typename T = void>
+    struct BlockPointerTyped {
         uint32_t count;
-        Pointer<PointerBase_Tags> data;
+        Pointer<PointerBase_Tags, T> data;
         uint32_t bullshit;
     };
+
+    using BlockPointer = BlockPointerTyped<void>;
 
     struct TagReference {
         uint32_t groupID;

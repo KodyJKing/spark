@@ -4,7 +4,9 @@
 #include "engine/map.hpp"
 #include "schema/schema_file.hpp"
 #include "map_file.hpp"
-#include "copy_tag.hpp"
+#include "spark/copy_tag.hpp"
+#include "spark/spark_cache_header.hpp"
+#include "spark/relocate_path_strings.hpp"
 
 #include "utils/Strings.hpp"
 
@@ -19,69 +21,11 @@
 
 namespace Engine::Map {
 
-    // Guest data that lives in the unused portion of the cache header.
-    struct SparkCacheHeader {
-        uint32_t magic = FOUR_CC('s', 'p', 'r', 'k');
-        void* relocatedPathStrings = nullptr;
-        uint32_t tagCapacity = 0;
-        uint32_t magicFooter = FOUR_CC('g', 'l', 't', 'y');
-    };
-
-    SparkCacheHeader* getOrCreateSparkCacheHeader(RuntimeMapFile* map) {
-        if (!map) return nullptr;
-        CacheHeader* header = (CacheHeader*) map->getCacheHeader();
-        if (!header) return nullptr;
-        SparkCacheHeader* sparkHeader = (SparkCacheHeader*) &header->unused[0];
-        if (sparkHeader->magic != FOUR_CC('s', 'p', 'r', 'k')) {
-            *sparkHeader = SparkCacheHeader();
-        }
-        return sparkHeader;
-    }
-    
-    bool movePathStrings(RuntimeMapFile* map) {
-        SparkCacheHeader* sparkHeader = getOrCreateSparkCacheHeader(map);
-        if (!sparkHeader) return false;
-        if (sparkHeader->relocatedPathStrings) return true;
-        
-        uint32_t tagCount = map->getTagCount();
-
-        // 1. Measure total length of all path strings
-        size_t totalLength = 0;
-        for (uint32_t i = 0; i < tagCount; ++i) {
-            Tag* tag = map->getTag(i);
-            char* path = (char*) map->getTagPath(tag);
-            totalLength += strlen(path) + 1;
-        }
-        
-        // 2. Allocate a contiguous block of memory for all resource strings.
-        char* newBlock = (char*) map->allocate(totalLength);
-        if (!newBlock) return false;
-
-        // 3. Copy each path string into the new block and update the tag to point to it.
-        char* current = newBlock;
-        for (uint32_t i = 0; i < tagCount; ++i) {
-            Tag* tag = map->getTag(i);
-            char* path = (char*) map->getTagPath(tag);
-            size_t len = strlen(path) + 1;
-            memcpy(current, path, len);
-            tag->path = map->toRelative<PointerBase_Tags>(current);
-            current += len;
-        }
-
-        sparkHeader->relocatedPathStrings = newBlock;
-        
-        TagDataHeader* tagHeader = map->getTagDataHeader();
-        uint32_t addedCapacity = totalLength / sizeof(Tag);
-        sparkHeader->tagCapacity = tagHeader->tagCount + addedCapacity;
-
-        return true;
-    }
-
     Tag* allocateTag(RuntimeMapFile* map) {
         // Make room for more tags by moving path strings to a new location.
-        movePathStrings(map);
+        Spark::relocatePathStrings(map);
 
-        SparkCacheHeader* sparkHeader = getOrCreateSparkCacheHeader(map);
+        Spark::SparkCacheHeader* sparkHeader = Spark::getOrCreateSparkCacheHeader(map);
         if (!sparkHeader) return nullptr;
         if (sparkHeader->tagCapacity <= map->getTagCount()) return nullptr;
 
@@ -120,7 +64,7 @@ namespace Engine::Map {
 
     Tag *RuntimeMapFile::copyTag(MapFile *sourceMap, uint32_t sourceTagHandle) {
         Schema* schema = getMainSchema();
-        return Engine::Map::copyTag(
+        return Spark::copyTag(
             schema,
             sourceMap,
             this,
@@ -128,8 +72,7 @@ namespace Engine::Map {
         );
     }
 
-    void *RuntimeMapFile::allocate(size_t size)
-    {
+    void *RuntimeMapFile::allocate(size_t size) {
         // Todo: Use a Halo owned allocator so we don't need to free anything on quit-to-menu.
         return Engine::allocateMapMemory(size);
     }

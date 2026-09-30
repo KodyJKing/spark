@@ -1,13 +1,13 @@
 #pragma once
 
-#include "map_file.hpp"
+#include "../map_file.hpp"
 #include <memory>
 #include <filesystem>
 #include <fstream>
 #include <vector>
 #include <cstdint>
 
-namespace Engine::Map {
+namespace Engine::Map::Spark {
 
     class ManagedMapFile : public MapFile {
         public:

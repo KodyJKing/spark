@@ -1,8 +1,8 @@
 #pragma once
-#include "schema/schema.hpp"
-#include "map_file.hpp"
+#include "../schema/schema.hpp"
+#include "../map_file.hpp"
 
-namespace Engine::Map {
+namespace Engine::Map::Spark {
 
     Tag* copyTag(
         Schema* schema,

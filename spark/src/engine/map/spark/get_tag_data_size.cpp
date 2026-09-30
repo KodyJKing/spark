@@ -1,8 +1,8 @@
-#include "schema/schema.hpp"
-#include "schema/reference.hpp"
+#include "../schema/schema.hpp"
+#include "../schema/reference.hpp"
 #include "engine/map.hpp"
 
-namespace Engine::Map {
+namespace Engine::Map::Spark {
 
     size_t getTagDataSize(MapFile* map, uint32_t tagHandle) {
         // Todo: Replace with a more robust approach.

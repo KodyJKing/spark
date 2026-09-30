@@ -1,9 +1,9 @@
 #include "get_tag_data_size.hpp"
-#include "schema/schema.hpp"
-#include "schema/reference.hpp"
+#include "../schema/schema.hpp"
+#include "../schema/reference.hpp"
 #include "engine/map.hpp"
 
-namespace Engine::Map {
+namespace Engine::Map::Spark {
 
     //////////////////////////////////////
     void applyRelocationFixups(StructureRef fromStructure, StructureRef toStructure);

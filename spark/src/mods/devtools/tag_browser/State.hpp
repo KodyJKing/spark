@@ -4,7 +4,7 @@
 #include <mutex>
 #include "engine/halo1.hpp"
 #include "engine/map/map_file.hpp"
-#include "engine/map/managed_map_file.hpp"
+#include "engine/map/spark/managed_map_file.hpp"
 #include "utils/FileUtils.hpp"
 #include "utils/Utils.hpp"
 
@@ -14,7 +14,7 @@ namespace Mod::DevTools {
 
     inline static Engine::Map::RuntimeMapFile run;
 
-    inline static Engine::Map::ManagedMapFilePtr disk;
+    inline static Engine::Map::Spark::ManagedMapFilePtr disk;
 
     using Tag = Engine::Map::Tag;
 
@@ -33,7 +33,7 @@ namespace Mod::DevTools {
         void openFileDialog() {
             // The file picker is causing the weird hang. Use a hard coded file for the moment.
             auto path = Utils::getHalo1Directory() / "maps" / "d40.map";
-            disk = Engine::Map::ManagedMapFile::create(path);
+            disk = Engine::Map::Spark::ManagedMapFile::create(path);
             currentFilePath = path.string();
         }
 
