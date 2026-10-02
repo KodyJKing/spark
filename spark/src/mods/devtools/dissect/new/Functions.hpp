@@ -23,9 +23,13 @@ namespace Mod::DevTools::DissectTagNew {
     using namespace Engine::Map;
 
     inline void renderRowAddress(uintptr_t address, uintptr_t structureBase) {
+        char buffer[256];
         ImGui::NewLine();
         ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(128, 128, 128, 255));
-        ImGui::Text("%p", (void*)address);
+        snprintf(buffer, sizeof(buffer), "%p", address);
+        if(ImGui::TextLink(buffer)) {
+            ImGui::SetClipboardText(buffer);
+        }
         ImGui::SameLine();
         ImGui::PopStyleColor();
 

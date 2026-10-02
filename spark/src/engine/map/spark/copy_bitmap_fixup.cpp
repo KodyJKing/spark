@@ -2,8 +2,7 @@
 #include "../map_file.hpp"
 #include "spark_texture_buffer.hpp"
 
-#define DEBUG
-
+// #define DEBUG
 #ifdef DEBUG
 #include <iostream>
 #include <Windows.h>
@@ -57,8 +56,6 @@ namespace Engine::Map::Spark {
         SparkBitmap* toBitmap,
         uint32_t toBitmapTagHandle
     ) {
-        DEBUGGER;
-
         if (!fromMap || !toBitmap || !toMap)
             return false;
 
