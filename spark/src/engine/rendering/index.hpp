@@ -3,4 +3,5 @@
 
 namespace Engine {
     ID3D11DeviceContext* getD3D11Context();
+    ID3D11Device* getD3D11Device();
 }

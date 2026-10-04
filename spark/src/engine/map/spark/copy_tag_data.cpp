@@ -1,13 +1,24 @@
+#include "copy_tag.hpp"
 #include "get_tag_data_size.hpp"
 #include "../schema/schema.hpp"
 #include "../schema/reference.hpp"
 #include "engine/map.hpp"
+#include "utils/Strings.hpp"
+
+#define DEBUG 1
+
+#ifdef DEBUG
+#include <iostream>
+#define LOG(msg) std::cout << "[Engine::Map::Spark - copy_tag_data] " << msg << std::endl;
+#else
+#define LOG(msg)
+#endif
 
 namespace Engine::Map::Spark {
 
     //////////////////////////////////////
     void applyRelocationFixups(StructureRef fromStructure, StructureRef toStructure);
-    void applyRelocationFixupsInner(StructureRef fromStructure, int64_t relocationOffset, int64_t dataOffset);
+    void applyRelocationFixupsInner(RuntimeMapFile* toMap, StructureRef fromStructure, int64_t relocationOffset, int64_t dataOffset);
     //////////////////////////////////////
     
     bool copyTagData(
@@ -81,10 +92,11 @@ namespace Engine::Map::Spark {
     ) {
         int64_t relocationOffset = getRelocationOffset(fromStructure, toStructure);
         int64_t dataOffset = (char*)toStructure.address - (char*)fromStructure.address;
-        applyRelocationFixupsInner(fromStructure, relocationOffset, dataOffset);
+        applyRelocationFixupsInner((RuntimeMapFile*)toStructure.context->mapFile, fromStructure, relocationOffset, dataOffset);
     }
 
     void applyRelocationFixupsInner(
+        RuntimeMapFile* toMap,
         StructureRef fromStructure,
         int64_t relocationOffset,
         int64_t dataOffset
@@ -102,14 +114,58 @@ namespace Engine::Map::Spark {
                 // Recurse on each element of the block.
                 for (size_t i = 0; i < fromPtr->count; ++i) {
                     StructureRef fromElement = field.getBlockElement(i);
-                    applyRelocationFixupsInner(fromElement, relocationOffset, dataOffset);
+                    applyRelocationFixupsInner(toMap, fromElement, relocationOffset, dataOffset);
                 }
                 
             } else if (field.is(Type::Structure)) {
 
                 // Recurse on the nested structure.
                 StructureRef fromNested = field.getStructure();
-                applyRelocationFixupsInner(fromNested, relocationOffset, dataOffset);
+                applyRelocationFixupsInner(toMap, fromNested, relocationOffset, dataOffset);
+
+            } else if (field.is(Type::TagReference)) {
+
+                TagReference* tagRef = reinterpret_cast<TagReference*>(field.address);
+                if (tagRef->tagHandle == 0xFFFFFFFF)
+                    continue;
+
+                uint32_t groupId = field.getTagGroupId();
+                if (groupId == GroupId_Invalid) continue;
+                
+                const char* tagPath = field.getTagPath();
+                if (!tagPath) continue;
+                
+                // Lookup the corresponding tag in the destination map.
+                Tag* matchingTag = toMap->findTag(groupId, tagPath);
+                bool tagCopied = false;
+
+                std::string fullTagDescription = std::string("[") + Strings::fourccToString(groupId) + "] " + tagPath;
+                if (!matchingTag) {
+                    LOG("No matching tag found for path:" << fullTagDescription);
+                    LOG("Attempting to copy tag for path:" << fullTagDescription);
+                    MapFile* fromMap = fromStructure.context->mapFile;
+                    uint32_t fromTagHandle = tagRef->tagHandle;
+                    Tag* newTag = toMap->copyTag(fromMap, fromTagHandle);
+                    if (!newTag) {
+                        LOG("Could not copy tag for path:" << fullTagDescription);
+                        continue;
+                    }
+                    matchingTag = newTag;
+                    tagCopied = true;
+                    LOG("Successfully copied tag for path:" << fullTagDescription);
+                } else {
+                    LOG("Found existing matching tag for path:" << fullTagDescription);
+                }
+                
+                if (tagRef) {
+                    tagRef->tagHandle = matchingTag->tagHandle;
+                    tagRef->path = matchingTag->path;
+                    tagRef->groupID = groupId;
+                }
+
+                if (!tagCopied) {
+                    // Todo: Optionally patch the tag's data. Allow dev to specify which tags are patchable.
+                }
 
             }
 

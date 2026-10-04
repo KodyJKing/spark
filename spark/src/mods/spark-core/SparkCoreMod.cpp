@@ -1,6 +1,6 @@
 #include "SparkCoreMod.hpp"
 #include "Engine/halo1.hpp"
-#include "Engine/map/spark/spark_texture_buffer.hpp"
+#include "Engine/map/spark/spark_buffers.hpp"
 #include "spark/hook/Hooks.hpp"
 
 static bool loadingSparkOwnedBitmap = false;
@@ -8,7 +8,7 @@ static bool loadingSparkOwnedBitmap = false;
 void SparkCoreMod::init() {
 
     Spark::TextureCacheStartLoadingBitmap::addHandler(modId_, +[](void*, auto next, Engine::Map::BitmapData* bitmapData) {
-        loadingSparkOwnedBitmap = Engine::Map::Spark::isSparkOwnedBitmap(bitmapData->bitmapTagHandle);
+        loadingSparkOwnedBitmap = Engine::Map::Spark::isSparkOwnedTag(bitmapData->bitmapTagHandle);
         uint64_t result = next(bitmapData);
         loadingSparkOwnedBitmap = false;
         return result;

@@ -42,8 +42,4 @@ namespace Engine::Map {
     };
     static_assert(sizeof(Bitmap) == 0x6C);
 
-    using SparkBitmap = Bitmap;
-    using SparkBitmapData = BitmapData;
-
 };
-

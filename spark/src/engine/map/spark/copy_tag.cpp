@@ -1,14 +1,22 @@
 #include "copy_tag.hpp"
 #include "get_tag_data_size.hpp"
 #include "../bitmap.hpp"
+#include "../model.hpp"
 
 namespace Engine::Map::Spark {
 
     bool copyBitmapFixup(
         MapFile* fromMap,
         MapFile* toMap,
-        SparkBitmap* toBitmap,
+        Bitmap* toBitmap,
         uint32_t toBitmapTagHandle
+    );
+
+    bool copyModelFixup(
+        MapFile* fromMap,
+        MapFile* toMap,
+        Model* toModel,
+        uint32_t toModelTagHandle
     );
 
     bool applyTypedFixups(
@@ -21,7 +29,8 @@ namespace Engine::Map::Spark {
         void* tagData = toMap->getTagData(tag);
 
         switch(tag->groupID) {
-            case GroupId_Bitmap: return copyBitmapFixup(fromMap, toMap, (SparkBitmap*) tagData, tag->tagHandle);
+            case GroupId_Bitmap: return copyBitmapFixup(fromMap, toMap, (Bitmap*) tagData, tag->tagHandle);
+            case GroupId_Model: return copyModelFixup(fromMap, toMap, (Model*) tagData, tag->tagHandle);
         }
 
         return true;

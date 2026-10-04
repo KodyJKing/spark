@@ -47,6 +47,8 @@ namespace Engine::Map {
         uint32_t getVertexDataSize();
         size_t guessTagDataSize(uint32_t tagHandle);
 
+        Tag* findTag(uint32_t groupId, const char* path);
+
         // Gets base ptr for a section of the map file
         virtual void* getPointerBase(PointerBase b) = 0;
         virtual TagDataHeader* getTagDataHeader() = 0;

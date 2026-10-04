@@ -1,6 +1,6 @@
 #include "../bitmap.hpp"
 #include "../map_file.hpp"
-#include "spark_texture_buffer.hpp"
+#include "spark_buffers.hpp"
 
 // #define DEBUG
 #ifdef DEBUG
@@ -22,7 +22,7 @@ namespace Engine::Map::Spark {
     bool copyBitmapDataFixup(
         MapFile* fromMap,
         MapFile* toMap,
-        SparkBitmapData* toBitmap,
+        BitmapData* toBitmap,
         uint32_t toBitmapTagHandle
     ) {
         if (!fromMap || !toBitmap || !toMap) 
@@ -43,7 +43,7 @@ namespace Engine::Map::Spark {
         // This offset is (mostly) harmless nonsense without Spark's texture buffer binding detour.
         toBitmap->data = { toBufferOffset };
 
-        markSparkOwnedBitmap(toBitmapTagHandle);
+        markSparkOwnedTag(toBitmapTagHandle);
         toBitmap->bitmapTagHandle = toBitmapTagHandle;
 
         return true;
@@ -53,7 +53,7 @@ namespace Engine::Map::Spark {
     bool copyBitmapFixup(
         MapFile* fromMap,
         MapFile* toMap,
-        SparkBitmap* toBitmap,
+        Bitmap* toBitmap,
         uint32_t toBitmapTagHandle
     ) {
         if (!fromMap || !toBitmap || !toMap)
@@ -61,7 +61,7 @@ namespace Engine::Map::Spark {
 
         bool allPassed = true;
         for (size_t i = 0; i < toBitmap->bitmapData.count; i++) {
-            SparkBitmapData* toBitmapData = toMap->getBlockElement(toBitmap->bitmapData, i);
+            BitmapData* toBitmapData = toMap->getBlockElement(toBitmap->bitmapData, i);
             if (!toBitmapData) {
                 allPassed = false;
                 continue;

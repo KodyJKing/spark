@@ -17,8 +17,8 @@ namespace Engine::Map::Spark {
         RuntimeMapFile* toMap,
         uint32_t fromTagHandle,
         // Optional, patched if possible. Will allocate new data block if not.
-        void* toTagData = nullptr,
-        size_t toTagDataSize = 0
+        void* toTagData,
+        size_t toTagDataSize
     );
 
 }

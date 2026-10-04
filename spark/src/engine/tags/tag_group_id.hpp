@@ -29,6 +29,7 @@ namespace Engine {
         ENTRY(Shader, shdr),
         ENTRY(Light, ligh),
         ENTRY(BSP, sbsp),
+        ENTRY(Model, mod2),
         ENTRY(CollisionModel, coll),
         #undef ENTRY
         GroupId_Invalid = 0xFFFFFF

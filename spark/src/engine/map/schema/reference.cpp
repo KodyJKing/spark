@@ -296,6 +296,40 @@ namespace Engine::Map {
         return StructureRef{context, structNode, address};
     }
 
+    uint32_t FieldRef::getTagGroupId() {
+        if (!valid()) {
+            LOG("FieldRef is not valid");
+            return 0;
+        }
+        if (node->type.type != Type::TagReference) {
+            LOG("FieldRef is not a tag reference");
+            return 0;
+        }
+        TagReference* tagRef = reinterpret_cast<TagReference*>(address);
+        if (!tagRef) {
+            LOG("TagReference is null");
+            return GroupId_Invalid;
+        }
+        return tagRef->groupID;
+    }
+
+    const char* FieldRef::getTagPath() {
+        if (!valid()) {
+            LOG("FieldRef is not valid");
+            return nullptr;
+        }
+        if (node->type.type != Type::TagReference) {
+            LOG("FieldRef is not a tag reference");
+            return nullptr;
+        }
+        TagReference* tagRef = reinterpret_cast<TagReference*>(address);
+        if (!tagRef) {
+            LOG("TagReference is null");
+            return nullptr;
+        }
+        return (char*) context->mapFile->fromRelative(tagRef->path);
+    }
+
     bool FieldRef::is(Type type) {
         if (!valid()) {
             LOG("FieldRef is not valid");

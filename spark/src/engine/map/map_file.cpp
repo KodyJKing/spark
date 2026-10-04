@@ -46,4 +46,16 @@ namespace Engine::Map {
         return (uintptr_t)nextData - (uintptr_t)currentData;
     }
 
+    Tag* MapFile::findTag(uint32_t groupId, const char* path) {
+        size_t count = getTagCount();
+        for (size_t i = 0; i < count; i++) {
+            Tag* tag = getTag(i);
+            if (!tag || tag->groupID != groupId) continue;
+            const char* tagPath = getTagPath(tag);
+            if (strncmp(path, tagPath, 1024) == 0)
+                return tag;
+        }
+        return nullptr;
+    }
+
 }

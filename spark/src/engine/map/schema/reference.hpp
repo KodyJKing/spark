@@ -52,6 +52,10 @@ namespace Engine::Map {
 
         StructureRef getStructure();
 
+        // TagReference accessors
+        uint32_t getTagGroupId();
+        const char* getTagPath();
+
         bool is(Type type);
     };
 
