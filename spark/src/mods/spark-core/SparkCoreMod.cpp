@@ -1,9 +1,21 @@
 #include "SparkCoreMod.hpp"
-#include "Engine/halo1.hpp"
-#include "Engine/map/spark/spark_buffers.hpp"
+#include "ModelBufferDetour.hpp"
+#include "engine/halo1.hpp"
+#include "engine/map/model.hpp"
+#include "engine/map/spark/spark_buffers.hpp"
 #include "spark/hook/Hooks.hpp"
+#include <stack>
 
 static bool loadingSparkOwnedBitmap = false;
+static std::stack<uint32_t> renderingEntityStack;
+
+#define DEBUG
+#include <iostream>
+#ifdef DEBUG
+#define LOG(x) std::cout << "[SparkCoreMod] " << x << std::endl;
+#else
+#define LOG(x)
+#endif
 
 void SparkCoreMod::init() {
 
@@ -24,6 +36,13 @@ void SparkCoreMod::init() {
         }
 
         return result;
+    }, nullptr);
+
+    Spark::DrawModelPart::addHandler(modId_, +[](void*, auto next, Engine::IndexBufferSlice* indices, uint64_t param_2, int remainingPrimitivesToDraw, Engine::VertexBufferSlice* vertices) -> void {
+        char* partBase = (char*) indices - 0x44;
+        bool renderingSparkOwnedModel = Engine::Map::Spark::isSparkOwnedPart((Engine::Map::Part*) partBase);
+        // bool renderingSparkOwnedModel = true;
+        Mod::SparkCore::drawModelPart(indices, param_2, remainingPrimitivesToDraw, vertices, renderingSparkOwnedModel);
     }, nullptr);
 
 }

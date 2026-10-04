@@ -23,7 +23,9 @@ namespace Engine::Map::Spark {
         memcpy(toBuffer, fromBuffer, dataSize);
 
         toPart->runtimeVertices = { toBufferOffset };
-        toPart->union0.bufferSourceIndex = 0;
+        toPart->union0.bufferSourceIndex = 1;
+
+        markSparkOwnedPart(toPart);
 
         return true;
     }

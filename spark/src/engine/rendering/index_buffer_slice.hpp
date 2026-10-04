@@ -1,6 +1,8 @@
+#pragma once
 #include <stdint.h>
 
-namespace Engine::Decomp {
+namespace Engine {
+    
     enum Topology : uint16_t {
         Topology_TriangleList,
         Topology_TriangleStrip,

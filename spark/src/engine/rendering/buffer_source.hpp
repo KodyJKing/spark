@@ -1,6 +1,7 @@
+#pragma once
 #include <d3d11.h>
 
-namespace Engine::Decomp {
+namespace Engine {
 
     // Ghidra (_drawModel disasm): BufferSource::object is a pointer to a polymorphic object -
     // the call is a real virtual dispatch (this=object, vtable slot 2 / offset 0x10), not a

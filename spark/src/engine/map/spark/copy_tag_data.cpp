@@ -125,9 +125,9 @@ namespace Engine::Map::Spark {
 
             } else if (field.is(Type::TagReference)) {
 
-                TagReference* tagRef = reinterpret_cast<TagReference*>(field.address);
-                if (tagRef->tagHandle == 0xFFFFFFFF)
-                    continue;
+                TagReference* fromTagRef = reinterpret_cast<TagReference*>(field.address);
+                if (fromTagRef->tagHandle == 0xFFFFFFFF) continue;
+                TagReference* toTagRef = getDestination(fromTagRef, dataOffset);
 
                 uint32_t groupId = field.getTagGroupId();
                 if (groupId == GroupId_Invalid) continue;
@@ -144,7 +144,7 @@ namespace Engine::Map::Spark {
                     LOG("No matching tag found for path:" << fullTagDescription);
                     LOG("Attempting to copy tag for path:" << fullTagDescription);
                     MapFile* fromMap = fromStructure.context->mapFile;
-                    uint32_t fromTagHandle = tagRef->tagHandle;
+                    uint32_t fromTagHandle = toTagRef->tagHandle;
                     Tag* newTag = toMap->copyTag(fromMap, fromTagHandle);
                     if (!newTag) {
                         LOG("Could not copy tag for path:" << fullTagDescription);
@@ -157,10 +157,10 @@ namespace Engine::Map::Spark {
                     LOG("Found existing matching tag for path:" << fullTagDescription);
                 }
                 
-                if (tagRef) {
-                    tagRef->tagHandle = matchingTag->tagHandle;
-                    tagRef->path = matchingTag->path;
-                    tagRef->groupID = groupId;
+                if (toTagRef) {
+                    toTagRef->tagHandle = matchingTag->tagHandle;
+                    toTagRef->path = matchingTag->path;
+                    toTagRef->groupID = groupId;
                 }
 
                 if (!tagCopied) {

@@ -1,7 +1,7 @@
+#pragma once
 #include <stdint.h>
 
-namespace Engine::Decomp {
-
+namespace Engine {
     struct VertexBufferSlice {
         int16_t strideIndex;
         char unk0[2];

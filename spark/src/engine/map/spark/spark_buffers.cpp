@@ -40,11 +40,19 @@ namespace {
             auto device = Engine::getD3D11Device();
             if (!device) return;
             D3D11_BUFFER_DESC desc{0};
-            desc.Usage = D3D11_USAGE_DEFAULT;
+            desc.Usage = D3D11_USAGE_DYNAMIC;
             desc.ByteWidth = size;
             desc.BindFlags = bindFlags;
             desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-            device->CreateBuffer(&desc, nullptr, &gpuBuffer);
+            HRESULT result = device->CreateBuffer(&desc, nullptr, &gpuBuffer);
+            #ifdef DEBUG
+            if (FAILED(result)) {
+                static int tick = 0;
+                if (tick++ % 60 == 0) {
+                    LOG("Failed to create GPU buffer " << reinterpret_cast<void*>(result));
+                }
+            }
+            #endif
         }
 
         void updateGPUBuffer() {
@@ -75,6 +83,7 @@ namespace {
 namespace Engine::Map::Spark {
     
     std::unordered_set<uint32_t> sparkOwnedTags;
+    std::unordered_set<Part*> sparkOwnedParts;
 
     std::vector<char> textureBuffer;
     D3DBuffer vertexBuffer;
@@ -82,6 +91,9 @@ namespace Engine::Map::Spark {
 
     void markSparkOwnedTag(uint32_t tagHandle) { sparkOwnedTags.insert(tagHandle); }
     bool isSparkOwnedTag(uint32_t tagHandle) { return sparkOwnedTags.contains(tagHandle); }
+
+    void markSparkOwnedPart(Part* part) { sparkOwnedParts.insert(part); }
+    bool isSparkOwnedPart(Part* part) { return sparkOwnedParts.contains(part); }
 
     uint32_t allocateTextureData(size_t size, void** outData) { return allocateData(textureBuffer, size, outData); }
     uint32_t allocateVertexData(size_t size, void** outData) {
@@ -110,6 +122,7 @@ namespace Engine::Map::Spark {
     void resetSparkBuffers() {
         sparkOwnedTags.clear();
         textureBuffer.clear();
+        sparkOwnedParts.clear();
         vertexBuffer.cpuBuffer.clear();
         indexBuffer.cpuBuffer.clear();
         vertexBuffer.release();

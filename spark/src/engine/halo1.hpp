@@ -17,6 +17,7 @@
 #include "types/index.hpp"
 #include "raycast.hpp"
 #include "effects.hpp"
+#include "rendering/index.hpp"
 #include "scripting/Scripting.hpp"
 #include "scripting/TerminalOutput.hpp"
 
