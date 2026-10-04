@@ -79,6 +79,20 @@ namespace Mod::DevTools::DissectTagNew {
         std::string valueStr = field.readAsString();
         ImGui::SameLine();
         ImGui::Text("%s", valueStr.c_str());
+        if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
+            ImGui::OpenPopup("Edit Field");
+        }
+
+        if (ImGui::BeginPopup("Edit Field")) {
+            static char buffer[256] = "";
+            ImGui::InputText("Value", buffer, sizeof(buffer), ImGuiInputTextFlags_EnterReturnsTrue);
+            ImGui::SameLine();
+            if (ImGui::Button("Set")) {
+                field.writeFromString(buffer);
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
+        }
 
         ImGui::SameLine();
         if (ImGui::Button("x")) {

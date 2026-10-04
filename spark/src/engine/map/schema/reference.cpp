@@ -180,6 +180,54 @@ namespace Engine::Map {
             LOG("FieldRef is not valid");
             return;
         }
+        
+        try {
+            switch (node->type.type) {
+                case Type::I8: {
+                    int8_t* ptr = (int8_t*)address;
+                    *ptr = static_cast<int8_t>(std::stoi(value));
+                    break;
+                }
+                case Type::I16: {
+                    int16_t* ptr = (int16_t*)address;
+                    *ptr = static_cast<int16_t>(std::stoi(value));
+                    break;
+                }
+                case Type::I32: {
+                    int32_t* ptr = (int32_t*)address;
+                    *ptr = static_cast<int32_t>(std::stoi(value));
+                    break;
+                }
+                case Type::I64: {
+                    int64_t* ptr = (int64_t*)address;
+                    *ptr = static_cast<int64_t>(std::stoll(value));
+                    break;
+                }
+                case Type::F32: {
+                    float* ptr = (float*)address;
+                    *ptr = static_cast<float>(std::stof(value));
+                    break;
+                }
+                case Type::F64: {
+                    double* ptr = (double*)address;
+                    *ptr = static_cast<double>(std::stod(value));
+                    break;
+                }
+                case Type::TagReference: {
+                    uint32_t handle = static_cast<uint32_t>(std::stoul(value, nullptr, 16));
+                    TagReference* tagRef = (TagReference*)address;
+                    tagRef->tagHandle = handle;
+                    break;
+                }
+                default: {
+                    LOG("Unsupported field type in writeFromString");
+                    break;
+                }
+            }
+        } catch (const std::exception& e) {
+            LOG("Exception in writeFromString: " << e.what());
+            MessageBeep(MB_ICONERROR);
+        }
 
         LOG("Not implemented: writeFromString");
     }
