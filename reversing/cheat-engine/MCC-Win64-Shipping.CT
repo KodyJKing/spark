@@ -1138,6 +1138,28 @@ dealloc(newmem)
   </CheatEntries>
   <CheatCodes>
     <CodeEntry>
+      <Description>Spark DebugMe</Description>
+      <AddressString>spark.dll+13A6A0</AddressString>
+      <Before>
+        <Byte>CC</Byte>
+        <Byte>CC</Byte>
+        <Byte>CC</Byte>
+        <Byte>CC</Byte>
+        <Byte>CC</Byte>
+      </Before>
+      <Actual>
+        <Byte>40</Byte>
+        <Byte>57</Byte>
+      </Actual>
+      <After>
+        <Byte>48</Byte>
+        <Byte>83</Byte>
+        <Byte>EC</Byte>
+        <Byte>20</Byte>
+        <Byte>48</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
       <Description>Consume Frag : dec [rdx+rbx+000002FC]</Description>
       <AddressString>halo1.dll+B0A330</AddressString>
       <Before>
@@ -5668,6 +5690,125 @@ dealloc(newmem)
         <Byte>C3</Byte>
       </After>
     </CodeEntry>
+    <CodeEntry>
+      <Description>Read Shader.shader :mov ecx,[rdi+0C]</Description>
+      <AddressString>halo1.dll+C63BE9</AddressString>
+      <Before>
+        <Byte>E7</Byte>
+        <Byte>05</Byte>
+        <Byte>48</Byte>
+        <Byte>03</Byte>
+        <Byte>F8</Byte>
+      </Before>
+      <Actual>
+        <Byte>8B</Byte>
+        <Byte>4F</Byte>
+        <Byte>0C</Byte>
+      </Actual>
+      <After>
+        <Byte>E8</Byte>
+        <Byte>57</Byte>
+        <Byte>7A</Byte>
+        <Byte>E3</Byte>
+        <Byte>FF</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Read Shader.shader :mov ecx,[rdi+0C]</Description>
+      <AddressString>halo1.dll+C63DCF</AddressString>
+      <Before>
+        <Byte>E8</Byte>
+        <Byte>D9</Byte>
+        <Byte>F0</Byte>
+        <Byte>F3</Byte>
+        <Byte>FF</Byte>
+      </Before>
+      <Actual>
+        <Byte>8B</Byte>
+        <Byte>4F</Byte>
+        <Byte>0C</Byte>
+      </Actual>
+      <After>
+        <Byte>4C</Byte>
+        <Byte>8D</Byte>
+        <Byte>53</Byte>
+        <Byte>44</Byte>
+        <Byte>0F</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of call qword ptr [rax+60]</Description>
+      <AddressString>halo1.dll+BF5B72</AddressString>
+      <Before>
+        <Byte>33</Byte>
+        <Byte>C9</Byte>
+        <Byte>48</Byte>
+        <Byte>8B</Byte>
+        <Byte>01</Byte>
+      </Before>
+      <Actual>
+        <Byte>FF</Byte>
+        <Byte>50</Byte>
+        <Byte>60</Byte>
+      </Actual>
+      <After>
+        <Byte>45</Byte>
+        <Byte>03</Byte>
+        <Byte>E7</Byte>
+        <Byte>48</Byte>
+        <Byte>8D</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of call _drawModel2</Description>
+      <AddressString>halo1.dll+D4664C</AddressString>
+      <Before>
+        <Byte>33</Byte>
+        <Byte>D2</Byte>
+        <Byte>48</Byte>
+        <Byte>8B</Byte>
+        <Byte>CE</Byte>
+      </Before>
+      <Actual>
+        <Byte>E8</Byte>
+        <Byte>FB</Byte>
+        <Byte>3C</Byte>
+        <Byte>FB</Byte>
+        <Byte>FF</Byte>
+      </Actual>
+      <After>
+        <Byte>44</Byte>
+        <Byte>39</Byte>
+        <Byte>35</Byte>
+        <Byte>34</Byte>
+        <Byte>D1</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of call __renderBSPAlbedo</Description>
+      <AddressString>halo1.dll+C4E993</AddressString>
+      <Before>
+        <Byte>8B</Byte>
+        <Byte>D7</Byte>
+        <Byte>41</Byte>
+        <Byte>8B</Byte>
+        <Byte>CE</Byte>
+      </Before>
+      <Actual>
+        <Byte>E8</Byte>
+        <Byte>DC</Byte>
+        <Byte>6E</Byte>
+        <Byte>FA</Byte>
+        <Byte>FF</Byte>
+      </Actual>
+      <After>
+        <Byte>41</Byte>
+        <Byte>03</Byte>
+        <Byte>DC</Byte>
+        <Byte>3B</Byte>
+        <Byte>DF</Byte>
+      </After>
+    </CodeEntry>
   </CheatCodes>
   <UserdefinedSymbols/>
   <Structures StructVersion="2">
@@ -9463,6 +9604,11 @@ RCX = VertexBlockBase
 </Comment>
     </DisassemblerComment>
     <DisassemblerComment>
+      <Address>"halo1.dll"+BF5B72</Address>
+      <Comment>renderBSPValue
+</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
       <Address>"halo1.dll"+BF5D18</Address>
       <Comment>RCX and R9 always seem to point into a mod2::Geometry::Part, particularly at index and vertex buffer refs
 </Comment>
@@ -9490,6 +9636,11 @@ RCX = VertexBlockBase
     <DisassemblerComment>
       <Address>"halo1.dll"+C41B31</Address>
       <Comment>unpackQuaternion
+</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+C4E993</Address>
+      <Comment>draw shadows
 </Comment>
     </DisassemblerComment>
     <DisassemblerComment>
@@ -9536,6 +9687,11 @@ RCX = VertexBlockBase
     <DisassemblerComment>
       <Address>"halo1.dll"+CC84DC</Address>
       <Comment>get actor's tag data pointer
+</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"halo1.dll"+D4664C</Address>
+      <Comment>all translucent object draws seem to go through this
 </Comment>
     </DisassemblerComment>
   </DisassemblerComments>

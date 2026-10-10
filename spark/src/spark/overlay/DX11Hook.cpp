@@ -42,6 +42,7 @@ static ID3D11Device* g_pd3dDevice = NULL;
 static ID3D11DeviceContext* g_pd3dDeviceContext = NULL;
 static ID3D11RenderTargetView* g_pd3dRenderTarget = NULL;
 static IDXGISwapChain* g_pSwapChain = NULL;
+static bool g_isRenderingImGui = false;
 
 static void CleanupDeviceD3D11( );
 static void CleanupRenderTarget( );
@@ -97,8 +98,9 @@ static std::add_pointer_t<HRESULT WINAPI(IDXGISwapChain*, UINT, UINT)> oPresent;
 static HRESULT WINAPI hkPresent(IDXGISwapChain* pSwapChain,
                                 UINT SyncInterval,
                                 UINT Flags) {
+    g_isRenderingImGui = true;
     RenderImGui_DX11(pSwapChain);
-
+    g_isRenderingImGui = false;
     return oPresent(pSwapChain, SyncInterval, Flags);
 }
 
@@ -186,6 +188,10 @@ static HRESULT WINAPI hkCreateSwapChainForComposition(IDXGIFactory* pFactory,
 
 namespace Spark::Overlay::DX11Hook {
     std::atomic_bool isUnhooking = false;
+
+    bool isRenderingImGui() {
+        return g_isRenderingImGui;
+    }
 
 	HWND findMainWindow( ) {
 		HWND hwnd = nullptr;

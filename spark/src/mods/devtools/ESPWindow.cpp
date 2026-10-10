@@ -6,6 +6,7 @@
 #include "halomcc/HaloMCC.hpp"
 #include "memory/Memory.hpp"
 #include "utils/ImGuiUtils.hpp"
+#include "frame_debugger/FrameDebugger.hpp"
 #include <string>
 
 namespace Mod::DevTools {
@@ -290,6 +291,8 @@ namespace Mod::DevTools {
             flags |= ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize |
                      ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMouseInputs;
 
+        FrameDebugger::render();
+
         ImGui::Begin("ESP", 0, flags);
 
         if (ImGui::BeginTabBar("ESP Tabs")) {
@@ -313,6 +316,11 @@ namespace Mod::DevTools {
                 ImGui::EndTabItem();
             }
 #endif
+            if (ImGui::BeginTabItem("More")) {
+                if (ImGui::Button("Frame Dissector"))
+                    Mod::DevTools::FrameDebugger::showWindow();
+                ImGui::EndTabItem();
+            }
             ImGui::EndTabBar();
         }
         ImGui::End();

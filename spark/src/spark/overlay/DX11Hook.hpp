@@ -6,4 +6,6 @@ namespace Spark::Overlay::DX11Hook {
     
     void hook(HWND hwnd);
     void unhook();
+
+    bool isRenderingImGui();
 }

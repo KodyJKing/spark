@@ -8,6 +8,10 @@
 
 namespace Debugging {
 
+    __declspec(dllexport) inline void debugMe() {
+        printf("Set a breakpoint here.\n");
+    }
+
     inline void debug(DWORD timeout = 10000) {
         #ifdef _DEBUG
         if (IsDebuggerPresent()) {
