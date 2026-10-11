@@ -3,7 +3,6 @@
 #include "imgui.h"
 #include "engine/halo1.hpp"
 #include "mods/devtools/dissect/DissectTag.hpp"
-#include "mods/devtools/dissect/new/DissectTagNew.hpp"
 
 #include "State.hpp"
 #include "Constants.hpp"
@@ -64,7 +63,7 @@ namespace Mod::DevTools {
 
     void tagBrowser() {
         // Mod::DevTools::DissectTag::render();
-        Mod::DevTools::DissectTagNew::render();
+        Mod::DevTools::DissectTag::render();
         
         if (!state.show) return;
 

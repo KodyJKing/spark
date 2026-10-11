@@ -10,7 +10,7 @@
 
 #include "memory/Memory.hpp"
 
-namespace Mod::DevTools::DissectTagNew::Hints {
+namespace Mod::DevTools::DissectTag::Hints {
 
     using namespace Engine::Map;
 

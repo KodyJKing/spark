@@ -1,8 +1,9 @@
 #pragma once
 
 #include <cstdint>
+#include "engine/map/map_file.hpp"
 
 namespace Mod::DevTools::DissectTag {
-    void openWindow(uint32_t tagId);
+    void openWindow(Engine::Map::MapFile* mapFile, uint32_t tagId);
     void render();
 }

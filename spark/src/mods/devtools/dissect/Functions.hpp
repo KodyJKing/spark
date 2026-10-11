@@ -1,48 +1,56 @@
 #pragma once
 
-#include "engine/tags/schema/schema.hpp"
-#include "engine/halo1.hpp"
-#include <string>
-#include <cstdio>
-#include <algorithm>
+#include <cstdint>
+
+#include "engine/map/schema/schema.hpp"
+#include "engine/map/schema/type.hpp"
+
+#include "imgui.h"
+
+#define DEBUG
+
+#ifdef DEBUG
+#include "utils/Debugging.hpp"
+#include <iostream>
+#define LOG(X) std::cout << "[DissectTag] " << X << std::endl;
+#else
+#define LOG(X)
+#endif
+
 
 namespace Mod::DevTools::DissectTag {
 
-    using namespace Engine::TagSchema;
+    using namespace Engine::Map;
 
-    inline std::string toHex(uint32_t value) {
-        char buffer[9];
-        snprintf(buffer, sizeof(buffer), "%08X", value);
-        return std::string(buffer);
-    }
-
-    inline std::string toHex(uint64_t value) {
-        char buffer[17];
-        snprintf(buffer, sizeof(buffer), "%016llX", value);
-        return std::string(buffer);
-    }
-
-    inline size_t guessDataSize(Engine::Tag* tag) {
-        auto nextTag = tag + 1;
-        if (!Engine::tagExists(nextTag))
-            return 0;
-        void* dataPointer = tag->getData();
-        void* nextDataPointer = nextTag->getData();
-        return reinterpret_cast<uint8_t*>(nextDataPointer) - reinterpret_cast<uint8_t*>(dataPointer);
-    }
-
-    inline void deleteFieldFromStructure(Structure& structure, Field* field) {
-        auto it = std::find_if(structure.fields.begin(), structure.fields.end(),
-                               [&](const Field& f) { return strcmp(f.name, field->name) == 0 && f.offset == field->offset; });
-        if (it != structure.fields.end()) {
-            structure.fields.erase(it);
+    inline void renderRowAddress(uintptr_t address, uintptr_t structureBase) {
+        char buffer[256];
+        ImGui::NewLine();
+        ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(128, 128, 128, 255));
+        snprintf(buffer, sizeof(buffer), "%p", address);
+        if(ImGui::TextLink(buffer)) {
+            ImGui::SetClipboardText(buffer);
         }
+        ImGui::SameLine();
+        ImGui::PopStyleColor();
+
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Offset %X", (address - structureBase));
     }
 
-    inline void sortFields(Structure& structure) {
-        std::sort(structure.fields.begin(), structure.fields.end(), [](const Field& a, const Field& b) {
-            return a.offset < b.offset;
-        });
+
+    inline void renderTypePicker(Type* type) {
+        if (!type) return;
+        ImGui::SetNextItemWidth(ImGui::GetFontSize() * 8);
+        if (ImGui::BeginCombo("##Type", Engine::Map::TypeNames[static_cast<int>(*type)])) {
+            for (int i = 0; i < static_cast<int>(Engine::Map::TypeCount); ++i) {
+                bool isSelected = (*type == static_cast<Engine::Map::Type>(i));
+                if (ImGui::Selectable(Engine::Map::TypeNames[i], isSelected)) {
+                    *type = static_cast<Engine::Map::Type>(i);
+                }
+                if (isSelected)
+                    ImGui::SetItemDefaultFocus();
+            }
+            ImGui::EndCombo();
+        }
     }
 
 }

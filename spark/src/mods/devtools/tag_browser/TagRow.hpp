@@ -4,7 +4,6 @@
 #include "imgui.h"
 #include "utils/ImGuiUtils.hpp"
 #include "mods/devtools/dissect/DissectTag.hpp"
-#include "mods/devtools/dissect/new/DissectTagNew.hpp"
 
 #define COLOR_SELECTED_ROW IM_COL32(255, 255, 0, 255)
 
@@ -16,7 +15,7 @@ namespace Mod::DevTools {
             state.selection = index;
             
             if (ImGui::MenuItem("Inspect Tag")) {
-                Mod::DevTools::DissectTagNew::openWindow(state.getMap(), tag->tagHandle);
+                Mod::DevTools::DissectTag::openWindow(state.getMap(), tag->tagHandle);
             }
 
             if (state.isFileOpen()) {
@@ -61,7 +60,7 @@ namespace Mod::DevTools {
                 hovered = true;
             }
             if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && ImGui::GetIO().KeyShift) {
-                Mod::DevTools::DissectTagNew::openWindow(state.getMap(), tag->tagHandle);
+                Mod::DevTools::DissectTag::openWindow(state.getMap(), tag->tagHandle);
             }
         };
 
