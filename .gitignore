@@ -28,10 +28,10 @@ spark-unicorn-test/approved/*.received.txt
 
 scripts/user
 paired_sensors.txt
-cheat-engine/data
 
 reversing/binary-ninja/*.bndb
 reversing/cheat-engine/traces
+reversing/cheat-engine/pointer-scan
 reversing/ghidra/*.gpr
 reversing/ghidra/*.lock
 reversing/ghidra/*.lock~
@@ -41,3 +41,4 @@ reversing/ghidra_restic
 reversing/ghidra/versions
 
 tags/*/bitmaps
+
