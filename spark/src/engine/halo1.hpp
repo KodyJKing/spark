@@ -12,10 +12,12 @@
 #include "player.hpp"
 #include "map.hpp"
 #include "bsp/index.hpp"
+#include "map/index.hpp"
 #include "tags/index.hpp"
 #include "types/index.hpp"
 #include "raycast.hpp"
 #include "effects.hpp"
+#include "rendering/index.hpp"
 #include "scripting/Scripting.hpp"
 #include "scripting/TerminalOutput.hpp"
 

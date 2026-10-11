@@ -1,5 +1,7 @@
 #include "Strings.hpp"
 #include <stdint.h>
+#include <locale>
+#include <codecvt>
 
 namespace Strings {
 
@@ -31,6 +33,11 @@ namespace Strings {
         c = str[2];
         d = str[3];
         return (a << 24) | (b << 16) | (c << 8) | d;
+    }
+
+    std::string convertWideString(const std::wstring & wideStr) {
+        std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
+        return converter.to_bytes(wideStr);
     }
 
 }

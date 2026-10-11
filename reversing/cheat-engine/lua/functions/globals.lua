@@ -46,3 +46,7 @@ function anyRegisterEquals(value)
     end
     return false
 end
+
+function maybe(probability)
+    return math.random() < probability
+end

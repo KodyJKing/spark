@@ -10,17 +10,16 @@ namespace Memory {
         return mbi.State == MEM_COMMIT;
     }
     
+    bool isAllocated( void* ptr ) {
+        return isAllocated( (uintptr_t) ptr );
+    }
+
     bool isAllocatedFast( uintptr_t address ) {
         uintptr_t dummy;
-        static HANDLE proc = GetCurrentProcess();
-        return ReadProcessMemory(proc, (LPCVOID)address, &dummy, sizeof(dummy), NULL);
+        return ReadProcessMemory(GetCurrentProcess(), (LPCVOID)address, &dummy, sizeof(dummy), NULL);
     }
 
     bool isAllocatedFast( void* ptr ) {
-        return isAllocatedFast( (uintptr_t) ptr );
-    }
-
-    bool isAllocated( void* ptr ) {
         return isAllocated( (uintptr_t) ptr );
     }
 

@@ -45,8 +45,8 @@ namespace {
 constexpr uint64_t kEntityListPtrOffset = 0x1C42248;
 constexpr uint64_t kEntityArrayBaseOffset = 0x2D9CDF8;
 constexpr uint64_t kTagArrayPtrOffset = 0x1C34FB0;
-constexpr uint64_t kRelocatedMapBaseOffset = 0x2D9CE10;
-constexpr uint64_t kMapBaseOffset = 0x2EA3410;
+constexpr uint64_t ktagHeaderBaseOffset = 0x2D9CE10;
+constexpr uint64_t ktagPointerOffsetOffset = 0x2EA3410;
 
 // getEntityPointer()'s "+ 0x34" adjustment (entity_list.cpp) -- an
 // algorithm constant baked into that function, not a member offset of any
@@ -123,8 +123,8 @@ UNICORN_TEST(Dump_EntityList_HandlesTagNamesAndPositions_MatchesApproved) {
     uint64_t entityListPtr = read<uint64_t>(engine, dump, dllBase + kEntityListPtrOffset);
     uint64_t entityArrayBase = read<uint64_t>(engine, dump, dllBase + kEntityArrayBaseOffset);
     uint64_t tagArrayPtr = read<uint64_t>(engine, dump, dllBase + kTagArrayPtrOffset);
-    uint64_t relocatedMapBase = read<uint64_t>(engine, dump, dllBase + kRelocatedMapBaseOffset);
-    uint64_t mapBase = read<uint64_t>(engine, dump, dllBase + kMapBaseOffset);
+    uint64_t relocatedMapBase = read<uint64_t>(engine, dump, dllBase + ktagHeaderBaseOffset);
+    uint64_t mapBase = read<uint64_t>(engine, dump, dllBase + ktagPointerOffsetOffset);
 
     if (entityListPtr == 0) {
         std::cout << "  entity list pointer is null in this capture -- was a map loaded?\n";

@@ -25,6 +25,7 @@ namespace Spark {
 #include "mods/devtools/DevToolsMod.hpp"
 #include "mods/hooklog/HookLogMod.hpp"
 #include "mods/spark-input/SparkInputMod.hpp"
+#include "mods/spark-core/SparkCoreMod.hpp"
 
 namespace Spark {
 
@@ -48,6 +49,7 @@ namespace Spark {
         Input::init();
         Input::loadBindings();
 
+        registry.add(new SparkCoreMod());
         registry.add(new SparkInputMod());
         
         #ifdef _DEBUG
@@ -56,7 +58,7 @@ namespace Spark {
         registry.add(new HookLogMod());
         #endif
 
-        modLoader.loadAll(); // LoadLibrary's *.dll from the mods directory (e.g. smc64.dll), calling spark_registerMod() for each.
+        // modLoader.loadAll(); // LoadLibrary's *.dll from the mods directory (e.g. smc64.dll), calling spark_registerMod() for each.
         registry.initAll(halo1);
 
         Engine::Decomp::install(halo1);

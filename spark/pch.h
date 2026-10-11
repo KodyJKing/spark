@@ -23,4 +23,6 @@
 #include <Psapi.h>
 #include <TlHelp32.h>
 
+#include <json.hpp>
+
 #endif //PCH_H

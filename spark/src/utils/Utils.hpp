@@ -13,4 +13,6 @@ namespace Utils {
     // injected from an arbitrary location (e.g. the repo's build output during dev), but
     // mods must always be found next to the actual game executable.
     std::filesystem::path getModsDirectory();
+    std::filesystem::path getTagSchemaPath();
+    std::filesystem::path getHalo1Directory();
 }

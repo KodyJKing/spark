@@ -1,0 +1,389 @@
+#include "reference.hpp"
+#include "functions.hpp"
+#include "schema.hpp"
+#include "type.hpp"
+
+#include "utils/Strings.hpp"
+#include "memory/Memory.hpp"
+
+#define DEBUG_REFERENCE
+
+#ifdef DEBUG_REFERENCE
+#include <iostream>
+#define LOG(X) std::cout << "[DEBUG_REFERENCE] " << X << std::endl;
+#else
+#define LOG(X)
+#endif
+
+namespace Engine::Map {
+
+    //////////////////////////////////////////////
+    // StructureRef
+
+    bool StructureRef::valid() const {
+        return context != nullptr && address != nullptr;
+    }
+
+    bool StructureRef::allocated() const {
+        return Memory::isAllocated(address);
+    }
+
+    bool FieldRef::valid() const {
+        return context != nullptr && address != nullptr && parent.valid();
+    }
+
+    FieldRef StructureRef::getFieldRef(const char* name) {
+        if (!valid()) {
+            LOG("StructureRef is not valid");
+            return FieldRef{};
+        }
+        
+        for (const auto& pair : node->fields) {
+            const auto& fieldId = pair.second;
+            if (context->schema->fields.find(fieldId) == context->schema->fields.end()) {
+                LOG("Field ID " << fieldId << " not found in schema");
+                continue;
+            }
+            auto& field = context->schema->fields.at(fieldId);
+            if (strncmp(field.name, name, 256) == 0) {
+                return {
+                    context,
+                    &field,
+                    (void*)((char*) this->address + field.offset),
+                    *this
+                };
+            }
+        }
+        LOG("Field with name " << name << " not found");
+        return FieldRef{};
+    }
+
+    std::vector<FieldRef> StructureRef::getFieldRefs() {
+        if (!valid()) {
+            LOG("StructureRef is not valid");
+            return {};
+        }
+        
+        
+        std::vector<FieldRef> refs;
+        for (const auto& pair : node->fields) {
+            const auto& fieldId = pair.second;
+            if (!context->schema->fields.contains(fieldId)) {
+                LOG("Field ID " << fieldId << " not found in schema");
+                continue;
+            }
+            auto& field = context->schema->fields.at(fieldId);
+            refs.emplace_back(
+                context,
+                &field,
+                (void*)((char*) this->address + field.offset),
+                *this
+            );
+        }
+        return refs;
+    }
+
+    void StructureRef::insertField(Id id) {
+        if (!valid()) {
+            LOG("StructureRef is not valid");
+            return;
+        }
+        if (!context->schema->fields.contains(id)) {
+            LOG("Field ID " << id << " not found in schema");
+            return;
+        }
+        auto& field = context->schema->fields.at(id);
+        node->fields[field.offset] = id;
+    }
+
+    void StructureRef::createFieldAt(void* address, Type type) {
+        if (!valid()) {
+            LOG("StructureRef is not valid");
+            return;
+        }
+        if (!node->assertWritable("Cannot create field on read-only structure")) {
+            return;
+        }
+        
+        Schema* schema = context->schema;
+        int offset = (int)((char*)address - (char*)this->address);
+        std::string fieldName = "field_0x" + Strings::toHex(offset);
+
+        FieldNode* fieldNode = nullptr;
+        Id fieldId = schema->createField(fieldName, &fieldNode, type);
+        if (!fieldNode) {
+            LOG("Failed to create field node");
+            return;
+        }
+
+        fieldNode->offset = offset;
+        insertField(fieldId);
+    }
+
+    //////////////////////////////////////////////
+    // FieldRef
+
+    std::string FieldRef::readAsString() {
+        if (!valid()) {
+            LOG("FieldRef is not valid");
+            return "[invalid field reference]";
+        }
+
+        switch (node->type.type) {
+            #define CONVERT(type) std::to_string(*(type*)address);
+            #define CONVERT3(type) std::to_string(*(type*)address) + ", " + std::to_string(*((type*)address + 1)) + ", " + std::to_string(*((type*)address + 2));
+            #define CONVERT4(type) std::to_string(*(type*)address) + ", " + std::to_string(*((type*)address + 1)) + ", " + std::to_string(*((type*)address + 2)) + ", " + std::to_string(*((type*)address + 3));
+            case Type::U8: return CONVERT(uint8_t);
+            case Type::U16: return CONVERT(uint16_t);
+            case Type::U32: return CONVERT(uint32_t);
+            case Type::U64: return CONVERT(uint64_t);
+            case Type::I8: return CONVERT(int8_t);
+            case Type::I16: return CONVERT(int16_t);
+            case Type::I32: return CONVERT(int32_t);
+            case Type::I64: return CONVERT(int64_t);
+            case Type::F32: return CONVERT(float);
+            case Type::F64: return CONVERT(double);
+            case Type::Vec3: return CONVERT3(float);
+            case Type::Vec4: return CONVERT4(float);
+            case Type::Matrix3x3: return CONVERT3(float) + "; " + CONVERT3(float) + "; " + CONVERT3(float);
+            case Type::BlockPointer: {
+                void* structureBase = parent.address;
+                StructureRef ref = getBlockElement(0);
+                int64_t offset = (char*)ref.address - (char*)structureBase;
+                std::string structureName = std::string(ref.node->name);
+                if (structureName.empty()) structureName = "[unnamed]";
+                std::string description = structureName + " Block at offset 0x" + Strings::toHex(offset);
+                return description;
+            }
+            case Type::TagString: {
+                return std::string((char*)address, 32);
+            }
+            case Type::TagReference: {
+                TagReference* tagRef = (TagReference*)address;
+                char* path = (char*) context->mapFile->fromRelative(tagRef->path);
+                if (!Memory::isAllocated(path)) return "[invalid tag reference]";
+                std::string description = "[" + Strings::fourccToString(tagRef->groupID) + "] " + path;
+                return description;
+            }
+            case Type::Structure: {
+                return "[structure]";
+            }
+            #undef CONVERT
+            default:
+                // LOG("Unsupported field type");
+                return "[not implemented]";
+        }
+    }
+
+    void FieldRef::writeFromString(const std::string& value) {
+        if (!valid()) {
+            LOG("FieldRef is not valid");
+            return;
+        }
+        
+        try {
+            switch (node->type.type) {
+                case Type::I8: {
+                    int8_t* ptr = (int8_t*)address;
+                    *ptr = static_cast<int8_t>(std::stoi(value));
+                    break;
+                }
+                case Type::I16: {
+                    int16_t* ptr = (int16_t*)address;
+                    *ptr = static_cast<int16_t>(std::stoi(value));
+                    break;
+                }
+                case Type::I32: {
+                    int32_t* ptr = (int32_t*)address;
+                    *ptr = static_cast<int32_t>(std::stoi(value));
+                    break;
+                }
+                case Type::I64: {
+                    int64_t* ptr = (int64_t*)address;
+                    *ptr = static_cast<int64_t>(std::stoll(value));
+                    break;
+                }
+                case Type::F32: {
+                    float* ptr = (float*)address;
+                    *ptr = static_cast<float>(std::stof(value));
+                    break;
+                }
+                case Type::F64: {
+                    double* ptr = (double*)address;
+                    *ptr = static_cast<double>(std::stod(value));
+                    break;
+                }
+                case Type::TagReference: {
+                    uint32_t handle = static_cast<uint32_t>(std::stoul(value, nullptr, 16));
+                    TagReference* tagRef = (TagReference*)address;
+                    tagRef->tagHandle = handle;
+                    break;
+                }
+                default: {
+                    LOG("Unsupported field type in writeFromString");
+                    break;
+                }
+            }
+        } catch (const std::exception& e) {
+            LOG("Exception in writeFromString: " << e.what());
+            MessageBeep(MB_ICONERROR);
+        }
+
+        LOG("Not implemented: writeFromString");
+    }
+
+    size_t FieldRef::size() {
+        if (!valid()) {
+            LOG("FieldRef is not valid");
+            return 0;
+        }
+        int typeIndex = (int)node->type.type;
+        if (typeIndex < 0 || typeIndex >= TypeCount) {
+            LOG("Invalid type index: " << typeIndex);
+            return 0;
+        }
+
+        if (node->type.type == Type::Structure) {
+            StructureNode* structNode = this->getReferencedType();
+            if (structNode) {
+                return structNode->size;
+            } else {
+                LOG("Referenced structure type not found");
+                return 0;
+            }
+        }
+
+        return TypeSizes[typeIndex];
+    }
+
+    StructureNode *FieldRef::getReferencedType() {
+        if (!valid()) {
+            LOG("FieldRef is not valid");
+            return nullptr;
+        }
+        if (!context->schema->structures.contains(node->type.ref)) {
+            LOG("Referenced type not found in schema");
+            return &NullStructure;
+        }
+        return &context->schema->structures[node->type.ref];
+    }
+
+    void FieldRef::deleteField() {
+        if (!valid()) {
+            LOG("FieldRef is not valid");
+            return;
+        }
+        parent.node->fields.erase(node->offset);
+        context->schema->fields.erase(node->id);
+    }
+
+    bool FieldRef::createStructure(size_t size) {
+        if (!valid()) {
+            LOG("FieldRef is not valid");
+            return false;
+        }
+        StructureNode* newNode = nullptr;
+        Id newId = context->schema->createStructure("", &newNode, size);
+        if (newId != NullId) {
+            node->type.ref = newId;
+            return true;
+        }
+        return false;
+    }
+
+    BlockPointer *FieldRef::getBlockPointer() {
+        if (!valid()) {
+            LOG("FieldRef is not valid");
+            return nullptr;
+        }
+        if (node->type.type != Type::BlockPointer) {
+            LOG("FieldRef is not a block pointer");
+            return nullptr;
+        }
+        return (BlockPointer*)address;
+    }
+
+    StructureRef FieldRef::getBlockElement(size_t index) {
+        if (!valid()) {
+            LOG("FieldRef is not valid");
+            return StructureRef{nullptr};
+        }
+        if (node->type.type != Type::BlockPointer) {
+            LOG("FieldRef is not a block");
+            return StructureRef{nullptr};
+        }
+
+        StructureNode* structNode = getReferencedType();
+        if (!structNode) {
+            LOG("Block pointer type not found");
+            return StructureRef{nullptr};
+        }
+
+        BlockPointer* blockPointer = (BlockPointer*)address;
+        void* blockBase = context->mapFile->fromRelative(blockPointer->data);
+
+        void* elementAddress = (char*)blockBase + index * structNode->size;
+
+        return StructureRef{context, structNode, elementAddress};
+    }
+
+    StructureRef FieldRef::getStructure() {
+        if (!valid()) {
+            LOG("FieldRef is not valid");
+            return StructureRef{nullptr};
+        }
+        if (node->type.type != Type::Structure) {
+            LOG("FieldRef is not a structure");
+            return StructureRef{nullptr};
+        }
+        StructureNode* structNode = getReferencedType();
+        if (!structNode) {
+            LOG("Referenced structure type not found");
+            return StructureRef{nullptr};
+        }
+        return StructureRef{context, structNode, address};
+    }
+
+    uint32_t FieldRef::getTagGroupId() {
+        if (!valid()) {
+            LOG("FieldRef is not valid");
+            return 0;
+        }
+        if (node->type.type != Type::TagReference) {
+            LOG("FieldRef is not a tag reference");
+            return 0;
+        }
+        TagReference* tagRef = reinterpret_cast<TagReference*>(address);
+        if (!tagRef) {
+            LOG("TagReference is null");
+            return GroupId_Invalid;
+        }
+        return tagRef->groupID;
+    }
+
+    const char* FieldRef::getTagPath() {
+        if (!valid()) {
+            LOG("FieldRef is not valid");
+            return nullptr;
+        }
+        if (node->type.type != Type::TagReference) {
+            LOG("FieldRef is not a tag reference");
+            return nullptr;
+        }
+        TagReference* tagRef = reinterpret_cast<TagReference*>(address);
+        if (!tagRef) {
+            LOG("TagReference is null");
+            return nullptr;
+        }
+        return (char*) context->mapFile->fromRelative(tagRef->path);
+    }
+
+    bool FieldRef::is(Type type) {
+        if (!valid()) {
+            LOG("FieldRef is not valid");
+            return false;
+        }
+        return node->type.type == type;
+    }
+
+}

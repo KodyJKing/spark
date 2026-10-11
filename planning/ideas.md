@@ -1,0 +1,3 @@
+- Realtime renderdoc: Hook DX11 and add filter to only allow first N draw calls in a frame. Use a slider to sweep from 0% to 100% calls.
+    - Intermittently save call stack from final accepted call and display in UI.
+    - Add a button to start debugging on the current last call.

@@ -72,6 +72,25 @@ static void saveDecisions() {
         f << (stop ? '+' : '-') << std::hex << (unsigned long)code << "\n";
 }
 
+bool startJitDebugger() {
+    // Ask user if they want to start the JIT debugger
+    int response = MessageBoxA(nullptr, "A crash has occurred. Do you want to start the JIT debugger?", "Crash Handler", MB_YESNO | MB_ICONQUESTION);
+    if (response != IDYES)
+        return false;
+    
+    char cmd[256];
+    snprintf(cmd, sizeof(cmd), "vsjitdebugger.exe -p %lu", GetCurrentProcessId());
+    // This is really stupid to do in a crash handler, but whatever.
+    system(cmd);
+
+    DWORD deadline = GetTickCount() + 30000; // 30 second timeout
+    while (!IsDebuggerPresent() && GetTickCount() < deadline)
+        Sleep(100);
+        
+    return IsDebuggerPresent();
+}
+
+
 static void printStackTrace(CONTEXT* ctx) {
     HANDLE process = GetCurrentProcess();
     HANDLE thread  = GetCurrentThread();
@@ -207,6 +226,13 @@ static LONG WINAPI handler(EXCEPTION_POINTERS* ep) {
 
     lock.unlock();
 
+    Console::showConsole(true);
+
+    if (startJitDebugger()) {
+        return EXCEPTION_CONTINUE_SEARCH;
+    }
+
+
     printf("\n[CrashHandler] CAUGHT 0x%08X\n", (unsigned)code);
     printf("[CrashHandler]   PID: %lu\n",       (unsigned long)pid);
     printf("[CrashHandler]   TID: %lu  <-- offending thread\n", (unsigned long)tid);
@@ -218,10 +244,7 @@ static LONG WINAPI handler(EXCEPTION_POINTERS* ep) {
 
     std::cout << "[CrashHandler] Suspending all other threads — attach a debugger now." << std::endl;
 
-    Console::showConsole(true);
-
     suspendOtherThreads(tid, pid);
-
     char exitMsg[320];
     snprintf(exitMsg, sizeof(exitMsg),
         "Exception 0x%08X caught.\n"
@@ -231,6 +254,7 @@ static LONG WINAPI handler(EXCEPTION_POINTERS* ep) {
         (unsigned)code, (unsigned long)tid, (unsigned long long)rip);
     MessageBoxA(nullptr, exitMsg, "CrashHandler — Process Suspended",
                 MB_OK | MB_ICONERROR | MB_SYSTEMMODAL | MB_SETFOREGROUND);
+
     TerminateProcess(GetCurrentProcess(), (UINT)code);
 }
 

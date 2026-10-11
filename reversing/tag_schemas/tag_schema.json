@@ -1,0 +1,1306 @@
+{
+  "schemas": {
+    "actr": {
+      "enumerations": {},
+      "groupId": "actr",
+      "mainStructure": {
+        "fields": [],
+        "name": "",
+        "size": 0
+      },
+      "name": "actr",
+      "structures": {}
+    },
+    "actv": {
+      "enumerations": {},
+      "groupId": "actv",
+      "mainStructure": {
+        "fields": [
+          {
+            "bitOffset": 0,
+            "name": "field_10",
+            "offset": 16,
+            "type": {
+              "name": "Struct_10",
+              "primitive": "TagReference"
+            }
+          },
+          {
+            "bitOffset": 0,
+            "name": "field_20",
+            "offset": 32,
+            "type": {
+              "name": "Struct_20",
+              "primitive": "TagReference"
+            }
+          },
+          {
+            "bitOffset": 0,
+            "name": "field_30",
+            "offset": 48,
+            "type": {
+              "name": "Struct_30",
+              "primitive": "TagReference"
+            }
+          },
+          {
+            "bitOffset": 0,
+            "name": "field_70",
+            "offset": 112,
+            "type": {
+              "name": "Struct_70",
+              "primitive": "TagReference"
+            }
+          }
+        ],
+        "name": "",
+        "size": 0
+      },
+      "name": "actv",
+      "structures": {}
+    },
+    "bitm": {
+      "enumerations": {},
+      "groupId": "bitm",
+      "mainStructure": {
+        "fields": [
+          {
+            "bitOffset": 0,
+            "name": "type",
+            "offset": 0,
+            "type": {
+              "name": "Struct_0",
+              "primitive": "Uint16"
+            }
+          },
+          {
+            "bitOffset": 0,
+            "name": "encoding_format",
+            "offset": 2,
+            "type": {
+              "name": "Struct_2",
+              "primitive": "Uint16"
+            }
+          },
+          {
+            "bitOffset": 0,
+            "name": "usage",
+            "offset": 4,
+            "type": {
+              "name": "Struct_4",
+              "primitive": "Uint16"
+            }
+          },
+          {
+            "bitOffset": 0,
+            "name": "groupSequence",
+            "offset": 84,
+            "type": {
+              "name": "GroupSequence",
+              "primitive": "StructureReference"
+            }
+          },
+          {
+            "bitOffset": 0,
+            "name": "bitmapData",
+            "offset": 96,
+            "type": {
+              "name": "BitmapData",
+              "primitive": "StructureReference"
+            }
+          }
+        ],
+        "name": "",
+        "size": 0
+      },
+      "name": "bitm",
+      "structures": {
+        "BitmapData": {
+          "fields": [
+            {
+              "bitOffset": 0,
+              "name": "bitmap_class",
+              "offset": 0,
+              "type": {
+                "name": "Struct_0",
+                "primitive": "Uint32"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "width",
+              "offset": 4,
+              "type": {
+                "name": "Struct_4",
+                "primitive": "Uint16"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "height",
+              "offset": 6,
+              "type": {
+                "name": "Struct_6",
+                "primitive": "Uint16"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "depth",
+              "offset": 8,
+              "type": {
+                "name": "Struct_8",
+                "primitive": "Uint16"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "type",
+              "offset": 10,
+              "type": {
+                "name": "Struct_A",
+                "primitive": "Uint16"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "format",
+              "offset": 12,
+              "type": {
+                "name": "Struct_C",
+                "primitive": "Uint16"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "flags",
+              "offset": 14,
+              "type": {
+                "name": "Struct_E",
+                "primitive": "Uint16"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "registration_x",
+              "offset": 16,
+              "type": {
+                "name": "Struct_10",
+                "primitive": "Int16"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "registration_y",
+              "offset": 18,
+              "type": {
+                "name": "Struct_12",
+                "primitive": "Int16"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "mipmap_count",
+              "offset": 20,
+              "type": {
+                "name": "Struct_14",
+                "primitive": "Uint16"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "data_offset",
+              "offset": 24,
+              "type": {
+                "name": "Struct_18",
+                "primitive": "Uint32"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "data_size",
+              "offset": 28,
+              "type": {
+                "name": "Struct_1C",
+                "primitive": "Uint32"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "this_bitmap",
+              "offset": 32,
+              "type": {
+                "name": "Struct_20",
+                "primitive": "TagReference"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "tex_cache_handle",
+              "offset": 36,
+              "type": {
+                "name": "Struct_24",
+                "primitive": "Uint32"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "buffer_source_index",
+              "offset": 40,
+              "type": {
+                "name": "Struct_28",
+                "primitive": "Uint32"
+              }
+            }
+          ],
+          "name": "BitmapData",
+          "size": 48
+        },
+        "GroupSequence": {
+          "fields": [
+            {
+              "bitOffset": 0,
+              "name": "sprites",
+              "offset": 52,
+              "type": {
+                "name": "Sprite",
+                "primitive": "StructureReference"
+              }
+            }
+          ],
+          "name": "GroupSequence",
+          "size": 64
+        },
+        "Sprite": {
+          "fields": [
+            {
+              "bitOffset": 0,
+              "name": "bitmap_index",
+              "offset": 0,
+              "type": {
+                "name": "Struct_0",
+                "primitive": "Uint16"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "left",
+              "offset": 8,
+              "type": {
+                "name": "Struct_8",
+                "primitive": "Float"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "right",
+              "offset": 12,
+              "type": {
+                "name": "Struct_C",
+                "primitive": "Float"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "top",
+              "offset": 16,
+              "type": {
+                "name": "Struct_10",
+                "primitive": "Float"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "bottom",
+              "offset": 20,
+              "type": {
+                "name": "Struct_14",
+                "primitive": "Float"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "registration_x",
+              "offset": 24,
+              "type": {
+                "name": "Struct_18",
+                "primitive": "Float"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "registration_y",
+              "offset": 28,
+              "type": {
+                "name": "Struct_1C",
+                "primitive": "Float"
+              }
+            }
+          ],
+          "name": "Sprite",
+          "size": 32
+        },
+        "Struct_84": {
+          "fields": [],
+          "name": "Struct_84",
+          "size": 256
+        },
+        "Struct_90": {
+          "fields": [],
+          "name": "Struct_90",
+          "size": 256
+        }
+      }
+    },
+    "effe": {
+      "enumerations": {},
+      "groupId": "effe",
+      "mainStructure": {
+        "fields": [
+          {
+            "bitOffset": 0,
+            "name": "locations",
+            "offset": 40,
+            "type": {
+              "name": "Location",
+              "primitive": "StructureReference"
+            }
+          },
+          {
+            "bitOffset": 0,
+            "name": "events",
+            "offset": 52,
+            "type": {
+              "name": "Event",
+              "primitive": "StructureReference"
+            }
+          }
+        ],
+        "name": "",
+        "size": 64
+      },
+      "name": "effe",
+      "structures": {
+        "Event": {
+          "fields": [
+            {
+              "bitOffset": 0,
+              "name": "skip_fraction",
+              "offset": 0,
+              "type": {
+                "name": "Struct_0",
+                "primitive": "Float"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "delay_min",
+              "offset": 4,
+              "type": {
+                "name": "Struct_4",
+                "primitive": "Float"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "delay_max",
+              "offset": 8,
+              "type": {
+                "name": "Struct_8",
+                "primitive": "Float"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "duration_min",
+              "offset": 16,
+              "type": {
+                "name": "Struct_10",
+                "primitive": "Float"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "duration_max",
+              "offset": 20,
+              "type": {
+                "name": "Struct_14",
+                "primitive": "Float"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "parts",
+              "offset": 44,
+              "type": {
+                "name": "Part",
+                "primitive": "StructureReference"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "particles",
+              "offset": 56,
+              "type": {
+                "name": "Particle",
+                "primitive": "StructureReference"
+              }
+            }
+          ],
+          "name": "Event",
+          "size": 68
+        },
+        "Location": {
+          "fields": [
+            {
+              "bitOffset": 0,
+              "name": "marker_name",
+              "offset": 0,
+              "type": {
+                "name": "Struct_0",
+                "primitive": "TagString"
+              }
+            }
+          ],
+          "name": "Location",
+          "size": 32
+        },
+        "Part": {
+          "fields": [
+            {
+              "bitOffset": 0,
+              "name": "create_in",
+              "offset": 0,
+              "type": {
+                "name": "Struct_0",
+                "primitive": "Uint16"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "violence_mode",
+              "offset": 2,
+              "type": {
+                "name": "Struct_2",
+                "primitive": "Uint16"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "type",
+              "offset": 36,
+              "type": {
+                "name": "Struct_24",
+                "primitive": "TagReference"
+              }
+            }
+          ],
+          "name": "Part",
+          "size": 104
+        },
+        "Particle": {
+          "fields": [
+            {
+              "bitOffset": 0,
+              "name": "field_60",
+              "offset": 96,
+              "type": {
+                "name": "Struct_60",
+                "primitive": "TagReference"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "count_min",
+              "offset": 108,
+              "type": {
+                "name": "Struct_6C",
+                "primitive": "Uint16"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "count_max",
+              "offset": 110,
+              "type": {
+                "name": "Struct_6E",
+                "primitive": "Uint16"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "radius_min",
+              "offset": 160,
+              "type": {
+                "name": "Struct_A0",
+                "primitive": "Float"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "radius_max",
+              "offset": 164,
+              "type": {
+                "name": "Struct_A4",
+                "primitive": "Float"
+              }
+            }
+          ],
+          "name": "Particle",
+          "size": 232
+        }
+      }
+    },
+    "eqip": {
+      "enumerations": {},
+      "groupId": "eqip",
+      "mainStructure": {
+        "fields": [
+          {
+            "bitOffset": 0,
+            "name": "model",
+            "offset": 52,
+            "type": {
+              "name": "Struct_34",
+              "primitive": "TagReference"
+            }
+          },
+          {
+            "bitOffset": 0,
+            "name": "collision_model",
+            "offset": 124,
+            "type": {
+              "name": "Struct_7C",
+              "primitive": "TagReference"
+            }
+          },
+          {
+            "bitOffset": 0,
+            "name": "modifier_shader",
+            "offset": 156,
+            "type": {
+              "name": "Struct_9C",
+              "primitive": "TagReference"
+            }
+          },
+          {
+            "bitOffset": 0,
+            "name": "creation_effect",
+            "offset": 172,
+            "type": {
+              "name": "Struct_AC",
+              "primitive": "TagReference"
+            }
+          }
+        ],
+        "name": "",
+        "size": 0
+      },
+      "name": "eqip",
+      "structures": {}
+    },
+    "jpt!": {
+      "enumerations": {},
+      "groupId": "jpt!",
+      "mainStructure": {
+        "fields": [
+          {
+            "bitOffset": 0,
+            "name": "radius_min",
+            "offset": 0,
+            "type": {
+              "name": "",
+              "primitive": "Float"
+            }
+          },
+          {
+            "bitOffset": 0,
+            "name": "radius_max",
+            "offset": 4,
+            "type": {
+              "name": "",
+              "primitive": "Float"
+            }
+          },
+          {
+            "bitOffset": 0,
+            "name": "field_120",
+            "offset": 288,
+            "type": {
+              "name": "",
+              "primitive": "TagReference"
+            }
+          }
+        ],
+        "name": "main",
+        "size": 672
+      },
+      "name": "damage_effect",
+      "structures": {}
+    },
+    "mod2": {
+      "enumerations": {},
+      "groupId": "mod2",
+      "mainStructure": {
+        "fields": [
+          {
+            "bitOffset": 0,
+            "name": "field_0",
+            "offset": 0,
+            "type": {
+              "name": "Struct_0",
+              "primitive": "Uint8"
+            }
+          },
+          {
+            "bitOffset": 0,
+            "name": "markers",
+            "offset": 172,
+            "type": {
+              "name": "Marker",
+              "primitive": "StructureReference"
+            }
+          },
+          {
+            "bitOffset": 0,
+            "name": "nodes",
+            "offset": 184,
+            "type": {
+              "name": "Node",
+              "primitive": "StructureReference"
+            }
+          },
+          {
+            "bitOffset": 0,
+            "name": "regions",
+            "offset": 196,
+            "type": {
+              "name": "Region",
+              "primitive": "StructureReference"
+            }
+          },
+          {
+            "bitOffset": 0,
+            "name": "geometries",
+            "offset": 208,
+            "type": {
+              "name": "Geometry",
+              "primitive": "StructureReference"
+            }
+          },
+          {
+            "bitOffset": 0,
+            "name": "shaders",
+            "offset": 220,
+            "type": {
+              "name": "Shader",
+              "primitive": "StructureReference"
+            }
+          }
+        ],
+        "name": "",
+        "size": 172
+      },
+      "name": "mod2",
+      "structures": {
+        "Geometry": {
+          "fields": [
+            {
+              "bitOffset": 0,
+              "name": "flags",
+              "offset": 0,
+              "type": {
+                "name": "Struct_0",
+                "primitive": "Uint32"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "parts",
+              "offset": 36,
+              "type": {
+                "name": "Part",
+                "primitive": "StructureReference"
+              }
+            }
+          ],
+          "name": "Geometry",
+          "size": 48
+        },
+        "Instance": {
+          "fields": [
+            {
+              "bitOffset": 0,
+              "name": "region_index",
+              "offset": 0,
+              "type": {
+                "name": "Struct_0",
+                "primitive": "Uint8"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "permutation_index",
+              "offset": 1,
+              "type": {
+                "name": "Struct_1",
+                "primitive": "Uint8"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "node_index",
+              "offset": 2,
+              "type": {
+                "name": "Struct_2",
+                "primitive": "Uint8"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "translation",
+              "offset": 4,
+              "type": {
+                "name": "Struct_4",
+                "primitive": "Vec3"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "rotation",
+              "offset": 16,
+              "type": {
+                "name": "Struct_10",
+                "primitive": "Vec4"
+              }
+            }
+          ],
+          "name": "Instance",
+          "size": 32
+        },
+        "Marker": {
+          "fields": [
+            {
+              "bitOffset": 0,
+              "name": "name",
+              "offset": 0,
+              "type": {
+                "name": "Struct_0",
+                "primitive": "TagString"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "instances",
+              "offset": 52,
+              "type": {
+                "name": "Instance",
+                "primitive": "StructureReference"
+              }
+            }
+          ],
+          "name": "Marker",
+          "size": 64
+        },
+        "Node": {
+          "fields": [
+            {
+              "bitOffset": 0,
+              "name": "name",
+              "offset": 0,
+              "type": {
+                "name": "Struct_0",
+                "primitive": "TagString"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "next_sibling_index",
+              "offset": 32,
+              "type": {
+                "name": "Struct_20",
+                "primitive": "Int16"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "first_child_index",
+              "offset": 34,
+              "type": {
+                "name": "Struct_22",
+                "primitive": "Int16"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "parent_index",
+              "offset": 36,
+              "type": {
+                "name": "Struct_24",
+                "primitive": "Int16"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "translation_default",
+              "offset": 40,
+              "type": {
+                "name": "Struct_28",
+                "primitive": "Vec3"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "rotation_default",
+              "offset": 52,
+              "type": {
+                "name": "Struct_34",
+                "primitive": "Vec4"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "parent_distance",
+              "offset": 68,
+              "type": {
+                "name": "Struct_44",
+                "primitive": "Float"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "scale",
+              "offset": 104,
+              "type": {
+                "name": "Struct_68",
+                "primitive": "Float"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "rotation",
+              "offset": 108,
+              "type": {
+                "name": "Struct_6C",
+                "primitive": "Matrix3x3"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "translation",
+              "offset": 144,
+              "type": {
+                "name": "Struct_90",
+                "primitive": "Vec3"
+              }
+            }
+          ],
+          "name": "Node",
+          "size": 156
+        },
+        "Part": {
+          "fields": [
+            {
+              "bitOffset": 0,
+              "name": "shader_index",
+              "offset": 4,
+              "type": {
+                "name": "Struct_4",
+                "primitive": "Uint16"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "centroid",
+              "offset": 20,
+              "type": {
+                "name": "Struct_14",
+                "primitive": "Vec3"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "topology",
+              "offset": 68,
+              "type": {
+                "name": "Struct_44",
+                "primitive": "Uint16"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "index_count",
+              "offset": 72,
+              "type": {
+                "name": "Struct_48",
+                "primitive": "Uint32"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "index_offset",
+              "offset": 76,
+              "type": {
+                "name": "Struct_4C",
+                "primitive": "Uint32"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "vertex_format",
+              "offset": 84,
+              "type": {
+                "name": "Struct_54",
+                "primitive": "Uint16"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "vertex_count",
+              "offset": 88,
+              "type": {
+                "name": "Struct_58",
+                "primitive": "Uint32"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "vertex_offset",
+              "offset": 92,
+              "type": {
+                "name": "Struct_5C",
+                "primitive": "Uint32"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "buffer_source_index",
+              "offset": 100,
+              "type": {
+                "name": "Struct_64",
+                "primitive": "Uint32"
+              }
+            }
+          ],
+          "name": "Part",
+          "size": 132
+        },
+        "Permutation": {
+          "fields": [
+            {
+              "bitOffset": 0,
+              "name": "name",
+              "offset": 0,
+              "type": {
+                "name": "Struct_0",
+                "primitive": "TagString"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "flags",
+              "offset": 32,
+              "type": {
+                "name": "Struct_20",
+                "primitive": "Uint32"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "permutation_number",
+              "offset": 36,
+              "type": {
+                "name": "Struct_24",
+                "primitive": "Uint16"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "super_low",
+              "offset": 64,
+              "type": {
+                "name": "Struct_40",
+                "primitive": "Uint16"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "low",
+              "offset": 66,
+              "type": {
+                "name": "Struct_42",
+                "primitive": "Uint16"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "medium",
+              "offset": 68,
+              "type": {
+                "name": "Struct_44",
+                "primitive": "Uint16"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "high",
+              "offset": 70,
+              "type": {
+                "name": "Struct_46",
+                "primitive": "Uint16"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "super_high",
+              "offset": 72,
+              "type": {
+                "name": "Struct_48",
+                "primitive": "Uint16"
+              }
+            }
+          ],
+          "name": "Permutation",
+          "size": 88
+        },
+        "Region": {
+          "fields": [
+            {
+              "bitOffset": 0,
+              "name": "name",
+              "offset": 0,
+              "type": {
+                "name": "Struct_0",
+                "primitive": "TagString"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "permutations",
+              "offset": 64,
+              "type": {
+                "name": "Permutation",
+                "primitive": "StructureReference"
+              }
+            }
+          ],
+          "name": "Region",
+          "size": 76
+        },
+        "Shader": {
+          "fields": [
+            {
+              "bitOffset": 0,
+              "name": "shader",
+              "offset": 12,
+              "type": {
+                "name": "Struct_C",
+                "primitive": "TagReference"
+              }
+            }
+          ],
+          "name": "Shader",
+          "size": 32
+        },
+        "Struct_34": {
+          "fields": [
+            {
+              "bitOffset": 0,
+              "name": "field_20",
+              "offset": 32,
+              "type": {
+                "name": "Struct_20",
+                "primitive": "TagString"
+              }
+            },
+            {
+              "bitOffset": 0,
+              "name": "field_BC",
+              "offset": 188,
+              "type": {
+                "name": "Struct_BC",
+                "primitive": "TagString"
+              }
+            }
+          ],
+          "name": "Struct_34",
+          "size": 256
+        },
+        "Struct_44": {
+          "fields": [],
+          "name": "Struct_44",
+          "size": 256
+        },
+        "Struct_48": {
+          "fields": [],
+          "name": "Struct_48",
+          "size": 256
+        },
+        "Struct_B8": {
+          "fields": [],
+          "name": "Struct_B8",
+          "size": 156
+        }
+      }
+    },
+    "part": {
+      "enumerations": {},
+      "groupId": "part",
+      "mainStructure": {
+        "fields": [],
+        "name": "",
+        "size": 0
+      },
+      "name": "part",
+      "structures": {}
+    },
+    "proj": {
+      "enumerations": {},
+      "groupId": "proj",
+      "mainStructure": {
+        "fields": [
+          {
+            "bitOffset": 0,
+            "name": "field_258",
+            "offset": 600,
+            "type": {
+              "name": "Struct_258",
+              "primitive": "TagReference"
+            }
+          }
+        ],
+        "name": "",
+        "size": 0
+      },
+      "name": "proj",
+      "structures": {}
+    },
+    "scnr": {
+      "enumerations": {},
+      "groupId": "scnr",
+      "mainStructure": {
+        "fields": [],
+        "name": "",
+        "size": 0
+      },
+      "name": "scnr",
+      "structures": {}
+    },
+    "sky ": {
+      "enumerations": {},
+      "groupId": "sky ",
+      "mainStructure": {
+        "fields": [],
+        "name": "",
+        "size": 0
+      },
+      "name": "sky ",
+      "structures": {}
+    },
+    "soso": {
+      "enumerations": {},
+      "groupId": "soso",
+      "mainStructure": {
+        "fields": [
+          {
+            "bitOffset": 0,
+            "name": "base_map",
+            "offset": 176,
+            "type": {
+              "name": "Struct_B0",
+              "primitive": "TagReference"
+            }
+          },
+          {
+            "bitOffset": 0,
+            "name": "multipurpose_map",
+            "offset": 200,
+            "type": {
+              "name": "Struct_C8",
+              "primitive": "TagReference"
+            }
+          },
+          {
+            "bitOffset": 0,
+            "name": "detail_map_base_scale",
+            "offset": 216,
+            "type": {
+              "name": "Struct_D8",
+              "primitive": "Float"
+            }
+          },
+          {
+            "bitOffset": 0,
+            "name": "detail_map",
+            "offset": 232,
+            "type": {
+              "name": "Struct_E8",
+              "primitive": "TagReference"
+            }
+          },
+          {
+            "bitOffset": 0,
+            "name": "reflection_cube_map",
+            "offset": 368,
+            "type": {
+              "name": "Struct_170",
+              "primitive": "TagReference"
+            }
+          }
+        ],
+        "name": "",
+        "size": 0
+      },
+      "name": "soso",
+      "structures": {}
+    },
+    "weap": {
+      "enumerations": {},
+      "groupId": "weap",
+      "mainStructure": {
+        "fields": [
+          {
+            "bitOffset": 0,
+            "name": "model",
+            "offset": 52,
+            "type": {
+              "name": "Struct_34",
+              "primitive": "TagReference"
+            }
+          },
+          {
+            "bitOffset": 0,
+            "name": "collision_model",
+            "offset": 124,
+            "type": {
+              "name": "Struct_7C",
+              "primitive": "TagReference"
+            }
+          },
+          {
+            "bitOffset": 0,
+            "name": "modifier_shader",
+            "offset": 156,
+            "type": {
+              "name": "Struct_9C",
+              "primitive": "TagReference"
+            }
+          },
+          {
+            "bitOffset": 0,
+            "name": "creation_effect",
+            "offset": 172,
+            "type": {
+              "name": "Struct_AC",
+              "primitive": "TagReference"
+            }
+          }
+        ],
+        "name": "",
+        "size": 0
+      },
+      "name": "weap",
+      "structures": {}
+    }
+  }
+}

@@ -3,7 +3,10 @@
 namespace ImGuiUtils {
 
     void renderCopyableText(const char* label, const char* text) {
-        ImGui::Text("%s %s", label, text);
+        if (strnlen(label, 1) == 0)
+            ImGui::Text("%s", text);
+        else
+            ImGui::Text("%s %s", label, text);
         if (ImGui::IsItemHovered()) {
             ImGui::SetTooltip("Right click to copy to clipboard");
         }

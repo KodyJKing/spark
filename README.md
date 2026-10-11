@@ -20,6 +20,15 @@ Install [Visual Studio 2022](https://visualstudio.microsoft.com/) and add MSBuil
 
 Download [Premake](https://premake.github.io/) and add it to your path.
 
+## Build Requirements
+
+Spark **and every mod built for it** must link the CRT dynamically — `staticruntime "off"` in premake (`/MD` / `/MDd`). This is a hard requirement, not a preference:
+
+- Spark hands out heap-owned objects (and shared-memory-referenced buffers) that must resolve to a single, process-wide CRT heap shared across `spark.dll` and every mod DLL.
+- That shared heap is what lets allocations survive an uninject/re-inject cycle. With a statically-linked CRT, each DLL gets its own heap that is destroyed on unload, dangling any pointer handed across DLLs or persisted across injections.
+
+All bundled premake projects already set this; keep it set in any new mod.
+
 ## Building and Running
 
 ```powershell

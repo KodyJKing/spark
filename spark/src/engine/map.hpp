@@ -29,5 +29,11 @@ namespace Engine {
     SPARK_API bool isMapLoaded();
     SPARK_API uint64_t translateMapAddress( uint32_t address );
     SPARK_API uint32_t translateToMapAddress(uint64_t absoluteAddress);
+    SPARK_API bool canTranslateToMapAddress(uint64_t absoluteAddress);
+    SPARK_API uint64_t tagHeaderBase();
+    SPARK_API uint64_t tagPointerOffset();
+    SPARK_API uint64_t tagDataBase();
 
+    SPARK_API void* allocateMapMemory(size_t size);
+    SPARK_API void freeMapMemory(void* address);
 }

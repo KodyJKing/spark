@@ -53,4 +53,20 @@ namespace Utils {
         return std::filesystem::path(path).parent_path() / "mods";
     }
 
+    std::filesystem::path getTagSchemaPath() {
+        char path[MAX_PATH];
+        GetModuleFileNameA(nullptr, path, MAX_PATH);
+        return std::filesystem::path(path).parent_path() / "tags.schema2.json";
+    }
+
+    std::filesystem::path getHalo1Directory() {
+        char path[MAX_PATH];
+        GetModuleFileNameA(nullptr, path, MAX_PATH);
+        auto win64Path = std::filesystem::path(path).parent_path();
+        auto binariesPath = win64Path.parent_path();
+        auto mccPath = binariesPath.parent_path();
+        auto halo1Path = mccPath.parent_path() / "halo1";
+        return halo1Path;
+    }
+
 }

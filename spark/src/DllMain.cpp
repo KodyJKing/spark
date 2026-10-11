@@ -18,7 +18,7 @@
 DWORD WINAPI MainThread(LPVOID _hModule) {
     HMODULE hModule = (HMODULE) _hModule;
     Console::alloc();
-    Console::toggleConsole();
+    // Console::toggleConsole();
     Spark::CrashHandler::install();
 
     std::cout << "Load method: " << (Utils::isInjected() ? "Injection" : "Imported") << std::endl;

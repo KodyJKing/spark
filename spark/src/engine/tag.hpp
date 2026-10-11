@@ -6,9 +6,12 @@
 #include <string>
 #include "map.hpp"
 #include "memory/Memory.hpp"
+#include "utils/Strings.hpp"
 #include "spark/SparkAPI.h"
+#include "engine/tags/tag_group_id.hpp"
 
 namespace Engine {
+
     // Thanks to Kavawuvi for documentation on the map format and tag structure.
     class SPARK_API Tag {
         public:
@@ -23,6 +26,7 @@ namespace Engine {
         char* getResourcePath();
         void* getData();
         std::string groupIDStr();
+        std::string classIdStr();
 
         template<typename T>
         T* getDataAs() {
@@ -35,6 +39,13 @@ namespace Engine {
         if (!tag) return nullptr;
         return (T*) tag->getData();
     }
+
+    struct CreateTagOptions {
+        uint32_t groupId;
+        uint32_t parentGroupId;
+        uint32_t grandparentGroupId;
+        const char* resourcePath;
+    };
 
     // Represents a block of structs in a tag's data.
     struct BlockPointer {
@@ -51,10 +62,15 @@ namespace Engine {
             return (T*)(baseAddress + index * sizeof(T));
         }
     };
-
-    SPARK_API Tag* getTag( uint32_t tagID );
+    
+    SPARK_API uint32_t getTagArraySize();
+    SPARK_API Tag *getTag(uint32_t tagID);
     SPARK_API Tag * findTag(const char * path, const char * fourCC);
     SPARK_API Tag * findTag(const char * path, uint32_t fourCC);
     SPARK_API bool validTagPath(const char * path);
     SPARK_API bool tagExists(Tag * tag);
+
+    SPARK_API Tag* allocateTag(CreateTagOptions options);
+    SPARK_API void* allocateTagData(size_t size);
+    SPARK_API Tag* cloneTagNaive(Tag* tag, size_t dataSize = 0);
 }

@@ -11,12 +11,10 @@
             "id": "20fdac7c0aa36829",
             "type": "leaf",
             "state": {
-              "type": "markdown",
-              "state": {
-                "file": "ReplaySystem.md",
-                "mode": "source",
-                "source": false
-              }
+              "type": "empty",
+              "state": {},
+              "icon": "lucide-file",
+              "title": "New tab"
             }
           }
         ]
@@ -38,8 +36,13 @@
             "state": {
               "type": "file-explorer",
               "state": {
-                "sortOrder": "alphabetical"
-              }
+                "sortOrder": "byCreatedTimeReverse",
+                "autoReveal": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
             }
           },
           {
@@ -54,7 +57,9 @@
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical"
-              }
+              },
+              "icon": "lucide-search",
+              "title": "Search"
             }
           },
           {
@@ -62,7 +67,12 @@
             "type": "leaf",
             "state": {
               "type": "bookmarks",
-              "state": {}
+              "state": {
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
             }
           }
         ]
@@ -85,7 +95,6 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "ReplaySystem.md",
                 "collapseAll": true,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -93,7 +102,9 @@
                 "searchQuery": "",
                 "backlinkCollapsed": false,
                 "unlinkedCollapsed": true
-              }
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks"
             }
           },
           {
@@ -102,10 +113,11 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "ReplaySystem.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
-              }
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links"
             }
           },
           {
@@ -115,8 +127,12 @@
               "type": "tag",
               "state": {
                 "sortOrder": "frequency",
-                "useHierarchy": true
-              }
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
             }
           },
           {
@@ -125,8 +141,12 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "ReplaySystem.md"
-              }
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline"
             }
           }
         ],
@@ -138,6 +158,7 @@
   },
   "left-ribbon": {
     "hiddenItems": {
+      "bases:Create new base": false,
       "switcher:Open quick switcher": false,
       "graph:Open graph view": false,
       "canvas:Create new canvas": false,
@@ -148,15 +169,34 @@
   },
   "active": "20fdac7c0aa36829",
   "lastOpenFiles": [
+    "Old/WorldBones.md",
+    "Old/WeaponPoseBug.md",
+    "Old/ScriptSystem.md",
+    "Old/Reversing.md",
+    "Old/ReimplementationPlan.md",
+    "Old/RefSnippets.md",
+    "Old/LineTestSystem.md",
+    "Old/HSBuiltinAnalysisPlaybook.md",
+    "Old/Entity Handle to Entity Pointer.md",
+    "Old/DlmallocAllocator.md",
+    "Old/DamageSystem.md",
+    "Old/CameraSystem.md",
+    "Old/BSPVertexArrayAccess.md",
+    "Old/Audio.md",
+    "Old",
+    "Oct 2026/Level Loading File Access.canvas",
+    "Oct 2026",
+    "WorldBones.md",
+    "WeaponPoseBug.md",
+    "ScriptSystem.md",
     "Reversing.md",
-    "Replay.md",
-    "ReplaySystem.md",
+    "ReimplementationPlan.md",
+    "RefSnippets.md",
+    "LineTestSystem.md",
+    "HSBuiltinAnalysisPlaybook.md",
     "Entity Handle to Entity Pointer.md",
-    "Reversing Halo1.md",
-    "Reversing_Halo1.md",
-    "MASM.md",
-    "Todo.md",
-    "Updating.md",
-    "Welcome.md"
+    "DamageSystem.md",
+    "CameraSystem.md",
+    "BSPVertexArrayAccess.md"
   ]
 }

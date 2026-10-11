@@ -5,8 +5,8 @@
 #include "engine/halo1.hpp"
 #include "halomcc/HaloMCC.hpp"
 #include "memory/Memory.hpp"
-#include "mods/devtools/cheatengine/Messages.hpp"
 #include "utils/ImGuiUtils.hpp"
+#include "frame_debugger/FrameDebugger.hpp"
 #include <string>
 
 namespace Mod::DevTools {
@@ -134,10 +134,6 @@ namespace Mod::DevTools {
         }
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("Copy pointer to clipboard (Shift+C)");
         if (copyHotkeyDown) ImGui::PopStyleColor();
-
-        ImGui::SameLine();
-        if (ImGui::Button("browse"))
-            CE::Messages::openHexView((uintptr_t)highlightEntity);
 
         ImGui::SameLine();
         ImGui::Checkbox("anchor", &espSettings.anchorHighlight);
@@ -295,6 +291,8 @@ namespace Mod::DevTools {
             flags |= ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize |
                      ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMouseInputs;
 
+        FrameDebugger::render();
+
         ImGui::Begin("ESP", 0, flags);
 
         if (ImGui::BeginTabBar("ESP Tabs")) {
@@ -318,6 +316,11 @@ namespace Mod::DevTools {
                 ImGui::EndTabItem();
             }
 #endif
+            if (ImGui::BeginTabItem("More")) {
+                if (ImGui::Button("Frame Dissector"))
+                    Mod::DevTools::FrameDebugger::showWindow();
+                ImGui::EndTabItem();
+            }
             ImGui::EndTabBar();
         }
         ImGui::End();

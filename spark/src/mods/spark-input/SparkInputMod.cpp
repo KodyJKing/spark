@@ -74,4 +74,5 @@ void SparkInputMod::init() {
         }
         next();
     }, nullptr);
+
 }
