@@ -8,10 +8,9 @@
 namespace Memory {
 
     SPARK_API bool isAllocated(uintptr_t address);
-    SPARK_API bool isAllocated( void* ptr );
-
+    SPARK_API bool isAllocated(void *ptr);
     SPARK_API bool isAllocatedFast(uintptr_t address);
-    SPARK_API bool isAllocatedFast( void* ptr );
+    SPARK_API bool isAllocatedFast(void *ptr);
 
     template<typename T>
     std::optional<T> safeRead(uintptr_t address) {

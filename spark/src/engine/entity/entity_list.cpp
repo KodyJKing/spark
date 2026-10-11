@@ -28,6 +28,7 @@ namespace Engine {
     }
 
     Entity* getEntityPointer( uint32_t entityHandle ) {
+        if (entityHandleStale(entityHandle)) return nullptr;
         return getEntityPointer( getEntityRecord( entityHandle ) );
     }
 

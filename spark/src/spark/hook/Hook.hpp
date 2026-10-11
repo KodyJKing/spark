@@ -5,6 +5,7 @@
 #include "utils/UnloadLock.hpp"
 #include "spark/EventBus.hpp"
 #include "spark/SparkAPI.h"
+#include "spark/CrashHandler.hpp"
 
 namespace Spark {
 
@@ -59,7 +60,18 @@ struct SPARK_API Hook {
 
     static Ret dispatch(Args... args) {
         UnloadLock ulock;
-        return bus.dispatch(terminalShim, &original, args...);
+        // return bus.dispatch(terminalShim, &original, args...);
+
+        const char* hookName = typeid(Hook<Offset, Ret, Args...>).name();
+        Spark::CrashHandler::incrementStatusInt(hookName, 1);
+        if constexpr (std::is_void_v<Ret>) {
+            bus.dispatch(terminalShim, &original, args...);
+            Spark::CrashHandler::incrementStatusInt(hookName, -1);
+        } else {
+            Ret result = bus.dispatch(terminalShim, &original, args...);
+            Spark::CrashHandler::incrementStatusInt(hookName, -1);
+            return result;
+        }
     }
 
 private:
