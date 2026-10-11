@@ -11,17 +11,10 @@
             "id": "20fdac7c0aa36829",
             "type": "leaf",
             "state": {
-              "type": "canvas",
-              "state": {
-                "file": "Oct 2026/Level Loading File Access.canvas",
-                "viewState": {
-                  "x": 1635.1336072367158,
-                  "y": 168.61758704189418,
-                  "zoom": -0.9999999999999996
-                }
-              },
-              "icon": "lucide-layout-dashboard",
-              "title": "Level Loading File Access"
+              "type": "empty",
+              "state": {},
+              "icon": "lucide-file",
+              "title": "New tab"
             }
           }
         ]
@@ -102,7 +95,6 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Oct 2026/Level Loading File Access.canvas",
                 "collapseAll": true,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -121,7 +113,6 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "Oct 2026/Level Loading File Access.canvas",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
@@ -150,7 +141,6 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "Oct 2026/Level Loading File Access.canvas",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
@@ -179,19 +169,34 @@
   },
   "active": "20fdac7c0aa36829",
   "lastOpenFiles": [
+    "Old/WorldBones.md",
+    "Old/WeaponPoseBug.md",
+    "Old/ScriptSystem.md",
+    "Old/Reversing.md",
+    "Old/ReimplementationPlan.md",
+    "Old/RefSnippets.md",
+    "Old/LineTestSystem.md",
+    "Old/HSBuiltinAnalysisPlaybook.md",
+    "Old/Entity Handle to Entity Pointer.md",
+    "Old/DlmallocAllocator.md",
+    "Old/DamageSystem.md",
+    "Old/CameraSystem.md",
+    "Old/BSPVertexArrayAccess.md",
     "Old/Audio.md",
+    "Old",
     "Oct 2026/Level Loading File Access.canvas",
     "Oct 2026",
-    "Old",
-    "Old/Reversing.md",
-    "Replay.md",
-    "ReplaySystem.md",
-    "Old/Entity Handle to Entity Pointer.md",
-    "Reversing Halo1.md",
-    "Reversing_Halo1.md",
-    "MASM.md",
-    "Todo.md",
-    "Updating.md",
-    "Welcome.md"
+    "WorldBones.md",
+    "WeaponPoseBug.md",
+    "ScriptSystem.md",
+    "Reversing.md",
+    "ReimplementationPlan.md",
+    "RefSnippets.md",
+    "LineTestSystem.md",
+    "HSBuiltinAnalysisPlaybook.md",
+    "Entity Handle to Entity Pointer.md",
+    "DamageSystem.md",
+    "CameraSystem.md",
+    "BSPVertexArrayAccess.md"
   ]
 }
