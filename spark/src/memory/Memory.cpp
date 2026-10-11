@@ -8,9 +8,16 @@ namespace Memory {
         if ( !VirtualQuery( (LPCVOID) address, &mbi, sizeof( mbi ) ) )
             return false;
         return mbi.State == MEM_COMMIT;
+    }
+    
+    bool isAllocatedFast( uintptr_t address ) {
+        uintptr_t dummy;
+        static HANDLE proc = GetCurrentProcess();
+        return ReadProcessMemory(proc, (LPCVOID)address, &dummy, sizeof(dummy), NULL);
+    }
 
-        // uintptr_t dummy;
-        // return ReadProcessMemory(GetCurrentProcess(), (LPCVOID)address, &dummy, sizeof(dummy), NULL);
+    bool isAllocatedFast( void* ptr ) {
+        return isAllocatedFast( (uintptr_t) ptr );
     }
 
     bool isAllocated( void* ptr ) {
