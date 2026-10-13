@@ -17,7 +17,7 @@
 #pragma comment(lib, "dbghelp.lib")
 #pragma comment(lib, "psapi.lib")
 
-#define ENABLE_CRASH_HANDLER_STATUS 1
+// #define ENABLE_CRASH_HANDLER_STATUS 1
 
 #if ENABLE_CRASH_HANDLER_STATUS
     #include <unordered_map>

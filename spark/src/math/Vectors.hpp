@@ -3,6 +3,10 @@
 #include <string>
 #include "spark/SparkAPI.h"
 
+struct SPARK_API Vec2 {
+    float x, y;
+};
+
 struct Vec3i;
 
 struct SPARK_API Vec3 {

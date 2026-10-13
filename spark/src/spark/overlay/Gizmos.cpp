@@ -57,6 +57,40 @@ namespace Spark::Overlay::Gizmos {
         s_gizmos.push_back(Gizmo{ GizmoType::Text, center, Vec3{}, std::string{text ? text : ""}, color, durationFrames, durationFrames });
     }
 
+    void drawBox(Vec3& min, Vec3& max, ImU32 color, uint32_t durationFrames) {
+        if (!Spark::showDebugOverlay) return;
+
+        // Upper vertices
+        Vec3 v0{min.x, max.y, min.z};
+        Vec3 v1{max.x, max.y, min.z};
+        Vec3 v2{max.x, max.y, max.z};
+        Vec3 v3{min.x, max.y, max.z};
+
+        // Lower vertices
+        Vec3 v4{min.x, min.y, min.z};
+        Vec3 v5{max.x, min.y, min.z};
+        Vec3 v6{max.x, min.y, max.z};
+        Vec3 v7{min.x, min.y, max.z};
+
+        // Upper ring
+        drawLine(v0, v1, color, durationFrames);
+        drawLine(v1, v2, color, durationFrames);
+        drawLine(v2, v3, color, durationFrames);
+        drawLine(v3, v0, color, durationFrames);
+
+        // Lower ring
+        drawLine(v4, v5, color, durationFrames);
+        drawLine(v5, v6, color, durationFrames);
+        drawLine(v6, v7, color, durationFrames);
+        drawLine(v7, v4, color, durationFrames);
+
+        // Vertical edges
+        drawLine(v4, v0, color, durationFrames);
+        drawLine(v5, v1, color, durationFrames);
+        drawLine(v6, v2, color, durationFrames);
+        drawLine(v7, v3, color, durationFrames);
+    }
+
     void render() {
         std::lock_guard<std::mutex> lock(s_mutex);
 

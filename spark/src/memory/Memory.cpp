@@ -4,10 +4,12 @@
 namespace Memory {
 
     bool isAllocated( uintptr_t address ) {
-        MEMORY_BASIC_INFORMATION mbi;
-        if ( !VirtualQuery( (LPCVOID) address, &mbi, sizeof( mbi ) ) )
-            return false;
-        return mbi.State == MEM_COMMIT;
+        // Keep an eye on this.
+        return isAllocatedFast(address);
+        // MEMORY_BASIC_INFORMATION mbi;
+        // if ( !VirtualQuery( (LPCVOID) address, &mbi, sizeof( mbi ) ) )
+        //     return false;
+        // return mbi.State == MEM_COMMIT;
     }
     
     bool isAllocated( void* ptr ) {

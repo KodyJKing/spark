@@ -6,7 +6,7 @@
 #include "utils/Strings.hpp"
 #include "memory/Memory.hpp"
 
-#define DEBUG_REFERENCE
+// #define DEBUG_REFERENCE
 
 #ifdef DEBUG_REFERENCE
 #include <iostream>

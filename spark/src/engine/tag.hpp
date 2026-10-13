@@ -40,28 +40,24 @@ namespace Engine {
         return (T*) tag->getData();
     }
 
-    struct CreateTagOptions {
-        uint32_t groupId;
-        uint32_t parentGroupId;
-        uint32_t grandparentGroupId;
-        const char* resourcePath;
-    };
-
     // Represents a block of structs in a tag's data.
-    struct BlockPointer {
+    template <typename T = void>
+    struct BlockPointerTyped {
         uint32_t count;
         uint32_t offset;   // Use translateMapAddress to get the actual pointer
         uint32_t bullshit; // Not sure what this does.
 
-        template <typename T>
-        T* get(size_t index, bool safe = true) {
+        template<typename U = T>
+        U* get(size_t index, bool safe = true) {
             if (index >= count) return nullptr;
             uint64_t baseAddress = Engine::translateMapAddress(offset);
             if (!baseAddress) return nullptr;
-            if (safe && !Memory::isAllocated(baseAddress + index * sizeof(T))) return nullptr;
-            return (T*)(baseAddress + index * sizeof(T));
+            if (safe && !Memory::isAllocatedFast(baseAddress + index * sizeof(U))) return nullptr;
+            return (U*)(baseAddress + index * sizeof(U));
         }
     };
+
+    using BlockPointer = BlockPointerTyped<void>;
     
     SPARK_API uint32_t getTagArraySize();
     SPARK_API Tag *getTag(uint32_t tagID);
@@ -69,8 +65,4 @@ namespace Engine {
     SPARK_API Tag * findTag(const char * path, uint32_t fourCC);
     SPARK_API bool validTagPath(const char * path);
     SPARK_API bool tagExists(Tag * tag);
-
-    SPARK_API Tag* allocateTag(CreateTagOptions options);
-    SPARK_API void* allocateTagData(size_t size);
-    SPARK_API Tag* cloneTagNaive(Tag* tag, size_t dataSize = 0);
 }

@@ -1,18 +1,7 @@
-- Fix the LNK4217 warnings.
-
-- Convert all path and filenames to snake_case.
-
-x Investigate offset discrepency on VertexDataPointer. Is it an actual struct size difference or just two different fields?
-
-x Implement new map file API.
-
-x Implement RuntimeMapFile
-
-x Update tag browser to use new map file API.
-
-x Implement RawMapFile
-
-x Implement Schema driven tag data traversal.
+- Chores
+    - Fix the LNK4217 warnings.
+    - Bisect and find cause of recent build slowdown.
+    - Convert all path and filenames to snake_case.
 
 -> Update tag dissector to use new map file API.
     x Also clean up that fugly garbage.

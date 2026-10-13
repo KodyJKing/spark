@@ -16,6 +16,7 @@ namespace Spark::Overlay::Gizmos {
     SPARK_API void drawLine(Vec3& start, Vec3& end, ImU32 color, uint32_t durationFrames);
     SPARK_API void drawPoint(Vec3& position, ImU32 color, uint32_t durationFrames);
     SPARK_API void drawText(Vec3& center, const char* text, ImU32 color, uint32_t durationFrames);
+    SPARK_API void drawBox(Vec3 &min, Vec3 &max, ImU32 color, uint32_t durationFrames);
 
     // Flush all queued gizmos through ESP, then age them and drop expired ones.
     // Must be called on the render thread between ESP::beginESPWindow()/endESPWindow(),
