@@ -77,6 +77,7 @@ namespace Spark::Overlay::ESP::DX11 {
     static float  s_depthBias   = 0.0f;
 
     void init() {
+        #ifdef _DEBUG
         LOG("Initializing DX11 ESP");
         ID3D11DeviceContext* context = Engine::getD3D11Context();
         LOG("Got D3D11 context " << (void*) context);
@@ -169,9 +170,11 @@ namespace Spark::Overlay::ESP::DX11 {
         device->CreateBuffer(&cbDesc, nullptr, &s_constantBuffer);
 
         device->Release();
+        #endif
     }
 
     void free() {
+        #ifdef _DEBUG
         auto safeRelease = [](auto*& p) { if (p) { p->Release(); p = nullptr; } };
         safeRelease(s_depthState);
         safeRelease(s_rasterizerState);
@@ -181,6 +184,7 @@ namespace Spark::Overlay::ESP::DX11 {
         safeRelease(s_inputLayout);
         safeRelease(s_pixelShader);
         safeRelease(s_vertexShader);
+        #endif
     }
 
     static constexpr float CLIP_NEAR = 0.00782943f;
@@ -205,6 +209,7 @@ namespace Spark::Overlay::ESP::DX11 {
     }
 
     void begin() {
+        #ifdef _DEBUG
         if (!s_vertexBuffer) return;
 
         s_vertexCount = 0;
@@ -261,9 +266,11 @@ namespace Spark::Overlay::ESP::DX11 {
         context->OMSetBlendState(s_blendState, nullptr, 0xFFFFFFFF);
         context->RSSetState(s_rasterizerState);
         context->OMSetDepthStencilState(s_depthState, 0);
+        #endif
     }
 
     void end() {
+        #ifdef _DEBUG
         if (!cameraIsValid()) return;
 
         ID3D11DeviceContext* context = Engine::getD3D11Context();
@@ -299,6 +306,7 @@ namespace Spark::Overlay::ESP::DX11 {
         safeRelease(s_saved.rs);
         safeRelease(s_saved.ds);
         safeRelease(s_saved.cb0);
+        #endif
     }
 
     void setDepthBias(float bias) {
@@ -306,6 +314,7 @@ namespace Spark::Overlay::ESP::DX11 {
     }
 
     void drawLine(Vec3 a, Vec3 b, ImU32 color) {
+        #ifdef _DEBUG
         if (s_vertexCount + 2 > MAX_VERTS) return;
 
         auto& cam = ESP::camera;
@@ -335,6 +344,7 @@ namespace Spark::Overlay::ESP::DX11 {
 
         s_drawList[s_vertexCount++] = { a.x, a.y, a.z, r, g, bv, av };
         s_drawList[s_vertexCount++] = { b.x, b.y, b.z, r, g, bv, av };
+        #endif
     }
 
 }

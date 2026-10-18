@@ -11,10 +11,17 @@
             "id": "20fdac7c0aa36829",
             "type": "leaf",
             "state": {
-              "type": "empty",
-              "state": {},
-              "icon": "lucide-file",
-              "title": "New tab"
+              "type": "canvas",
+              "state": {
+                "file": "Oct 2026/Level Loading File Access.canvas",
+                "viewState": {
+                  "x": 1158.5,
+                  "y": 20.5,
+                  "zoom": -1.098461423021637
+                }
+              },
+              "icon": "lucide-layout-dashboard",
+              "title": "Level Loading File Access"
             }
           }
         ]
@@ -141,6 +148,7 @@
             "state": {
               "type": "outline",
               "state": {
+                "file": "Oct 2026/Level Loading File Access.canvas",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
