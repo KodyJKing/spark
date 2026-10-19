@@ -1146,6 +1146,28 @@ dealloc(newmem)
       <ZeroTerminate>1</ZeroTerminate>
       <Address>RCX</Address>
     </CheatEntry>
+    <CheatEntry>
+      <ID>152</ID>
+      <Description>"No description"</Description>
+      <ShowAsSigned>0</ShowAsSigned>
+      <VariableType>String</VariableType>
+      <Length>1024</Length>
+      <Unicode>0</Unicode>
+      <CodePage>0</CodePage>
+      <ZeroTerminate>1</ZeroTerminate>
+      <Address>1DB94FD0000 </Address>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>153</ID>
+      <Description>"No description"</Description>
+      <ShowAsSigned>0</ShowAsSigned>
+      <VariableType>String</VariableType>
+      <Length>10</Length>
+      <Unicode>0</Unicode>
+      <CodePage>0</CodePage>
+      <ZeroTerminate>1</ZeroTerminate>
+      <Address>7FF4F243C86F</Address>
+    </CheatEntry>
   </CheatEntries>
   <CheatCodes>
     <CodeEntry>
@@ -5818,6 +5840,52 @@ dealloc(newmem)
         <Byte>DC</Byte>
         <Byte>3B</Byte>
         <Byte>DF</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>__createFile</Description>
+      <AddressString>halo1.dll+CCFB0</AddressString>
+      <Before>
+        <Byte>CC</Byte>
+        <Byte>CC</Byte>
+        <Byte>CC</Byte>
+        <Byte>CC</Byte>
+        <Byte>CC</Byte>
+      </Before>
+      <Actual>
+        <Byte>48</Byte>
+        <Byte>83</Byte>
+        <Byte>EC</Byte>
+        <Byte>48</Byte>
+      </Actual>
+      <After>
+        <Byte>8B</Byte>
+        <Byte>C2</Byte>
+        <Byte>45</Byte>
+        <Byte>33</Byte>
+        <Byte>D2</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Code :call qword ptr [rax]</Description>
+      <AddressString>halo1.dll+1219D66</AddressString>
+      <Before>
+        <Byte>8B</Byte>
+        <Byte>D5</Byte>
+        <Byte>48</Byte>
+        <Byte>8B</Byte>
+        <Byte>CB</Byte>
+      </Before>
+      <Actual>
+        <Byte>FF</Byte>
+        <Byte>10</Byte>
+      </Actual>
+      <After>
+        <Byte>84</Byte>
+        <Byte>C0</Byte>
+        <Byte>75</Byte>
+        <Byte>07</Byte>
+        <Byte>33</Byte>
       </After>
     </CodeEntry>
   </CheatCodes>

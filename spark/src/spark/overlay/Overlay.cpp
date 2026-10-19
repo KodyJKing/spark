@@ -148,6 +148,20 @@ namespace Spark::Overlay {
         if (ImGui::IsKeyPressed(ImGuiKey_F1, false))
             Spark::showDebugOverlay = !Spark::showDebugOverlay;
 
+        #ifdef _DEBUG
+        if (Engine::isGameLoaded()) {
+            static bool gameSpeedToggled = false;
+            if (ImGui::IsKeyPressed(ImGuiKey_KeypadMultiply)) {
+                gameSpeedToggled = !gameSpeedToggled;
+                if (gameSpeedToggled) {
+                    Engine::Scripting::submit("game_speed_value 10");
+                } else {
+                    Engine::Scripting::submit("game_speed_value 1");
+                }
+            }
+        }
+        #endif
+
         if (Spark::showDebugOverlay) {
             // Sync ESP camera to the player camera, then fire the world-space debug render bus.
             // Spark owns this sync; handlers must not touch Overlay::ESP::camera setup.
