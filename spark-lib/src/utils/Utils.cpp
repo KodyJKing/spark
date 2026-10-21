@@ -54,6 +54,16 @@ namespace Utils {
     }
 
     std::filesystem::path getTagSchemaPath() {
+        // Prefer the repo's copy so there is a single source of truth for the schema.
+        char sparkHome[MAX_PATH];
+        DWORD n = GetEnvironmentVariableA("SPARK_HOME", sparkHome, MAX_PATH);
+        if (n > 0 && n < MAX_PATH) {
+            auto repoSchema = std::filesystem::path(sparkHome) / "spark" / "shipfiles" / "tags.schema2.json";
+            std::error_code ec;
+            if (std::filesystem::exists(repoSchema, ec))
+                return repoSchema;
+        }
+
         char path[MAX_PATH];
         GetModuleFileNameA(nullptr, path, MAX_PATH);
         return std::filesystem::path(path).parent_path() / "tags.schema2.json";

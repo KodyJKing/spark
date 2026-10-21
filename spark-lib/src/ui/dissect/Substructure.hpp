@@ -7,6 +7,7 @@
 #include "Constants.hpp"
 #include "Hints.hpp"
 #include "Functions.hpp"
+#include "engine/map/schema/functions.hpp"
 
 namespace SparkLib::UI::DissectTag {
 
@@ -40,7 +41,18 @@ namespace SparkLib::UI::DissectTag {
                 ImGui::SetNextItemWidth(ImGui::GetFontSize() * 16);
                 int size = structure.node->size;
                 ImGui::InputInt("Size", &size, 4, 16, ImGuiInputTextFlags_CharsHexadecimal);
-                structure.node->size = size > 4 ? size : 4;
+                structure.node->size = size > 0 ? size : 0;
+
+                size_t blockSize = Engine::Map::guessBlockPointerSizeSimple(field);
+                if (blockSize > 0) {
+                    ImGui::SameLine();
+                    ImGui::Text("(Guess: %X)", blockSize);
+                    ImGui::SameLine();
+                    if (ImGui::SmallButton("Use")) {
+                        structure.node->size = blockSize;
+                    }
+                }
+
                 ImGui::SameLine();
             }
     
