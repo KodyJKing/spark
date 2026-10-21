@@ -327,6 +327,24 @@ namespace Engine::Map {
         return StructureRef{context, structNode, elementAddress};
     }
 
+    size_t FieldRef::getBlockElementCount() {
+        if (!valid()) {
+            LOG("FieldRef is not valid");
+            return 0;
+        }
+        if (node->type.type != Type::BlockPointer) {
+            LOG("FieldRef is not a block pointer");
+            return 0;
+        }
+        BlockPointer* blockPointer = (BlockPointer*)address;
+        StructureNode* structNode = getReferencedType();
+        if (!structNode) {
+            LOG("Block pointer type not found");
+            return 0;
+        }
+        return blockPointer->count / structNode->size;
+    }
+
     StructureRef FieldRef::getStructure() {
         if (!valid()) {
             LOG("FieldRef is not valid");

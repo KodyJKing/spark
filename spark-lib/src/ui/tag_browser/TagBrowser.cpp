@@ -13,6 +13,10 @@ namespace SparkLib::UI {
         state.show = true;
     }
 
+    bool isTagBrowserWindowOpen() {
+        return state.show;
+    }
+
     void releaseMap(Engine::Map::MapFile* map) {
         // Waits for any in-flight search, then drops everything that points into the map.
         state.resetForNewMap();

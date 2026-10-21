@@ -23,6 +23,13 @@ namespace SparkLib::UI::DissectTag {
         state.openWindow(map, tagId);
     }
     
+    std::vector<uint32_t> openTagIds() {
+        std::vector<uint32_t> ids;
+        for (auto& [tagId, window] : state.windows)
+            if (window.isOpen) ids.push_back(tagId);
+        return ids;
+    }
+
     void closeWindowsForMap(MapFile* map) {
         for (auto& [tagId, window] : state.windows) {
             if (window.map == map) window.isOpen = false;
