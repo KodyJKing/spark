@@ -9,7 +9,6 @@ project "spark"
     objdir ("../obj/" .. outputdir .. "/%{prj.name}")
 
     files {
-        "pch.cpp",
         "src/**.hpp",
         "src/**.cpp",
         "../vendor/imgui/*.h", 
@@ -33,10 +32,6 @@ project "spark"
         "VERSION_US",
         "NO_SEGMENTED_MEMORY",
     }
-
-    pchheader "pch.h"
-    pchsource "pch.cpp"
-    forceincludes "pch.h"
 
     links { 
         "MinHook",

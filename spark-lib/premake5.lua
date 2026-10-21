@@ -14,7 +14,9 @@ function sparkLib()
 
     includedirs { libRoot .. "/src" }
 
-    -- Engine and memory headers expect the contents of the precompiled header.
+    -- Shared precompiled header; engine and memory headers expect its contents.
+    pchheader "pch.h"
+    pchsource(libRoot .. "/src/pch.cpp")
     forceincludes { "pch.h" }
 
     defines {
