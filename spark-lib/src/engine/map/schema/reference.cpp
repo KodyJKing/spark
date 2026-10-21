@@ -342,7 +342,7 @@ namespace Engine::Map {
             LOG("Block pointer type not found");
             return 0;
         }
-        return blockPointer->count / structNode->size;
+        return blockPointer->count;
     }
 
     StructureRef FieldRef::getStructure() {

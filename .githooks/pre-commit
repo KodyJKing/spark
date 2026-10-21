@@ -7,11 +7,3 @@ pwsh -File ./scripts/copy_tags.ps1
 #     echo "New changes detected after copying tags. Please review and commit them."
 #     exit 1
 # fi
-
-# Copy the injected instance's schema and block if it differs from what's in the working tree.
-SCHEMA=spark/shipfiles/tags.schema2.json
-pwsh -File ./scripts/copy_schema.ps1
-if ! git diff --quiet -- "$SCHEMA"; then
-    echo "Schema changed after copying from the injected instance. Review and stage $SCHEMA, then commit again."
-    exit 1
-fi

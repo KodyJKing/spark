@@ -2,9 +2,10 @@
 
 #include "schema.hpp"
 #include "reference.hpp"
-#include <array>
 #include <string>
 #include <random>
+
+#include <iostream>
 
 namespace Engine::Map {
     
@@ -28,7 +29,7 @@ namespace Engine::Map {
         if (!structure.valid()) return 0;
         auto fieldRefs = structure.getFieldRefs();
         for (auto& fieldRef : fieldRefs) {
-            if (fieldRef.is(Type::BlockPointer) && fieldRef.getBlockElementCount() > 0) {
+            if (fieldRef.is(Type::BlockPointer) && (fieldRef.getBlockElementCount() > 0)) {
                 StructureRef blockElement = fieldRef.getBlockElement(0);
                 if (blockElement.valid()) {
                     return (char*)blockElement.address - (char*)structure.address;
