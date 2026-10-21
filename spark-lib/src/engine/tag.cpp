@@ -1,0 +1,93 @@
+#include "tag.hpp"
+#include "common.hpp"
+#include "utils/Strings.hpp"
+#include "memory/Memory.hpp"
+#include "map.hpp"
+#include "engine/map/tag_path.hpp"
+#include <unordered_map>
+
+#define DEBUG_TAG 1
+
+#ifdef DEBUG_TAG
+#include <iostream>
+#define LOG(x) std::cout << "[Engine::Tags] " << x << std::endl;
+#else
+#define LOG(x)
+#endif
+namespace Engine {
+
+    #define TAG_ARRAY_OFFSET 0x1C34FB0U
+    #define TAG_ARRAY_SIZE_OFFSET 0x1C
+
+    // Correct but unused.
+    // struct TagArrayHeader {
+    //     char pad1[0xC];
+    //     uint32_t tagArraySize;
+    //     char pad2[0x18];
+    // };
+    
+    char* Tag::getResourcePath() { return (char*) translateMapAddress( resourcePathAddress ); }
+    void* Tag::getData() { return (void*) translateMapAddress( dataAddress ); }
+    std::string Tag::groupIDStr() {
+        auto fourccA = Strings::fourccToString( groupID );
+        auto fourccB = Strings::fourccToString( parentGroupID );
+        auto fourccC = Strings::fourccToString( grandparentGroupID );
+        return "[" + fourccC + " > " + fourccB + " > " + fourccA + "]";
+    }
+    std::string Tag::classIdStr() {
+        auto fourccA = Strings::fourccToString( groupID );
+        return fourccA;
+    }
+
+    Tag* getTagArray() {
+        return *(Tag**) ( dllBase() + TAG_ARRAY_OFFSET );
+    }
+
+    void setTagArray(Tag* newArray) {
+        *(Tag**) ( dllBase() + TAG_ARRAY_OFFSET ) = newArray;
+    }
+
+    uint32_t* getTagArraySizePtr() {
+        void* tagArray = *(void**) ( dllBase() + TAG_ARRAY_OFFSET );
+        return (uint32_t*) ( (uintptr_t)tagArray - TAG_ARRAY_SIZE_OFFSET );
+    }
+
+    uint32_t getTagArraySize() {
+        return *getTagArraySizePtr();
+    }
+
+    Tag* getTag( uint32_t tagID ) {
+        if (tagID == NULL_HANDLE)
+            return nullptr;
+        Tag* tagArray = *(Tag**) ( dllBase() + TAG_ARRAY_OFFSET );
+        return &tagArray[tagID & 0xFFFF];
+    }
+
+    Tag* findTag( const char* path, uint32_t fourCC) {
+        if ( !validTagPath( path ) ) return nullptr;
+        Tag* tagArray = *(Tag**) ( dllBase() + TAG_ARRAY_OFFSET );
+        for ( uint32_t i = 0; i < 0x10000; i++ ) {
+            auto tag = &tagArray[i];
+            // if ( !tagExists( tag ) ) break;
+            if ( strcmp( tag->getResourcePath(), path ) == 0 && tag->groupID == fourCC ) {
+                if ( !tagExists( tag ) ) break; // Keep an eye on this. Might need to go back to checking outside the loop.
+                return tag;
+            }
+        }
+        return nullptr;
+    }
+
+    Tag* findTag( const char* path, const char* fourCC ) {
+        uint32_t fourCCValue = Strings::stringToFourcc( fourCC );
+        return findTag( path, fourCCValue );
+    }
+
+    bool tagExists( Tag* tag ) {
+        return tag && Memory::isAllocated( (uintptr_t) tag->getData() ) && Memory::isAllocated( (uintptr_t) tag->getResourcePath() );
+    }
+
+    bool validTagPath( const char* path ) {
+        return Map::isValidTagPath( path );
+    }
+    
+}
