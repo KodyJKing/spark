@@ -1,7 +1,5 @@
-#include <Windows.h>
-#include <stdint.h>
 #include "imgui.h"
-#include "engine/halo1.hpp"
+#include <cmath>
 #include "mods/devtools/dissect/DissectTag.hpp"
 
 #include "State.hpp"
@@ -15,19 +13,10 @@ namespace Mod::DevTools {
         state.show = true;
     }
 
-    void fileUI() {
-        if (state.isFileOpen()) {
-            auto fileName = state.getFileName();
-            ImGui::Text("File: %s", fileName.c_str());
-            ImGui::SameLine();
-            if (ImGui::Button("Close File")) {
-                state.closeFile();
-            }
-        } else {
-            if (ImGui::Button("Open File")) {
-                state.openFileDialog();
-            }
-        }
+    void releaseMap(Engine::Map::MapFile* map) {
+        // Waits for any in-flight search, then drops everything that points into the map.
+        state.resetForNewMap();
+        DissectTag::closeWindowsForMap(map);
     }
 
     void menuBar() {
@@ -39,7 +28,7 @@ namespace Mod::DevTools {
                 }
             } else {
                 if (ImGui::MenuItem("Open")) {
-                    state.openFileDialog();
+                    state.openFile();
                 }
             }
             ImGui::EndMenu();
@@ -51,7 +40,7 @@ namespace Mod::DevTools {
 
         if (state.isFileOpen()) {
             ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 64));
-            std::string tail = state.currentFilePath;
+            std::string tail = state.getFilePath();
             constexpr size_t maxTailLength = 40;
             if (tail.size() > maxTailLength) tail = "..." + tail.substr(tail.size() - maxTailLength);
             ImGui::Text(tail.c_str());
@@ -61,14 +50,25 @@ namespace Mod::DevTools {
         ImGui::EndMenuBar();
     }
 
-    void tagBrowser() {
-        // Mod::DevTools::DissectTag::render();
+    void tagBrowser(TagBrowserHost& host) {
+        state.host = &host;
         Mod::DevTools::DissectTag::render();
         
         if (!state.show) return;
 
         ImGui::Begin("Tag Browser", &state.show, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_MenuBar);
         menuBar();
+
+        auto map = state.getMap();
+        if (map != state.lastMap) {
+            state.lastMap = map;
+            state.resetForNewMap();
+        }
+        if (!map) {
+            ImGui::Text("No map open.");
+            ImGui::End();
+            return;
+        }
 
         //////////////////////////////////////////////////////////////////////////
         // Pagination

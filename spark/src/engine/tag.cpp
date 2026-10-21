@@ -3,6 +3,7 @@
 #include "utils/Strings.hpp"
 #include "memory/Memory.hpp"
 #include "map.hpp"
+#include "engine/map/tag_path.hpp"
 #include <unordered_map>
 
 #define DEBUG_TAG 1
@@ -86,26 +87,7 @@ namespace Engine {
     }
 
     bool validTagPath( const char* path ) {
-        // Must match [a-zA-Z0-9_ \.\\-]+
-        // Must be atleast 3 characters long.
-        // Also must contain atleast one backslash.
-        int backslashCount = 0;
-        for ( size_t i = 0; i < 512; i++ ) {
-            char c = path[i];
-            if ( c == 0 ) 
-                return backslashCount > 0 && i > 2;
-            if ( 
-                !(c >= 'a' && c <= 'z') &&
-                !(c >= 'A' && c <= 'Z') &&
-                !(c >= '0' && c <= '9') && 
-                c != '_'   && c != ' '  &&
-                c != '\\'  && c != '.'  && c != '-'
-            )
-                return false;
-            if ( c == '\\' ) 
-                backslashCount++;
-        }
-        return true;
+        return Map::isValidTagPath( path );
     }
     
 }

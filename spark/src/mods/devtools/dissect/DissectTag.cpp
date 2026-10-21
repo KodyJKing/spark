@@ -23,6 +23,13 @@ namespace Mod::DevTools::DissectTag {
         state.openWindow(map, tagId);
     }
     
+    void closeWindowsForMap(MapFile* map) {
+        for (auto& [tagId, window] : state.windows) {
+            if (window.map == map) window.isOpen = false;
+        }
+        state.cleanupWindows();
+    }
+
     void renderFieldChildren(RenderContext& renderCtx, FieldRef& field) {
 
         if (field.is(Type::Structure)) {

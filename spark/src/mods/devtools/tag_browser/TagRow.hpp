@@ -1,6 +1,6 @@
 // This is a private mixin. Only import from one translation unit.
 
-#include "engine/halo1.hpp"
+#include <cstdio>
 #include "imgui.h"
 #include "utils/ImGuiUtils.hpp"
 #include "mods/devtools/dissect/DissectTag.hpp"
@@ -18,9 +18,9 @@ namespace Mod::DevTools {
                 Mod::DevTools::DissectTag::openWindow(state.getMap(), tag->tagHandle);
             }
 
-            if (state.isFileOpen()) {
+            if (state.canLoadTagToRuntime()) {
                 if (ImGui::MenuItem("Load Tag")) {
-                    state.copyTagToRuntime(tag->tagHandle);
+                    state.loadTagToRuntime(tag->tagHandle);
                 }
             }
 
