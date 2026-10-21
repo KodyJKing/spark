@@ -5,7 +5,8 @@
 #include "imgui.h"
 #include "engine/halo1.hpp"
 #include "memory/Memory.hpp"
-#include "mods/devtools/tag_browser/TagBrowser.hpp"
+#include "ui/tag_browser/TagBrowser.hpp"
+#include "mods/devtools/InGameHost.hpp"
 #include "utils/Strings.hpp"
 #include "spark/Spark.hpp"
 #include <string>
@@ -73,8 +74,8 @@ namespace Mod::DevTools {
         }
 
         if (ImGui::Button("Tag Browser"))
-            Mod::DevTools::showTagBrowserWindow();
-        tagBrowser();
+            SparkLib::UI::showTagBrowserWindow();
+        SparkLib::UI::tagBrowser(inGameTagBrowserHost());
 
         if (ImGui::Button("Inspect DX11")) 
             InspectDX11::open();

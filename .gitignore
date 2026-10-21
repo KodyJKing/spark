@@ -8,17 +8,6 @@ _obj/
 
 vendor/*/bin/
 vendor/*/obj/
-vendor/unicorn/build/
-
-# Captured memory dumps used by spark-unicorn-test -- these come from a
-# live/dumped game process and should never be committed. Keep the README
-# documenting the manifest format though.
-spark-unicorn-test/dumps/*
-!spark-unicorn-test/dumps/README.md
-
-# Approval-test scratch output (regenerated every run) -- the .approved.txt
-# reference files next to these ARE committed.
-spark-unicorn-test/approved/*.received.txt
 
 # Files
 *.vcxproj

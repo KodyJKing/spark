@@ -9,8 +9,6 @@ project "spark"
     objdir ("../obj/" .. outputdir .. "/%{prj.name}")
 
     files {
-        "pch.h",
-        "pch.cpp",
         "src/**.hpp",
         "src/**.cpp",
         "../vendor/imgui/*.h", 
@@ -18,6 +16,8 @@ project "spark"
         "../vendor/imgui/backends/imgui_impl_win32.*",
         "../vendor/imgui/backends/imgui_impl_dx11.*",
     }
+
+    sparkLib()
 
     includedirs {
         "src",
@@ -32,10 +32,6 @@ project "spark"
         "VERSION_US",
         "NO_SEGMENTED_MEMORY",
     }
-
-    pchheader "pch.h"
-    pchsource "pch.cpp"
-    forceincludes "pch.h"
 
     links { 
         "MinHook",
