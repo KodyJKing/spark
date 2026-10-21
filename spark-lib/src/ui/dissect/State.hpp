@@ -6,6 +6,7 @@
 #include "engine/map/schema/schema_file.hpp"
 #include "engine/map/schema/reference.hpp"
 #include "engine/map/schema/schema.hpp"
+#include "engine/map/schema/span_map.hpp"
 
 #include "Hints.hpp"
 
@@ -23,6 +24,13 @@ namespace SparkLib::UI::DissectTag {
         MapFile* map = nullptr;
 
         Hints::HintCache hintCache;
+
+        // Parse-minimap span cache. Rebuilt on a time throttle (and on manual
+        // refresh) rather than every frame, since fillSpanMap walks the entire
+        // block tree. Set minimapBuiltTime < 0 to force a rebuild.
+        Analysis::SpanMap minimapSpans;
+        std::vector<Analysis::SpanInfo> minimapOverlaps;
+        double minimapBuiltTime = -1.0;
 
         inline Tag* getTag() const {
             return map->getTag(tagId);
