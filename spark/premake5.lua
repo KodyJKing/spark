@@ -9,7 +9,6 @@ project "spark"
     objdir ("../obj/" .. outputdir .. "/%{prj.name}")
 
     files {
-        "pch.h",
         "pch.cpp",
         "src/**.hpp",
         "src/**.cpp",
@@ -18,6 +17,8 @@ project "spark"
         "../vendor/imgui/backends/imgui_impl_win32.*",
         "../vendor/imgui/backends/imgui_impl_dx11.*",
     }
+
+    sparkLib()
 
     includedirs {
         "src",

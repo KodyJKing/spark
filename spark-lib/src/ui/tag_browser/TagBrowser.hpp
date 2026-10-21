@@ -1,8 +1,8 @@
 #pragma once
 
-#include "mods/devtools/tag_browser/TagBrowserHost.hpp"
+#include "ui/tag_browser/TagBrowserHost.hpp"
 
-namespace Mod::DevTools {
+namespace SparkLib::UI {
     void showTagBrowserWindow();
     void tagBrowser(TagBrowserHost& host);
 }

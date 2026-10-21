@@ -2,7 +2,7 @@
 
 #include "FileDialog.hpp"
 #include "imgui.h"
-#include "mods/devtools/tag_browser/TagBrowser.hpp"
+#include "ui/tag_browser/TagBrowser.hpp"
 
 namespace Spool {
 
@@ -26,7 +26,7 @@ namespace Spool {
 
     void App::closeFile() {
         if (!map_) return;
-        Mod::DevTools::releaseMap(map_.get());
+        SparkLib::UI::releaseMap(map_.get());
         map_.reset();
     }
 
@@ -46,7 +46,7 @@ namespace Spool {
 
         if (ImGui::BeginMenu("Tools")) {
             if (ImGui::MenuItem("Tag Browser"))
-                Mod::DevTools::showTagBrowserWindow();
+                SparkLib::UI::showTagBrowserWindow();
             ImGui::EndMenu();
         }
 
@@ -58,7 +58,7 @@ namespace Spool {
             openFile();
 
         menuBar();
-        Mod::DevTools::tagBrowser(*this);
+        SparkLib::UI::tagBrowser(*this);
     }
 
 }

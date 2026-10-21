@@ -3,7 +3,7 @@
 #include "utils/Strings.hpp"
 #include <cstdint>
 
-namespace Mod::DevTools {
+namespace SparkLib::UI {
 
     struct GroupID {
         const char* name;

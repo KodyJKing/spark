@@ -15,7 +15,7 @@
 
 #include "imgui.h"
 
-namespace Mod::DevTools::DissectTag {
+namespace SparkLib::UI::DissectTag {
 
     using namespace Engine::Map;
 

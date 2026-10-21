@@ -8,7 +8,7 @@
 #include "Hints.hpp"
 #include "Functions.hpp"
 
-namespace Mod::DevTools::DissectTag {
+namespace SparkLib::UI::DissectTag {
 
     void renderStructure(RenderContext& renderCtx, StructureRef& structure, size_t fallbackSize);
 

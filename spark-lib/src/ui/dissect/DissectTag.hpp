@@ -3,7 +3,7 @@
 #include <cstdint>
 #include "engine/map/map_file.hpp"
 
-namespace Mod::DevTools::DissectTag {
+namespace SparkLib::UI::DissectTag {
     void openWindow(Engine::Map::MapFile* mapFile, uint32_t tagId);
     void render();
 

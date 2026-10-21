@@ -8,7 +8,7 @@
 
 #include <sstream>
 
-namespace Mod::DevTools::DissectTag {
+namespace SparkLib::UI::DissectTag {
 
     inline void renderUntypedRow(RenderContext& renderCtx, StructureRef& structure, uint8_t* address, int32_t length) {
         if (length <= 0) return;

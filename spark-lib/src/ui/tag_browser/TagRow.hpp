@@ -3,11 +3,11 @@
 #include <cstdio>
 #include "imgui.h"
 #include "utils/ImGuiUtils.hpp"
-#include "mods/devtools/dissect/DissectTag.hpp"
+#include "ui/dissect/DissectTag.hpp"
 
 #define COLOR_SELECTED_ROW IM_COL32(255, 255, 0, 255)
 
-namespace Mod::DevTools {
+namespace SparkLib::UI {
 
     void renderContextMenu(int index, Tag* tag) {
         if (index < 0) return;
@@ -15,7 +15,7 @@ namespace Mod::DevTools {
             state.selection = index;
             
             if (ImGui::MenuItem("Inspect Tag")) {
-                Mod::DevTools::DissectTag::openWindow(state.getMap(), tag->tagHandle);
+                SparkLib::UI::DissectTag::openWindow(state.getMap(), tag->tagHandle);
             }
 
             if (state.canLoadTagToRuntime()) {
@@ -60,7 +60,7 @@ namespace Mod::DevTools {
                 hovered = true;
             }
             if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && ImGui::GetIO().KeyShift) {
-                Mod::DevTools::DissectTag::openWindow(state.getMap(), tag->tagHandle);
+                SparkLib::UI::DissectTag::openWindow(state.getMap(), tag->tagHandle);
             }
         };
 

@@ -11,7 +11,7 @@
 
 #include "utils/Utils.hpp"
 
-namespace Mod::DevTools::DissectTag {
+namespace SparkLib::UI::DissectTag {
 
     using namespace Engine::Map;
 

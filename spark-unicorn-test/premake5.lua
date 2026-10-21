@@ -16,6 +16,7 @@ project "spark-unicorn-test"
     includedirs {
         "src",
         "../spark/src",
+        "../spark-lib/src",
         "../vendor/unicorn/include",
         "../vendor/imgui"
     }

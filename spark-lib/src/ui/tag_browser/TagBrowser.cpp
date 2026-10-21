@@ -1,13 +1,13 @@
 #include "imgui.h"
 #include <cmath>
-#include "mods/devtools/dissect/DissectTag.hpp"
+#include "ui/dissect/DissectTag.hpp"
 
 #include "State.hpp"
 #include "Constants.hpp"
 #include "Search.hpp"
 #include "TagRow.hpp"
 
-namespace Mod::DevTools {
+namespace SparkLib::UI {
 
     void showTagBrowserWindow() {
         state.show = true;
@@ -52,7 +52,7 @@ namespace Mod::DevTools {
 
     void tagBrowser(TagBrowserHost& host) {
         state.host = &host;
-        Mod::DevTools::DissectTag::render();
+        SparkLib::UI::DissectTag::render();
         
         if (!state.show) return;
 

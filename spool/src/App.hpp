@@ -4,13 +4,13 @@
 #include <windows.h>
 
 #include "engine/map/spark/managed_map_file.hpp"
-#include "mods/devtools/tag_browser/TagBrowserHost.hpp"
+#include "ui/tag_browser/TagBrowserHost.hpp"
 
 namespace Spool {
 
     // Application-level state. Owns the open map and hands it to tool windows through
     // the TagBrowserHost interface.
-    class App : public Mod::DevTools::TagBrowserHost {
+    class App : public SparkLib::UI::TagBrowserHost {
         public:
         explicit App(HWND window) : window_(window) {}
         ~App() override { closeFile(); }

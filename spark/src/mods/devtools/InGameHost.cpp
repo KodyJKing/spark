@@ -8,7 +8,7 @@ namespace Mod::DevTools {
 
     namespace {
 
-        class InGameHost : public TagBrowserHost {
+        class InGameHost : public SparkLib::UI::TagBrowserHost {
             public:
             Engine::Map::MapFile* getMap() override {
                 if (disk) return disk.get();
@@ -32,7 +32,7 @@ namespace Mod::DevTools {
 
             void closeFile() override {
                 if (!disk) return;
-                releaseMap(disk.get());
+                SparkLib::UI::releaseMap(disk.get());
                 disk.reset();
             }
 
@@ -49,7 +49,7 @@ namespace Mod::DevTools {
 
     }
 
-    TagBrowserHost& inGameTagBrowserHost() {
+    SparkLib::UI::TagBrowserHost& inGameTagBrowserHost() {
         static InGameHost host;
         return host;
     }

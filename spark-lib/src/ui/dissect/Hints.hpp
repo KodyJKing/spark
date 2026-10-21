@@ -10,7 +10,7 @@
 
 #include "memory/Memory.hpp"
 
-namespace Mod::DevTools::DissectTag::Hints {
+namespace SparkLib::UI::DissectTag::Hints {
 
     using namespace Engine::Map;
 

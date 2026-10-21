@@ -4,7 +4,7 @@
 #include <string>
 #include "engine/map/map_file.hpp"
 
-namespace Mod::DevTools {
+namespace SparkLib::UI {
 
     // Dependency injected into the Tag Browser by whatever application hosts it
     // (the in-game devtools mod, or the standalone Spool app). The host owns the open map.

@@ -6,7 +6,7 @@
 #include "State.hpp"
 #include "Constants.hpp"
 
-namespace Mod::DevTools {
+namespace SparkLib::UI {
 
     bool canReuse() {
         std::string searchStr = state.search;

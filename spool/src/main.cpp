@@ -8,7 +8,7 @@
 #include "imgui_impl_dx11.h"
 
 #include "App.hpp"
-#include "mods/devtools/tag_browser/TagBrowser.hpp"
+#include "ui/tag_browser/TagBrowser.hpp"
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -136,7 +136,7 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int) {
         auto initialMap = commandLineMapPath();
         if (!initialMap.empty()) {
             app.openMap(initialMap);
-            Mod::DevTools::showTagBrowserWindow();
+            SparkLib::UI::showTagBrowserWindow();
         }
 
         bool running = true;

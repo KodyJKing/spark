@@ -10,7 +10,7 @@
 
 #include "Constants.hpp"
 
-namespace Mod::DevTools {
+namespace SparkLib::UI {
 
     using Tag = Engine::Map::Tag;
 

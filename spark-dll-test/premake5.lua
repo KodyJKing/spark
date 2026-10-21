@@ -16,6 +16,7 @@ project "spark-dll-test"
     includedirs {
         "src",
         "../spark/src",
+        "../spark-lib/src",
         "../vendor/imgui"
     }
 
