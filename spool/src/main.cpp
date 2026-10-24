@@ -110,7 +110,12 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int) {
         return 1;
     }
 
-    ShowWindow(hwnd, SW_SHOWDEFAULT);
+    // Whole-window constant opacity (title bar and contents alike).
+    SetWindowLongPtrW(hwnd, GWL_EXSTYLE, GetWindowLongPtrW(hwnd, GWL_EXSTYLE) | WS_EX_LAYERED);
+    SetLayeredWindowAttributes(hwnd, 0, (BYTE)(255 * 0.85f), LWA_ALPHA);
+
+    if (!Spool::App::restoreWindowPlacement(hwnd))
+        ShowWindow(hwnd, SW_SHOWDEFAULT);
     UpdateWindow(hwnd);
 
     ImGui::CreateContext();
@@ -133,11 +138,7 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int) {
     {
         Spool::App app(hwnd);
 
-        auto initialMap = commandLineMapPath();
-        if (!initialMap.empty()) {
-            app.openMap(initialMap);
-            SparkLib::UI::showTagBrowserWindow();
-        }
+        app.restoreSession(commandLineMapPath());
 
         bool running = true;
         while (running) {

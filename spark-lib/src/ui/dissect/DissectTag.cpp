@@ -6,6 +6,7 @@
 #include "Hints.hpp"
 #include "Untyped.hpp"
 #include "Substructure.hpp"
+#include "Minimap.hpp"
 
 #include "engine/map/schema/reference.hpp"
 #include "engine/tags/tag_group_id.hpp"
@@ -23,6 +24,13 @@ namespace SparkLib::UI::DissectTag {
         state.openWindow(map, tagId);
     }
     
+    std::vector<uint32_t> openTagIds() {
+        std::vector<uint32_t> ids;
+        for (auto& [tagId, window] : state.windows)
+            if (window.isOpen) ids.push_back(tagId);
+        return ids;
+    }
+
     void closeWindowsForMap(MapFile* map) {
         for (auto& [tagId, window] : state.windows) {
             if (window.map == map) window.isOpen = false;
@@ -191,8 +199,14 @@ namespace SparkLib::UI::DissectTag {
                 RenderContext renderCtx = { &window, tagData, (uint8_t*)tagData + guessedTotalSize };
 
                 ImGui::Text("Estimated tag data size: %zu", guessedSize);
-                ImGui::SameLine();
+
+                if (ImGui::CollapsingHeader("Parse Minimap", ImGuiTreeNodeFlags_DefaultOpen)) {
+                    renderMinimap(renderCtx, ref);
+                }
+
+                ImGui::BeginChild("StructureScroll", ImVec2(0, 0), ImGuiChildFlags_None, ImGuiWindowFlags_HorizontalScrollbar);
                 renderStructure(renderCtx, ref, guessedSize);
+                ImGui::EndChild();
             }
         }
 

@@ -4,5 +4,6 @@
 
 namespace SparkLib::UI {
     void showTagBrowserWindow();
+    bool isTagBrowserWindowOpen();
     void tagBrowser(TagBrowserHost& host);
 }
