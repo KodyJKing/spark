@@ -44,7 +44,15 @@ namespace Engine::Map::Analysis {
             size_t size = type ? type->size : 0;
             if (size == 0) continue;
 
-            for (int i = 0; i < fieldRef.getBlockElementCount() && i < maxBlocksToScan; ++i) {
+            auto count = fieldRef.getBlockElementCount();
+            if (count > maxBlocksToScan) {
+                char* start = (char*) fieldRef.getBlockElement(0).address;
+                char* end = start + size * count;
+                spanMap.spans.insert({start, end, type});
+                continue; // Skip scanning individual block elements if too many
+            }
+
+            for (int i = 0; i < count; ++i) {
                 StructureRef blockElement = fieldRef.getBlockElement(i);
                 if ((char*)blockElement.address < (char*)startAddress) break;
                 if ((char*)blockElement.address >= (char*)stopAddress) break;
