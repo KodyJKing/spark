@@ -64,8 +64,8 @@ namespace Engine::Map {
         void* getPointerBase(PointerBase b) override;
         TagDataHeader* getTagDataHeader() override;
 
-        private:
         CacheHeader* cache = nullptr;
+        private:
     };
 
     class RuntimeMapFile : public MapFile {
