@@ -157,6 +157,7 @@ namespace Engine::Map {
             }
             case Type::DataPointer: {
                 DataPointer* dataPtr = (DataPointer*)address;
+                if (dataPtr->size <= 0) return "[Null DataPointer]";
                 void* data = context->mapFile->getDataPointer(*dataPtr);
                 int64_t offset = (char*)data - (char*)parent.address;
                 std::string description = "DataPointer of size " + std::to_string(dataPtr->size) + " at offset 0x" + Strings::toHex(offset);

@@ -11,6 +11,7 @@ namespace Engine::Map::Analysis {
         char* start;
         char* end;
         StructureNode* type;
+        Type fieldType;
         bool operator<(const Span& other) const {
             return start < other.start;
         }
@@ -45,7 +46,7 @@ namespace Engine::Map::Analysis {
                 void* start = mapFile->getDataPointer(*dataPtr);
                 if (!start) continue;
                 void* end = (char*)start + dataPtr->size;
-                spanMap.spans.insert({(char*)start, (char*)end, nullptr});
+                spanMap.spans.insert({(char*)start, (char*)end, nullptr, Type::DataPointer});
                 continue;
             }
 
@@ -60,7 +61,7 @@ namespace Engine::Map::Analysis {
             if (count > maxBlocksToScan) {
                 char* start = (char*) fieldRef.getBlockElement(0).address;
                 char* end = start + size * count;
-                spanMap.spans.insert({start, end, type});
+                spanMap.spans.insert({start, end, type, Type::BlockPointer});
                 continue; // Skip scanning individual block elements if too many
             }
 
@@ -70,7 +71,7 @@ namespace Engine::Map::Analysis {
                 if ((char*)blockElement.address >= (char*)stopAddress) break;
                 if (blockElement.valid()) {
                     char* start = (char*)blockElement.address;
-                    spanMap.spans.insert({start, start + size, type});
+                    spanMap.spans.insert({start, start + size, type, Type::BlockPointer});
                     fillSpanMap(blockElement, spanMap, startAddress, stopAddress);
                 }
             }

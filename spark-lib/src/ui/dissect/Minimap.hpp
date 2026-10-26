@@ -6,6 +6,7 @@
 
 #include <cmath>
 #include <cstdint>
+#include <unordered_map>
 #include <vector>
 
 namespace SparkLib::UI::DissectTag {
@@ -23,6 +24,11 @@ namespace SparkLib::UI::DissectTag {
     constexpr float kMinimapMinThumbWidth = 12.0f;
     constexpr double kMinimapZoomStep = 1.25;
     constexpr double kMinimapMinVisibleBytes = 16.0;
+    constexpr float kMinimapProblemStripHeight = 8.0f;
+    constexpr float kMinimapProblemTriHalfWidth = 4.0f;
+    constexpr uint32_t kMinimapProblemColor = IM_COL32(235, 50, 40, 255);
+    constexpr float kMinimapMinStripePixels = 2.0f;
+    constexpr float kMinimapStripeDim = 0.7f;
 
     // Stable color derived from the referenced type's identity, so repeated
     // structures share a hue and layout patterns are easy to spot.
@@ -33,6 +39,33 @@ namespace SparkLib::UI::DissectTag {
         float r, g, b;
         ImGui::ColorConvertHSVtoRGB(hue, 0.55f, 0.85f, r, g, b);
         return IM_COL32((int)(r * 255), (int)(g * 255), (int)(b * 255), 255);
+    }
+
+    inline uint32_t minimapStripeColor(uint32_t color, bool dim) {
+        if (!dim) return color;
+        ImVec4 c = ImColor(color).Value;
+        return ImColor(c.x * kMinimapStripeDim, c.y * kMinimapStripeDim, c.z * kMinimapStripeDim, c.w);
+    }
+
+    // Parity for alternating brightness: a span continues its type's stripe
+    // sequence when it starts exactly where the previous span of that type
+    // ended. Collapsed spans advance the parity by their element count.
+    inline std::vector<uint8_t> computeMinimapStripeParity(const std::vector<Analysis::SpanInfo>& spans) {
+        struct Run { char* end; uint32_t nextParity; };
+        std::unordered_map<StructureNode*, Run> runs;
+        std::vector<uint8_t> parity(spans.size(), 0);
+        for (size_t i = 0; i < spans.size(); ++i) {
+            const auto& span = spans[i].span;
+            uint32_t p = 0;
+            auto it = runs.find(span.type);
+            if (it != runs.end() && it->second.end == span.start) p = it->second.nextParity;
+            parity[i] = (uint8_t)(p & 1);
+            size_t elemSize = span.type ? span.type->size : 0;
+            size_t elems = elemSize > 0 ? (size_t)(span.end - span.start) / elemSize : 1;
+            if (elems == 0) elems = 1;
+            runs[span.type] = { span.end, p + (uint32_t)elems };
+        }
+        return parity;
     }
 
     inline void clampMinimapView(WindowState* window, double maxZoom) {
@@ -53,14 +86,31 @@ namespace SparkLib::UI::DissectTag {
             window->minimapViewStart = 0.0;
         }
         ImGui::SameLine();
+        if (ImGui::Checkbox("Ignore gaps after DataPointers", &state.problemOptions.ignoreGapsAfterDataPointer))
+            window->minimapBuiltTime = -1.0;
+        ImGui::SetItemTooltip("Opaque data (DataPointer payloads) can be followed by padding for 4-byte alignment.");
+        ImGui::SameLine();
         ImGui::TextDisabled("%.1fx  (wheel: zoom, drag/shift+wheel: pan, double-click: reset)", window->minimapZoom);
 
         double now = ImGui::GetTime();
         if (window->minimapBuiltTime < 0.0 ||
             now - window->minimapBuiltTime >= kMinimapRebuildSeconds) {
             window->minimapSpans.spans.clear();
+            // The root struct isn't a block element, so add it explicitly or it
+            // would show up as a gap at the start of the tag.
+            if (root.node && root.node->size > 0) {
+                char* rootStart = (char*)root.address;
+                window->minimapSpans.spans.insert({rootStart, rootStart + root.node->size, root.node, Type::Structure});
+            }
             Analysis::fillSpanMap(root, window->minimapSpans, renderCtx.tagStart, renderCtx.tagEnd);
             window->minimapOverlaps = Analysis::analyzeOverlaps(window->minimapSpans);
+            window->minimapStripeParity = computeMinimapStripeParity(window->minimapOverlaps);
+            window->minimapProblems = Analysis::findProblems(
+                window->minimapOverlaps, (char*)renderCtx.tagStart, (char*)renderCtx.tagEnd,
+                state.problemOptions);
+            Hints::findProbableTypeProblems(
+                root.context, window->minimapOverlaps, renderCtx.tagStart, renderCtx.tagEnd,
+                window->minimapProblems);
             window->minimapBuiltTime = now;
         }
 
@@ -82,9 +132,11 @@ namespace SparkLib::UI::DissectTag {
 
         ImVec2 p0 = ImGui::GetCursorScreenPos();
         ImVec2 p1 = ImVec2(p0.x + width, p0.y + kMinimapHeight);
+        ImVec2 strip0 = ImVec2(p0.x, p1.y);
+        ImVec2 strip1 = ImVec2(p1.x, p1.y + kMinimapProblemStripHeight);
 
-        // --- Input on the main bar ---
-        ImGui::InvisibleButton("##minimap", ImVec2(width, kMinimapHeight),
+        // --- Input on the main bar (and the problem strip beneath it) ---
+        ImGui::InvisibleButton("##minimap", ImVec2(width, kMinimapHeight + kMinimapProblemStripHeight),
             ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonMiddle);
         ImGui::SetItemKeyOwner(ImGuiKey_MouseWheelY);
         ImGui::SetItemKeyOwner(ImGuiKey_MouseWheelX);
@@ -136,12 +188,42 @@ namespace SparkLib::UI::DissectTag {
         dl->PushClipRect(p0, p1, true);
         dl->AddRectFilled(p0, p1, kMinimapBgColor);
 
-        for (auto& info : window->minimapOverlaps) {
+        for (size_t spanIndex = 0; spanIndex < window->minimapOverlaps.size(); ++spanIndex) {
+            auto& info = window->minimapOverlaps[spanIndex];
             char* s = info.span.start;
             char* e = info.span.end;
             if (e <= viewStart || s >= viewEnd) continue;
             if (s < tagStart) s = tagStart;
             if (e > tagEnd) e = tagEnd;
+
+            uint32_t baseColor = info.overlaps
+                ? kMinimapOverlapColor
+                : minimapColorForType(info.span.type);
+            uint32_t parity = spanIndex < window->minimapStripeParity.size()
+                ? window->minimapStripeParity[spanIndex] : 0;
+
+            // Collapsed multi-element spans (huge blocks) get striped per element
+            // once elements are wide enough on screen to tell apart.
+            StructureNode* type = info.span.type;
+            size_t elemSize = type ? type->size : 0;
+            if (!info.overlaps && elemSize > 0 &&
+                (size_t)(info.span.end - info.span.start) > elemSize &&
+                (double)elemSize / viewBytes * width >= kMinimapMinStripePixels) {
+                size_t firstElem = s > viewStart ? 0 : (size_t)(viewStart - info.span.start) / elemSize;
+                for (size_t i = firstElem;; ++i) {
+                    char* es = info.span.start + i * elemSize;
+                    if (es >= e || es >= viewEnd) break;
+                    char* ee = es + elemSize;
+                    if (ee > e) ee = e;
+                    float x0 = addrToX(es < s ? s : es);
+                    float x1 = addrToX(ee);
+                    if (x0 < p0.x - 1.0f) x0 = p0.x - 1.0f;
+                    if (x1 > p1.x + 1.0f) x1 = p1.x + 1.0f;
+                    uint32_t color = minimapStripeColor(baseColor, (parity + (uint32_t)i) & 1);
+                    dl->AddRectFilled(ImVec2(x0, p0.y), ImVec2(x1, p1.y), color);
+                }
+                continue;
+            }
 
             float x0 = addrToX(s);
             float x1 = addrToX(e);
@@ -149,14 +231,44 @@ namespace SparkLib::UI::DissectTag {
             if (x1 > p1.x + 1.0f) x1 = p1.x + 1.0f;
             if (x1 < x0 + 1.0f) x1 = x0 + 1.0f;
 
-            uint32_t color = info.overlaps
-                ? kMinimapOverlapColor
-                : minimapColorForType(info.span.type);
+            uint32_t color = info.overlaps ? baseColor : minimapStripeColor(baseColor, parity & 1);
             dl->AddRectFilled(ImVec2(x0, p0.y), ImVec2(x1, p1.y), color);
         }
 
         dl->PopClipRect();
         dl->AddRect(p0, p1, kMinimapBorderColor);
+
+        // --- Problem markers: an underline across the range plus a triangle
+        // pointing up at its center, so even 1-byte problems stay visible. ---
+        auto problemMarkerX = [&](const Analysis::Problem& p) {
+            float x0 = addrToX(p.start);
+            float x1 = addrToX(p.end);
+            float cx = (x0 + x1) * 0.5f;
+            // Keep the marker on-screen when the range is only partially visible.
+            if (cx < p0.x && x1 > p0.x) cx = (p0.x + (x1 < p1.x ? x1 : p1.x)) * 0.5f;
+            if (cx > p1.x && x0 < p1.x) cx = ((x0 > p0.x ? x0 : p0.x) + p1.x) * 0.5f;
+            return cx;
+        };
+
+        dl->PushClipRect(ImVec2(strip0.x - kMinimapProblemTriHalfWidth, strip0.y), 
+                         ImVec2(strip1.x + kMinimapProblemTriHalfWidth, strip1.y), true);
+        for (auto& problem : window->minimapProblems) {
+            if (problem.end <= viewStart || problem.start >= viewEnd) continue;
+            float x0 = addrToX(problem.start);
+            float x1 = addrToX(problem.end);
+            if (x0 < p0.x) x0 = p0.x;
+            if (x1 > p1.x) x1 = p1.x;
+            if (x1 - x0 >= 2.0f)
+                dl->AddRectFilled(ImVec2(x0, strip0.y), ImVec2(x1, strip0.y + 2.0f), kMinimapProblemColor);
+
+            float cx = problemMarkerX(problem);
+            dl->AddTriangleFilled(
+                ImVec2(cx, strip0.y + 1.0f),
+                ImVec2(cx - kMinimapProblemTriHalfWidth, strip1.y),
+                ImVec2(cx + kMinimapProblemTriHalfWidth, strip1.y),
+                kMinimapProblemColor);
+        }
+        dl->PopClipRect();
 
         if (barHovered && !ImGui::IsItemActive()) {
             double frac = (io.MousePos.x - p0.x) / width;
@@ -182,6 +294,23 @@ namespace SparkLib::UI::DissectTag {
                 }
             }
             if (!any) ImGui::TextDisabled("(no span)");
+
+            // Problems at the hovered byte, or whose triangle is under the mouse.
+            bool anyProblem = false;
+            for (auto& problem : window->minimapProblems) {
+                if (problem.end <= viewStart || problem.start >= viewEnd) continue;
+                bool contains = problem.start <= addr && addr < problem.end;
+                bool nearMarker = std::fabs(io.MousePos.x - problemMarkerX(problem)) <= kMinimapProblemTriHalfWidth;
+                if (!contains && !nearMarker) continue;
+                if (!anyProblem) ImGui::Separator();
+                anyProblem = true;
+                ImGui::TextColored(ImColor(kMinimapProblemColor).Value,
+                    "%s: 0x%zx - 0x%zx [size 0x%zx]",
+                    Analysis::problemKindName(problem.kind),
+                    (size_t)(problem.start - tagStart),
+                    (size_t)(problem.end - tagStart),
+                    (size_t)(problem.end - problem.start));
+            }
             ImGui::EndTooltip();
         }
 

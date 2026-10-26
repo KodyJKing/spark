@@ -28,7 +28,7 @@ namespace Engine::Map {
 
     template<typename T = void>
     struct DataPointerTyped {
-        uint32_t size;
+        int32_t size;
         uint32_t bullshit;
         int fileOffset;
         Pointer<PointerBase_Tags, T> data; 

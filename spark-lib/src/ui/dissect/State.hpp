@@ -7,6 +7,7 @@
 #include "engine/map/schema/reference.hpp"
 #include "engine/map/schema/schema.hpp"
 #include "engine/map/schema/span_map.hpp"
+#include "engine/map/schema/problems.hpp"
 
 #include "Hints.hpp"
 
@@ -30,6 +31,8 @@ namespace SparkLib::UI::DissectTag {
         // block tree. Set minimapBuiltTime < 0 to force a rebuild.
         Analysis::SpanMap minimapSpans;
         std::vector<Analysis::SpanInfo> minimapOverlaps;
+        std::vector<Analysis::Problem> minimapProblems;
+        std::vector<uint8_t> minimapStripeParity; // Parallel to minimapOverlaps.
         double minimapBuiltTime = -1.0;
 
         // Minimap view: zoom >= 1 (1 = whole tag visible), viewStart is the
@@ -76,6 +79,7 @@ namespace SparkLib::UI::DissectTag {
         }
 
         float hintThreshold = 0.25f;
+        Analysis::ProblemOptions problemOptions;
 
         ///////////////////////////
         // Windows
