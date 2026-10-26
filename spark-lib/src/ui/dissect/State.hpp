@@ -32,6 +32,11 @@ namespace SparkLib::UI::DissectTag {
         std::vector<Analysis::SpanInfo> minimapOverlaps;
         double minimapBuiltTime = -1.0;
 
+        // Minimap view: zoom >= 1 (1 = whole tag visible), viewStart is the
+        // fraction of the tag range at the left edge of the minimap.
+        double minimapZoom = 1.0;
+        double minimapViewStart = 0.0;
+
         inline Tag* getTag() const {
             return map->getTag(tagId);
         }
