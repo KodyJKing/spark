@@ -39,6 +39,11 @@ namespace Engine::Map {
             return (T*) &elements[i];
         }
 
+        template<typename T>
+        T* getDataPointer(DataPointerTyped<T>& dataPointer) {
+            return (T*) fromRelative(dataPointer.data);
+        }
+
         CacheHeader* getCacheHeader();
         uint32_t getTagCount();
         Tag* getTag(uint32_t handle);

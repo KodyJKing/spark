@@ -117,7 +117,7 @@ namespace Engine::Map::Spark {
             key.type = SymbolTable::Type::TagPath;
             key.nameHash = SymbolTable::hashName(path);
             
-            auto entry = symbolTable.getOrCreate(key);
+            auto& entry = symbolTable.getOrCreate(key);
             if (!entry.resolved) {
                 // Copy the tag path into the tag paths buffer
                 size_t pathLength = strlen(path) + 1;
@@ -262,23 +262,23 @@ namespace Engine::Map::Spark {
         }
 
         void linkSymbols() {
-
+            int i = 0;
             for (auto& pair : symbolTable.entries) {
                 auto& entry = pair.second;
-                
                 for (void* referrer : entry.referrers) {
-                    // Process each referrer as needed
+                    linkSymbol(entry, referrer);
+                    if (i++ > 0) return;
                 }
-
             }
-
         }
 
         void linkSymbol(SymbolEntry& entry, void* referrer) {
             switch(entry.symbol.type) {
-                case SymbolType::Tag: {
-                    // Handle tag symbol
-                    
+                case SymbolType::TagPath: {
+                    char* path = (char*)tagPaths + entry.offset;
+                    std::cout << "Linking TagPath symbol at offset " << entry.offset << " with path " << path << std::endl;
+                    Pointer<PointerBase_Tags>* pathPtr = reinterpret_cast<Pointer<PointerBase_Tags>*>(referrer);
+                    *pathPtr = hostMap->toRelative<PointerBase_Tags>(path);
                     break;
                 }
                 default: {

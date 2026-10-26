@@ -26,6 +26,17 @@ namespace Engine::Map {
 
     using BlockPointer = BlockPointerTyped<void>;
 
+    template<typename T = void>
+    struct DataPointerTyped {
+        uint32_t size;
+        uint32_t bullshit;
+        int fileOffset;
+        Pointer<PointerBase_Tags, T> data; 
+        void* definition;
+    };
+
+    using DataPointer = DataPointerTyped<void>;
+    
     struct TagReference {
         uint32_t groupID;
         Pointer<PointerBase_Tags> path; 

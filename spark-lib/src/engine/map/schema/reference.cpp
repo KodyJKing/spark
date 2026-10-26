@@ -155,6 +155,13 @@ namespace Engine::Map {
                 std::string description = structureName + " Block at offset 0x" + Strings::toHex(offset);
                 return description;
             }
+            case Type::DataPointer: {
+                DataPointer* dataPtr = (DataPointer*)address;
+                void* data = context->mapFile->getDataPointer(*dataPtr);
+                int64_t offset = (char*)data - (char*)parent.address;
+                std::string description = "DataPointer of size " + std::to_string(dataPtr->size) + " at offset 0x" + Strings::toHex(offset);
+                return description;
+            }
             case Type::TagString: {
                 return std::string((char*)address, 32);
             }

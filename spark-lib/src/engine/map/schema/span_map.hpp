@@ -30,6 +30,8 @@ namespace Engine::Map::Analysis {
         void* stopAddress
     ) {
         constexpr size_t maxBlocksToScan = 1024;
+
+        MapFile* mapFile = structure.context->mapFile;
         
         if (!structure.valid()) return;
         if ((char*)structure.address < (char*)startAddress) return;
@@ -37,6 +39,16 @@ namespace Engine::Map::Analysis {
 
         auto fieldRefs = structure.getFieldRefs();
         for (auto& fieldRef : fieldRefs) {
+
+            if (fieldRef.is(Type::DataPointer)) {
+                DataPointer* dataPtr = (DataPointer*)fieldRef.address;
+                void* start = mapFile->getDataPointer(*dataPtr);
+                if (!start) continue;
+                void* end = (char*)start + dataPtr->size;
+                spanMap.spans.insert({(char*)start, (char*)end, nullptr});
+                continue;
+            }
+
             if (!fieldRef.is(Type::BlockPointer)) continue;
             if ((char*)fieldRef.address < (char*)startAddress) break;
             if ((char*)fieldRef.address >= (char*)stopAddress) break;

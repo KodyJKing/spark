@@ -111,8 +111,8 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int) {
     }
 
     // Whole-window constant opacity (title bar and contents alike).
-    SetWindowLongPtrW(hwnd, GWL_EXSTYLE, GetWindowLongPtrW(hwnd, GWL_EXSTYLE) | WS_EX_LAYERED);
-    SetLayeredWindowAttributes(hwnd, 0, (BYTE)(255 * 0.85f), LWA_ALPHA);
+    // SetWindowLongPtrW(hwnd, GWL_EXSTYLE, GetWindowLongPtrW(hwnd, GWL_EXSTYLE) | WS_EX_LAYERED);
+    // SetLayeredWindowAttributes(hwnd, 0, (BYTE)(255 * 0.85f), LWA_ALPHA);
 
     if (!Spool::App::restoreWindowPlacement(hwnd))
         ShowWindow(hwnd, SW_SHOWDEFAULT);
