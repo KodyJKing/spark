@@ -48,7 +48,8 @@ namespace Engine::Map {
         uint32_t getTagCount();
         Tag* getTag(uint32_t handle);
         char* getTagPath(Tag* t);
-        void* getTagData(Tag* t);
+        void *getTagDataNaive(Tag *t);
+        void *getTagData(Tag *t);
         uint32_t getVertexDataSize();
         size_t guessTagDataSize(uint32_t tagHandle);
 

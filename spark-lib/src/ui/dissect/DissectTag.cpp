@@ -189,6 +189,8 @@ namespace SparkLib::UI::DissectTag {
             auto ref = window.getStructureRef(ctx);
             if (!ref.valid()) {
                 ImGui::Text("[invalid structure reference]");
+            } else if (!Memory::isAllocated(ref.address)) {
+                ImGui::Text("[memory not allocated]");
             } else {
                 size_t guessedTotalSize = window.map->guessTagDataSize(tag->tagHandle);
                 size_t guessedSize = Engine::Map::guessSizeFromFirstBlockElement(ref);

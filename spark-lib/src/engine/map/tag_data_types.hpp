@@ -88,4 +88,26 @@ namespace Engine::Map {
         char footerMagic[4]; // Should be "toof"
     };
 
+    struct StructureBspHeader {
+        Pointer<PointerBase_Map> structureBsp;
+        int vertexBufferSize;
+        Pointer<PointerBase_Map> vertexBuffer;
+        int pad[2];
+        char magic[4]; // Should be "psbs"
+    };
+
+    struct StructureBspReference {
+        Pointer<PointerBase_Map> structureBspHeader;
+        uint32_t size;
+        Pointer<PointerBase_Tags> runtimeAddress;
+        int pad[1];
+        TagReference tagReference;
+    };
+
+    struct Scenario {
+        char pad[0x5A4];
+        BlockPointerTyped<StructureBspReference> structureBsps;
+    };
+
 }
+

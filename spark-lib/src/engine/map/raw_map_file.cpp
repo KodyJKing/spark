@@ -13,7 +13,6 @@ namespace Engine::Map {
     }
 
     TagDataHeader* RawMapFile::getTagDataHeader() {
-        CacheHeader* c = cache;
         return (TagDataHeader*) fromRelative(cache->tagData);
     }
 
