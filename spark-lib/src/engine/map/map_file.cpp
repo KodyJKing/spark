@@ -1,5 +1,6 @@
 #include "map_file.hpp"
 #include "engine/tags/tag_group_id.hpp"
+#include "structure_bsp.hpp"
 
 namespace Engine::Map {
 
@@ -30,24 +31,6 @@ namespace Engine::Map {
     void* MapFile::getTagDataNaive(Tag* t) {
         if (!t) return nullptr;
         return fromRelative(t->data);
-    }
-
-    StructureBspReference* getStructureBspReference(MapFile* map, Tag* t) {
-        if (!map || !t) return nullptr;
-        if (t->groupID != GroupId_BSP) return nullptr;
-        Tag* firstTag = map->getTag(0);
-        if (!firstTag) return nullptr;
-        if (firstTag->groupID != GroupId_Scenario) return nullptr;
-        Scenario* scenario = (Scenario*)map->getTagData(firstTag);
-        if (!scenario) return nullptr;
-
-        for (size_t i = 0; i < scenario->structureBsps.count; i++) {
-            StructureBspReference* ref = map->getBlockElement(scenario->structureBsps, i);
-            if (ref->tagReference.tagHandle == t->tagHandle) {
-                return ref;
-            }
-        }
-        return nullptr;
     }
 
     void* MapFile::getTagData(Tag* t) {

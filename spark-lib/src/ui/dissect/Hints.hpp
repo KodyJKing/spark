@@ -11,6 +11,8 @@
 
 #include "memory/Memory.hpp"
 
+#define MAX_SPANS 0x2000
+
 namespace SparkLib::UI::DissectTag::Hints {
 
     using namespace Engine::Map;
@@ -366,6 +368,11 @@ namespace SparkLib::UI::DissectTag::Hints {
         void* tagEnd,
         std::vector<Analysis::Problem>& out
     ) {
+        if (spans.size() >= MAX_SPANS) {
+            // This will grind analysis to a halt. Skip until we get this working in bg-threads.
+            return;
+        }
+
         size_t firstNew = out.size();
         for (const auto& info : spans) {
             StructureNode* type = info.span.type;

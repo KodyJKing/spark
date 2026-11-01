@@ -89,7 +89,7 @@ namespace Engine::Map {
     };
 
     struct StructureBspHeader {
-        Pointer<PointerBase_Map> structureBsp;
+        Pointer<PointerBase_Tags> structureBsp;
         int vertexBufferSize;
         Pointer<PointerBase_Map> vertexBuffer;
         int pad[2];

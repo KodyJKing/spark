@@ -9,7 +9,7 @@
 
 namespace Engine::Map::Spark {
 
-    class ManagedMapFile : public MapFile {
+    class ManagedMapFile : public RawMapFile {
         public:
         const std::filesystem::path& getFilePath() const {
             return filePath;

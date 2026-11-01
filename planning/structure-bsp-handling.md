@@ -7,3 +7,9 @@ See CEA Decomp https://github.com/surreptitiousresearch/halocea
     - src\blam\cache\scenario_structure_bsp_load.c
     - src\headers\scenario_structure_bsp_reference.h
     - src\headers\cache_file_structure_bsp_header.h
+
+Todos:
+- Write a proceedure, `fixStructureBSPPointers`, to fix block/data pointers so they point into the correct location in the cache file. (normally they are relocated at runtume).
+- Before viewing a map in spool, apply `fixStructureBSPPointers`.
+- Before processing a map for tag injection, apply `fixStructureBSPPointers`.
+- After processing a map, undo the changes made by `fixStructureBSPPointers` to restore the original block/data pointers.

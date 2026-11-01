@@ -3,6 +3,8 @@
 #include "span_map.hpp"
 #include <vector>
 
+#define MAX_PROBLEMS 128
+
 namespace Engine::Map::Analysis {
 
     // Anything suspicious about a tag's parsed layout, tied to a byte range so
@@ -32,6 +34,8 @@ namespace Engine::Map::Analysis {
 
     // Overlapping regions are reported once per contiguous run, not per span.
     inline void findOverlapProblems(const std::vector<SpanInfo>& spans, std::vector<Problem>& out) {
+        if (out.size() >= MAX_PROBLEMS) return;
+        
         char* maxEnd = nullptr;
         Problem* last = nullptr;
         for (const auto& info : spans) {
@@ -44,6 +48,8 @@ namespace Engine::Map::Analysis {
                 } else {
                     out.push_back({ProblemKind::Overlap, s, oe});
                     last = &out.back();
+
+                    if (out.size() >= MAX_PROBLEMS) return;
                 }
             }
             if (maxEnd == nullptr || e > maxEnd) maxEnd = e;
@@ -64,6 +70,8 @@ namespace Engine::Map::Analysis {
         std::vector<Problem>& out,
         const ProblemOptions& options = {}
     ) {
+        if (out.size() >= MAX_PROBLEMS) return;
+
         char* cursor = rangeStart;
         // The span whose end defines the cursor, i.e. the one a gap would follow.
         const Span* cursorSpan = nullptr;
@@ -81,6 +89,8 @@ namespace Engine::Map::Analysis {
                 cursor = e;
                 cursorSpan = &info.span;
             }
+
+            if (out.size() >= MAX_PROBLEMS) return;
         }
         if (cursor < rangeEnd) reportGap(cursor, rangeEnd);
     }

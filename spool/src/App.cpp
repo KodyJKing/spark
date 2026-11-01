@@ -6,6 +6,7 @@
 #include "imgui.h"
 #include "ui/dissect/DissectTag.hpp"
 #include "ui/tag_browser/TagBrowser.hpp"
+#include "engine/map/schema/schema_file.hpp"
 
 namespace Spool {
 
@@ -49,6 +50,12 @@ namespace Spool {
             MessageBoxW(window_, message.c_str(), L"Spool", MB_OK | MB_ICONERROR);
             return false;
         }
+
+        Engine::Map::Schema* schema = Engine::Map::getMainSchema();
+        if (schema) {
+            newMap->normalize(schema);
+        }
+        
         closeFile();
         map_ = newMap;
         return true;

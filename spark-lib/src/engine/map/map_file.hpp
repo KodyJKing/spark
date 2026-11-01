@@ -4,6 +4,7 @@
 
 #include "tag_data_types.hpp"
 #include "memory/Memory.hpp"
+#include "schema/schema.hpp"
 
 #define DEBUG_MAP_FILE
 
@@ -70,8 +71,13 @@ namespace Engine::Map {
         void* getPointerBase(PointerBase b) override;
         TagDataHeader* getTagDataHeader() override;
 
+        bool normalized() { return isNormalized; }
+        void normalize(Schema* schema);
+        void denormalize(Schema* schema);
+        
         CacheHeader* cache = nullptr;
         private:
+        bool isNormalized = false;
     };
 
     class RuntimeMapFile : public MapFile {
