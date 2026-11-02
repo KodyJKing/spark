@@ -6,6 +6,10 @@
 
 #include <cmath>
 #include <cstdint>
+#include <functional>
+#include <memory>
+#include <string>
+#include <thread>
 #include <unordered_map>
 #include <vector>
 
@@ -31,9 +35,10 @@ namespace SparkLib::UI::DissectTag {
     constexpr float kMinimapStripeDim = 0.7f;
 
     // Stable color derived from the referenced type's identity, so repeated
-    // structures share a hue and layout patterns are easy to spot.
+    // structures share a hue and layout patterns are easy to spot. Hashes the
+    // id rather than the pointer since each analysis uses a fresh schema snapshot.
     inline uint32_t minimapColorForType(StructureNode* type) {
-        uint64_t h = (uint64_t)(uintptr_t)type;
+        uint64_t h = type ? (uint64_t)std::hash<std::string>{}(type->id) : 0;
         h ^= h >> 33; h *= 0xff51afd7ed558ccdULL; h ^= h >> 33;
         float hue = (h & 0xffff) / 65535.0f;
         float r, g, b;
@@ -76,10 +81,56 @@ namespace SparkLib::UI::DissectTag {
         if (window->minimapViewStart < 0.0) window->minimapViewStart = 0.0;
     }
 
+    // Runs the full minimap analysis on a detached thread against a snapshot of
+    // the schema. Map memory is read live; WindowState::waitForMinimapJob must
+    // be called before the map is freed.
+    inline std::shared_ptr<MinimapJob> startMinimapJob(const RenderContext& renderCtx, const StructureRef& root) {
+        auto job = std::make_shared<MinimapJob>();
+        auto schema = std::make_shared<Schema>(*root.context->schema);
+        MapFile* mapFile = root.context->mapFile;
+        Id rootId = root.node ? root.node->id : NullId;
+        void* rootAddress = root.address;
+        char* tagStart = (char*)renderCtx.tagStart;
+        char* tagEnd = (char*)renderCtx.tagEnd;
+        Analysis::ProblemOptions options = state.problemOptions;
+
+        std::thread([=] {
+            auto result = std::make_shared<MinimapAnalysis>();
+            result->schema = schema;
+            Context ctx = { mapFile, schema.get() };
+
+            auto it = schema->structures.find(rootId);
+            if (it != schema->structures.end()) {
+                StructureRef snapshotRoot = { &ctx, &it->second, rootAddress };
+                Analysis::SpanMap spans;
+                // The root struct isn't a block element, so add it explicitly or it
+                // would show up as a gap at the start of the tag.
+                if (snapshotRoot.node->size > 0) {
+                    char* rootStart = (char*)rootAddress;
+                    spans.spans.insert({rootStart, rootStart + snapshotRoot.node->size, snapshotRoot.node, Type::Structure});
+                }
+                Analysis::fillSpanMap(snapshotRoot, spans, tagStart, tagEnd);
+                if (!job->cancel) {
+                    result->overlaps = Analysis::analyzeOverlaps(spans);
+                    result->stripeParity = computeMinimapStripeParity(result->overlaps);
+                    result->problems = Analysis::findProblems(result->overlaps, tagStart, tagEnd, options);
+                }
+                if (!job->cancel) {
+                    Hints::findProbableTypeProblems(&ctx, result->overlaps, tagStart, tagEnd, result->problems);
+                }
+            }
+
+            job->result = std::move(result);
+            job->done = true;
+        }).detach();
+
+        return job;
+    }
+
     inline void renderMinimap(RenderContext& renderCtx, StructureRef& root) {
         WindowState* window = renderCtx.windowState;
 
-        if (ImGui::SmallButton("Refresh Minimap")) window->minimapBuiltTime = -1.0;
+        if (ImGui::SmallButton("Refresh Minimap")) window->minimapRefreshRequested = true;
         ImGui::SameLine();
         if (ImGui::SmallButton("Reset Zoom")) {
             window->minimapZoom = 1.0;
@@ -87,32 +138,37 @@ namespace SparkLib::UI::DissectTag {
         }
         ImGui::SameLine();
         if (ImGui::Checkbox("Ignore gaps after DataPointers", &state.problemOptions.ignoreGapsAfterDataPointer))
-            window->minimapBuiltTime = -1.0;
+            window->minimapRefreshRequested = true;
         ImGui::SetItemTooltip("Opaque data (DataPointer payloads) can be followed by padding for 4-byte alignment.");
         ImGui::SameLine();
         ImGui::TextDisabled("%.1fx  (wheel: zoom, drag/shift+wheel: pan, double-click: reset)", window->minimapZoom);
 
-        double now = ImGui::GetTime();
-        if (window->minimapBuiltTime < 0.0 ||
-            now - window->minimapBuiltTime >= kMinimapRebuildSeconds) {
-            window->minimapSpans.spans.clear();
-            // The root struct isn't a block element, so add it explicitly or it
-            // would show up as a gap at the start of the tag.
-            if (root.node && root.node->size > 0) {
-                char* rootStart = (char*)root.address;
-                window->minimapSpans.spans.insert({rootStart, rootStart + root.node->size, root.node, Type::Structure});
-            }
-            Analysis::fillSpanMap(root, window->minimapSpans, renderCtx.tagStart, renderCtx.tagEnd);
-            window->minimapOverlaps = Analysis::analyzeOverlaps(window->minimapSpans);
-            window->minimapStripeParity = computeMinimapStripeParity(window->minimapOverlaps);
-            window->minimapProblems = Analysis::findProblems(
-                window->minimapOverlaps, (char*)renderCtx.tagStart, (char*)renderCtx.tagEnd,
-                state.problemOptions);
-            Hints::findProbableTypeProblems(
-                root.context, window->minimapOverlaps, renderCtx.tagStart, renderCtx.tagEnd,
-                window->minimapProblems);
-            window->minimapBuiltTime = now;
+        if (window->minimapJob && window->minimapJob->done) {
+            window->minimap = std::move(window->minimapJob->result);
+            window->minimapJob.reset();
+            window->minimapBuiltTime = ImGui::GetTime();
         }
+
+        // Throttle from the last completed build so a slow analysis doesn't
+        // keep a core busy back-to-back.
+        double now = ImGui::GetTime();
+        bool stale = window->minimapRefreshRequested ||
+            window->minimapBuiltTime < 0.0 ||
+            now - window->minimapBuiltTime >= kMinimapRebuildSeconds;
+        if (stale && !window->minimapJob) {
+            window->minimapRefreshRequested = false;
+            window->minimapJob = startMinimapJob(renderCtx, root);
+        }
+
+        if (!window->minimap) {
+            ImGui::TextDisabled("[minimap: analyzing...]");
+            return;
+        }
+        // Hold a reference so the snapshot stays alive for this frame.
+        std::shared_ptr<MinimapAnalysis> analysis = window->minimap;
+        const auto& overlaps = analysis->overlaps;
+        const auto& problems = analysis->problems;
+        const auto& stripeParity = analysis->stripeParity;
 
         char* tagStart = (char*)renderCtx.tagStart;
         char* tagEnd = (char*)renderCtx.tagEnd;
@@ -188,8 +244,8 @@ namespace SparkLib::UI::DissectTag {
         dl->PushClipRect(p0, p1, true);
         dl->AddRectFilled(p0, p1, kMinimapBgColor);
 
-        for (size_t spanIndex = 0; spanIndex < window->minimapOverlaps.size(); ++spanIndex) {
-            auto& info = window->minimapOverlaps[spanIndex];
+        for (size_t spanIndex = 0; spanIndex < overlaps.size(); ++spanIndex) {
+            auto& info = overlaps[spanIndex];
             char* s = info.span.start;
             char* e = info.span.end;
             if (e <= viewStart || s >= viewEnd) continue;
@@ -199,8 +255,8 @@ namespace SparkLib::UI::DissectTag {
             uint32_t baseColor = info.overlaps
                 ? kMinimapOverlapColor
                 : minimapColorForType(info.span.type);
-            uint32_t parity = spanIndex < window->minimapStripeParity.size()
-                ? window->minimapStripeParity[spanIndex] : 0;
+            uint32_t parity = spanIndex < stripeParity.size()
+                ? stripeParity[spanIndex] : 0;
 
             // Collapsed multi-element spans (huge blocks) get striped per element
             // once elements are wide enough on screen to tell apart.
@@ -252,7 +308,7 @@ namespace SparkLib::UI::DissectTag {
 
         dl->PushClipRect(ImVec2(strip0.x - kMinimapProblemTriHalfWidth, strip0.y), 
                          ImVec2(strip1.x + kMinimapProblemTriHalfWidth, strip1.y), true);
-        for (auto& problem : window->minimapProblems) {
+        for (auto& problem : problems) {
             if (problem.end <= viewStart || problem.start >= viewEnd) continue;
             float x0 = addrToX(problem.start);
             float x1 = addrToX(problem.end);
@@ -280,7 +336,7 @@ namespace SparkLib::UI::DissectTag {
             ImGui::BeginTooltip();
             ImGui::Text("Offset: 0x%zx", (size_t)(addr - tagStart));
             bool any = false;
-            for (auto& info : window->minimapOverlaps) {
+            for (auto& info : overlaps) {
                 if (info.span.start <= addr && addr < info.span.end) {
                     any = true;
                     const char* name = info.span.type ? info.span.type->name : "?";
@@ -297,7 +353,7 @@ namespace SparkLib::UI::DissectTag {
 
             // Problems at the hovered byte, or whose triangle is under the mouse.
             bool anyProblem = false;
-            for (auto& problem : window->minimapProblems) {
+            for (auto& problem : problems) {
                 if (problem.end <= viewStart || problem.start >= viewEnd) continue;
                 bool contains = problem.start <= addr && addr < problem.end;
                 bool nearMarker = std::fabs(io.MousePos.x - problemMarkerX(problem)) <= kMinimapProblemTriHalfWidth;
