@@ -1,7 +1,9 @@
 #pragma once
 
 #include <vector>
-#include "engine/map/map_file.hpp"
+#include <span>
+#include "engine/map/schema/schema.hpp"
+#include "engine/map/tag_data_types.hpp"
 
 namespace Engine::Map::Spark {
 
@@ -12,11 +14,13 @@ namespace Engine::Map::Spark {
 
     using TagList = std::vector<PortableTagId>;
 
-    void injectTags(
-        RawMapFile& hostMap, 
-        RawMapFile& guestMap,
-        TagList& guestTags, 
-        RawMapFile& newMap
+    // Throws std::runtime_error for invalid or unsupported maps/schemas.
+    // Inputs are immutable; the returned buffer owns the complete serialized map.
+    std::vector<uint8_t> injectTags(
+        std::span<const uint8_t> hostBytes,
+        std::span<const uint8_t> guestBytes,
+        const TagList& guestTags,
+        const Schema& schema
     );
 
 }
