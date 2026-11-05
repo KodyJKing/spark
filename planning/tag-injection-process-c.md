@@ -35,7 +35,9 @@ semantic completeness, and gaps alone do not demonstrate an incomplete mapping.
    Preserve host indices and handles. Resolve requested tags by `(group, path)`.
    Prefer an existing host tag with that identity; otherwise assign a new index,
    preserving the guest handle's salt. Traverse dependencies to a fixed point,
-   including cyclic references. A stale handle or missing dependency is an error.
+   including cyclic references. A stale guest handle or missing guest dependency
+   is an error. Host handles are preserved without re-resolving them: compiled
+   maps may retain editor-only references to tags excluded from the cache.
 2. Walk schema-described host and imported guest metadata. Record fixups using
    section-relative integer locations, never pointers into growable buffers.
    Check block extents, schema field bounds/overlaps, fixups and pointer ranges.
@@ -71,9 +73,22 @@ displacement alone is not a valid pointer delta.
   tag before import. Adding BSPs requires a separate scenario/BSP layout design.
 - Inline DataPointer payloads are supported using the 20-byte disk layout, not
   the native pointer-sized C++ structure. Nonempty payloads with nonzero flags or
-  file offsets are rejected until their storage semantics are established.
-- Bitmap payloads must reside in the source map's fixed prefix. External bitmap
-  cache resources are rejected. Model buffers must be present in the source map.
+  null data addresses are rejected until their storage semantics are established.
+  Inline payloads may retain nonzero source-file offsets; those offsets are
+  preserved while the validated metadata address is relocated.
+- Internal bitmap payloads must reside in the source map's fixed prefix.
+  Host external bitmap records are preserved unchanged, including their flags,
+  cache offsets, sizes and handles; their pixel data is neither read nor copied.
+  The output therefore requires the same compatible shared bitmap cache as the
+  host. Missing, changed or corrupt cache contents are not validated by injection.
+  Guest external bitmaps are allowed under the same-cache assumption: their
+  flags, cache offsets and sizes are preserved, and their owner tag handles are
+  remapped. A successful import emits one warning per injection that cache
+  compatibility has not been verified. Spool displays it in a warning dialog and
+  the saved-result status; API callers can collect warnings or use default logging.
+  Future verification can compare the installed cache files against checksums
+  distributed by mod authors; no checksum validation is implemented yet.
+  Model buffers must be present in the source map.
   Nonzero runtime-initialized model vertex pointers are rejected.
 - Empty blocks/data and null tag references retain their sentinel values.
 - Missing/empty root schemas, unspecified block strides, unexpected section layouts, invalid indices,
@@ -97,10 +112,34 @@ MSBuild.exe spark.sln /t:spark-test /p:Configuration=Debug /p:Platform=Win64
 
 Tests include loading the actual bundled `scnr` schema, traversing its zero-size
 root and relocating its mapped references/data while preserving unmapped bytes.
-The raw header signatures, version and model/tag section boundary were also checked read-only against a local
-`b30.map` backup. That inspection is not a full-map injection or engine load test.
+The raw header signatures, version and model/tag section boundary were checked
+against local backups. The tag-data header's scenario handle is at `+0x04` and
+checksum at `+0x08`; real-map tests prevent regression to the originally swapped
+field definitions.
 The bundled `Struct_scnr` has 54 mapped fields and an unspecified root size.
 That is supported, not evidence of an absent scenario mapping.
+
+### Real-map regression tests
+
+Set `MCC_HOME` to the MCC installation and run:
+
+```powershell
+.\bin\Debug-Win64\spark-test\spark-test.exe "[.real_maps]"
+```
+
+These opt-in tests read `halo1\maps_backup`. They validate guest-map listing for
+level maps (excluding the separate `bitmaps.map` resource archive), and attempt
+to inject `weapons\shotgun\shotgun` (`mod2`) from `d40.map` into `b30.map`.
+The result is kept in memory. Neither inputs nor any existing output files are
+written; inputs are reread and compared even when injection throws.
+
+The shotgun test currently exposes a real schema blocker, rather than accepting
+partial output: `StartingLocations` declares a 28-byte stride but maps a 16-byte
+`field_0x1C` at offset 28. It remains a failing opt-in regression until the mapping
+is corrected. Beyond that, 51 groups present in the tested `b30` lack nonempty
+root schemas (including `lens`, `matg`, `scen`, `coll`, and `antr`). Host relocation
+requires those mappings; passing synthetic tests is not campaign-map readiness.
+No unsafe pointer guessing or skipping of those host groups is performed.
 
 Before using an output in MCC:
 
@@ -112,5 +151,23 @@ Before using an output in MCC:
    transitions. Non-contiguous bitmap storage still needs runtime confirmation.
 5. Add verified external DataPointer/resource-cache formats and their fixtures.
 
-UI, file-open detours and automatic game-map deployment are outside this first
-offline implementation.
+## Spool UI
+
+Open a host map normally, then use **File > Open Guest Map for Injection...**
+or **Tools > Tag Injection**. The guest is validated before listing owned tag
+identities; it does not replace or normalize the host map. The picker supports
+group/path filtering, persistent checkbox selection, selecting filtered results,
+and clearing the selection.
+
+**Inject Selected and Save As...** opens a native Save As dialog with a distinct
+`<host>.injected.map` suggestion. Cancellation returns without injecting or writing.
+The injector uses raw input bytes, not the dissector's normalized or edited buffer.
+Opening another host clears the guest and selection.
+
+Saving checks filesystem identity to reject host/guest aliases, holds input handles
+that deny writes/deletion, and writes/flushes a same-directory temporary file before
+replacing the chosen output. Read, dialog, injection and save failures are reported
+to the user. No partially written result is published.
+
+File-open detours and automatic game-map deployment remain outside this offline
+workflow.

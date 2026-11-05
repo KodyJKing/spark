@@ -18,6 +18,7 @@ project "spark-test"
     files {
         "src/**.hpp",
         "src/**.cpp",
+        "../spool/src/InjectionFiles.cpp",
         "../vendor/catch2/catch_amalgamated.hpp",
         "../vendor/catch2/catch_amalgamated.cpp",
         "../vendor/imgui/*.h",
@@ -28,6 +29,7 @@ project "spark-test"
 
     includedirs {
         "src",
+        "../spool/src",
         "../spark/src",
         "../vendor/catch2",
         "../vendor/imgui",

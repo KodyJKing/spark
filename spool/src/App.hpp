@@ -2,6 +2,7 @@
 
 #include <filesystem>
 #include <windows.h>
+#include "imgui.h"
 
 #include "engine/map/spark/managed_map_file.hpp"
 #include "ui/tag_browser/TagBrowserHost.hpp"
@@ -40,9 +41,25 @@ namespace Spool {
         void menuBar();
         static std::filesystem::path defaultSessionPath();
         void saveSessionIfChanged();
+        void openGuestMap();
+        void injectionWindow();
+        void injectAndSave();
+
+        struct GuestTagChoice {
+            uint32_t groupId;
+            std::string path;
+            std::string label;
+            bool selected = false;
+        };
 
         std::filesystem::path sessionPath_;
         std::string lastSessionJson_;
+        std::filesystem::path guestPath_;
+        std::vector<uint8_t> guestBytes_;
+        std::vector<GuestTagChoice> guestTags_;
+        ImGuiTextFilter guestFilter_;
+        std::string injectionMessage_;
+        bool showInjection_ = false;
 
         HWND window_;
         Engine::Map::Spark::ManagedMapFilePtr map_;

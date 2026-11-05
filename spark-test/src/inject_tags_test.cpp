@@ -203,6 +203,10 @@ TEST_CASE("Process C rebuilds a zero-injection map without changing its inputs",
     REQUIRE(std::equal(original.begin() + 0x800, original.begin() + 0x980, output.begin() + 0x800));
     auto again = injectTags(host.bytes, guest.bytes, {}, schema.schema);
     REQUIRE(again == output);
+    auto listed = listInjectionTags(output);
+    REQUIRE(listed.size() == 1);
+    REQUIRE(listed[0].groupId == GroupId_Weapon);
+    REQUIRE(listed[0].path == "host");
 }
 
 TEST_CASE("Process C closes cyclic dependencies and relocates blocks names and inline data", "[inject_tags]") {
@@ -446,7 +450,10 @@ TEST_CASE("Process C rejects invalid and unsupported inputs atomically", "[injec
         schema.schema.structures.clear();
         auto& node = schema.node("ref", 16, GroupId_Weapon);
         schema.field(node, 0, Type::TagReference);
-        put(host.bytes, at, TagReference{GroupId_Weapon, {}, 0, 0x12340000});
+        auto guestData = guest.allocate(16);
+        guest.add(GroupId_Weapon, "bad", guestData);
+        put(guest.bytes, guestData, TagReference{GroupId_Weapon, {}, 0, 0x12340000});
+        requested.push_back({GroupId_Weapon, "bad"});
     }
     SECTION("unterminated name") {
         auto entry = tag(host.bytes, 0);
@@ -463,6 +470,19 @@ TEST_CASE("Process C rejects invalid and unsupported inputs atomically", "[injec
         std::runtime_error, Catch::Matchers::MessageMatches(Catch::Matchers::StartsWith("injectTags:")));
     REQUIRE(host.bytes == originalHost);
     REQUIRE(guest.bytes == originalGuest);
+}
+
+TEST_CASE("Injection tag listing rejects malformed raw maps before UI access", "[inject_tags]") {
+    Fixture map;
+    auto at = map.allocate(4);
+    map.add(GroupId_Weapon, "tag", at);
+    SECTION("truncated header") { map.bytes.resize(10); }
+    SECTION("invalid tag array") {
+        auto h = header(map.bytes);
+        h.tagArray.offset = 0xFFFFFFFF;
+        put(map.bytes, Fixture::tagsAt, h);
+    }
+    REQUIRE_THROWS_AS(listInjectionTags(map.bytes), std::runtime_error);
 }
 
 TEST_CASE("Process C preserves shared blocks and empty-pointer sentinels", "[inject_tags]") {
@@ -529,10 +549,10 @@ TEST_CASE("Process C rejects conflicting interpretations of shared metadata", "[
     put(host.bytes, at + 12, BlockPointer{1, {host.pointer(shared)}, 0});
     put(host.bytes, shared, TagReference{1, {tag(host.bytes, 0).path.offset}, 0, invalid});
     REQUIRE_THROWS_WITH(injectTags(host.bytes, guest.bytes, {}, schema.schema),
-        "injectTags: conflicting aliased fixups");
+        Catch::Matchers::StartsWith("injectTags: conflicting aliased fixups"));
 }
 
-TEST_CASE("Process C fails closed on external or out-of-range bitmap payloads", "[inject_tags]") {
+TEST_CASE("Process C fails closed on out-of-range internal bitmap payloads", "[inject_tags]") {
     Fixture host, guest;
     Schemas schema;
     schema.bitmap();
@@ -543,7 +563,6 @@ TEST_CASE("Process C fails closed on external or out-of-range bitmap payloads", 
     BitmapData data{};
     data.data.offset = 0x840;
     data.dataSize = 8;
-    SECTION("external cache flag") { data.flags = 1 << 8; }
     SECTION("overlaps moved model buffer") { data.data.offset = 0x97F; }
     SECTION("offset overflow") { data.data.offset = 0xFFFFFFFE; }
     SECTION("size overflow") { data.dataSize = 0xFFFFFFFF; }
@@ -553,6 +572,112 @@ TEST_CASE("Process C fails closed on external or out-of-range bitmap payloads", 
     REQUIRE_THROWS_AS(injectTags(host.bytes, guest.bytes, {{GroupId_Bitmap, "bitmap"}}, schema.schema),
         std::runtime_error);
     REQUIRE(guest.bytes == original);
+}
+
+TEST_CASE("Process C preserves host external bitmaps while injecting internal guest pixels", "[inject_tags]") {
+    Fixture host, guest;
+    Schemas schema;
+    schema.bitmap();
+    auto hostRoot = host.allocate(sizeof(Bitmap));
+    auto hostData = host.allocate(2 * sizeof(BitmapData));
+    Bitmap hostBitmap{};
+    hostBitmap.bitmapData = {2, {host.pointer(hostData)}, 0};
+    put(host.bytes, hostRoot, hostBitmap);
+    host.add(GroupId_Bitmap, "host", hostRoot);
+    BitmapData external{};
+    external.flags = 0x183;
+    external.data.offset = 0x7A5711B;
+    external.dataSize = 349552;
+    external.bitmapTagHandle = 0xE1170000;
+    external.textureCacheHandle = 0xFFFFFFFF;
+    external.bufferIndex = 7;
+    put(host.bytes, hostData, external);
+    BitmapData internal{};
+    internal.data.offset = 0x840;
+    internal.dataSize = 8;
+    put(host.bytes, hostData + sizeof(BitmapData), internal);
+    auto guestRoot = guest.allocate(sizeof(Bitmap));
+    auto guestData = guest.allocate(sizeof(BitmapData));
+    Bitmap guestBitmap{};
+    guestBitmap.bitmapData = {1, {guest.pointer(guestData)}, 0};
+    put(guest.bytes, guestRoot, guestBitmap);
+    put(guest.bytes, guestData, internal);
+    guest.add(GroupId_Bitmap, "guest", guestRoot);
+    std::fill_n(guest.bytes.begin() + 0x840, 8, uint8_t(0xBC));
+    auto original = host.bytes;
+
+    std::vector<std::string> warnings;
+    auto output = injectTags(host.bytes, guest.bytes, {{GroupId_Bitmap, "guest"}}, schema.schema, &warnings);
+    REQUIRE(warnings.empty());
+    REQUIRE(host.bytes == original);
+    auto copiedHost = get<Bitmap>(output, file(output, tag(output, 0).data.offset));
+    REQUIRE(copiedHost.bitmapData.data.offset != hostBitmap.bitmapData.data.offset);
+    auto copiedRecords = file(output, copiedHost.bitmapData.data.offset);
+    REQUIRE(std::memcmp(output.data() + copiedRecords, &external, sizeof(external)) == 0);
+    REQUIRE(std::memcmp(output.data() + copiedRecords + sizeof(BitmapData), &internal, sizeof(internal)) == 0);
+    REQUIRE(external.data.offset > output.size());
+    REQUIRE(std::equal(original.begin() + 0x840, original.begin() + 0x848, output.begin() + 0x840));
+    auto copiedGuest = get<Bitmap>(output, file(output, tag(output, 1).data.offset));
+    auto guestRecord = get<BitmapData>(output, file(output, copiedGuest.bitmapData.data.offset));
+    REQUIRE(guestRecord.bitmapTagHandle == tag(output, 1).tagHandle);
+    REQUIRE(guestRecord.data.offset == 0x980);
+    REQUIRE(std::equal(guest.bytes.begin() + 0x840, guest.bytes.begin() + 0x848,
+        output.begin() + guestRecord.data.offset));
+}
+
+TEST_CASE("Process C imports external guest bitmaps with one shared-cache warning", "[inject_tags]") {
+    Fixture host, guest;
+    Schemas schema;
+    schema.bitmap();
+    host.add(GroupId_Bitmap, "host", host.allocate(sizeof(Bitmap)));
+    auto root = guest.allocate(sizeof(Bitmap)), dataAt = guest.allocate(3 * sizeof(BitmapData));
+    Bitmap bitmap{};
+    bitmap.bitmapData = {3, {guest.pointer(dataAt)}, 0};
+    put(guest.bytes, root, bitmap);
+    auto guestHandle = guest.add(GroupId_Bitmap, "external", root);
+    BitmapData external{};
+    external.flags = 0x183;
+    external.data.offset = 0x7A5711B;
+    external.dataSize = 349552;
+    external.bitmapTagHandle = guestHandle;
+    external.textureCacheHandle = 0xFFFFFFFF;
+    put(guest.bytes, dataAt, external);
+    auto empty = external;
+    empty.dataSize = 0;
+    put(guest.bytes, dataAt + sizeof(BitmapData), empty);
+    BitmapData internal{};
+    internal.data.offset = 0x840;
+    internal.dataSize = 8;
+    put(guest.bytes, dataAt + 2 * sizeof(BitmapData), internal);
+    std::vector<std::string> warnings;
+    auto original = guest.bytes;
+
+    SECTION("successful import") {
+        auto output = injectTags(host.bytes, guest.bytes, {{GroupId_Bitmap, "external"}}, schema.schema, &warnings);
+        REQUIRE(warnings.size() == 1);
+        REQUIRE_THAT(warnings[0], Catch::Matchers::ContainsSubstring("same shared bitmap cache"));
+        REQUIRE_THAT(warnings[0], Catch::Matchers::ContainsSubstring("has not been verified"));
+        auto imported = tag(output, 1);
+        REQUIRE(imported.tagHandle != guestHandle);
+        auto dest = get<Bitmap>(output, file(output, imported.data.offset));
+        auto records = file(output, dest.bitmapData.data.offset);
+        external.bitmapTagHandle = imported.tagHandle;
+        empty.bitmapTagHandle = imported.tagHandle;
+        REQUIRE(std::memcmp(output.data() + records, &external, sizeof(external)) == 0);
+        REQUIRE(std::memcmp(output.data() + records + sizeof(BitmapData), &empty, sizeof(empty)) == 0);
+        auto copiedInternal = get<BitmapData>(output, records + 2 * sizeof(BitmapData));
+        REQUIRE(copiedInternal.bitmapTagHandle == imported.tagHandle);
+        REQUIRE(copiedInternal.data.offset == 0x980);
+        REQUIRE(header(output).modelData.offset == 0x988);
+        REQUIRE(guest.bytes == original);
+    }
+    SECTION("failed import does not publish success warnings") {
+        internal.data.offset = 0xFFFFFFFF;
+        put(guest.bytes, dataAt + 2 * sizeof(BitmapData), internal);
+        REQUIRE_THROWS_AS(injectTags(host.bytes, guest.bytes, {{GroupId_Bitmap, "external"}}, schema.schema, &warnings),
+            std::runtime_error);
+        REQUIRE(warnings.empty());
+    }
 }
 
 TEST_CASE("Process C handles an empty tag set and rejects an exhausted handle table", "[inject_tags]") {
@@ -571,6 +696,23 @@ TEST_CASE("Process C handles an empty tag set and rejects an exhausted handle ta
         REQUIRE_THROWS_WITH(injectTags(host.bytes, guest.bytes, {}, schema.schema),
             "injectTags: tag count exceeds handle index capacity");
     }
+}
+
+TEST_CASE("Process C still bounds-checks internal host bitmap pixels", "[inject_tags]") {
+    Fixture host, guest;
+    Schemas schema;
+    schema.bitmap();
+    auto root = host.allocate(sizeof(Bitmap)), dataAt = host.allocate(sizeof(BitmapData));
+    Bitmap bitmap{};
+    bitmap.bitmapData = {1, {host.pointer(dataAt)}, 0};
+    put(host.bytes, root, bitmap);
+    BitmapData data{};
+    data.data.offset = 0x7A5711B;
+    data.dataSize = 349552;
+    put(host.bytes, dataAt, data);
+    host.add(GroupId_Bitmap, "internal", root);
+    REQUIRE_THROWS_WITH(injectTags(host.bytes, guest.bytes, {}, schema.schema),
+        Catch::Matchers::StartsWith("injectTags: range outside its section"));
 }
 
 TEST_CASE("Process C validates model formats and buffer extents before copying", "[inject_tags]") {
@@ -709,4 +851,25 @@ TEST_CASE("Process C still rejects unbounded fields overlaps and unspecified blo
     SECTION("root field exceeds metadata") { schema.field(root, host.bytes.size(), Type::U32); }
     SECTION("field extent overflows") { schema.field(root, std::numeric_limits<size_t>::max(), Type::U32); }
     REQUIRE_THROWS_AS(injectTags(host.bytes, guest.bytes, {}, schema.schema), std::runtime_error);
+}
+
+TEST_CASE("Process C preserves host editor references and inline data source offsets", "[inject_tags]") {
+    Fixture host, guest;
+    Schemas schema;
+    auto& root = schema.node("root", 36, GroupId_Weapon);
+    schema.field(root, 0, Type::TagReference);
+    schema.field(root, 16, Type::DataPointer);
+    auto at = host.allocate(36), payload = host.allocate(4);
+    host.add(GroupId_Weapon, "host", at);
+    put(host.bytes, at, TagReference{GroupId_Weapon, {tag(host.bytes, 0).path.offset}, 0, 0x12340000});
+    put(host.bytes, at + 16, uint32_t(4));
+    put(host.bytes, at + 24, uint32_t(0x61D));
+    put(host.bytes, at + 28, host.pointer(payload));
+    put(host.bytes, payload, uint32_t(0xABCDEF12));
+    auto output = injectTags(host.bytes, guest.bytes, {}, schema.schema);
+    auto dest = file(output, tag(output, 0).data.offset);
+    REQUIRE(get<TagReference>(output, dest).tagHandle == 0x12340000);
+    REQUIRE(path(output, get<TagReference>(output, dest).path.offset) == "host");
+    REQUIRE(get<uint32_t>(output, dest + 24) == 0x61D);
+    REQUIRE(get<uint32_t>(output, file(output, get<uint32_t>(output, dest + 28))) == 0xABCDEF12);
 }

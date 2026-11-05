@@ -5,6 +5,7 @@
 #include <array>
 #include <cstring>
 #include <limits>
+#include <iostream>
 #include <map>
 #include <set>
 #include <stdexcept>
@@ -25,7 +26,7 @@ namespace Engine::Map::Spark {
         }
 
         uint32_t narrow(size_t value) {
-            if (value > std::numeric_limits<uint32_t>::max()) fail("32-bit size overflow");
+            if (value > (std::numeric_limits<uint32_t>::max)()) fail("32-bit size overflow");
             return static_cast<uint32_t>(value);
         }
 
@@ -156,6 +157,7 @@ namespace Engine::Map::Spark {
             std::vector<uint32_t> tableData;
             uint32_t importedParts = 0;
             bool copyGuestModels = false;
+            bool importedExternalBitmaps = false;
 
             Injector(std::span<const uint8_t> h, std::span<const uint8_t> g, const Schema& s)
                 : host(h), guest(g), schema(s) {
@@ -205,7 +207,12 @@ namespace Engine::Map::Spark {
                         fail("schema offset mismatch or overlap in " + node.id);
                     size_t size = field.type.type == Type::Structure
                         ? structure(field.type.ref).size : TypeSizes[type];
-                    range(offset, size, node.size ? node.size : std::numeric_limits<uint32_t>::max());
+                    if (node.size && (offset > node.size || size > node.size - offset))
+                        fail("schema field " + std::string(node.name[0] ? node.name : node.id.c_str()) +
+                            "." + (field.name[0] ? field.name : field.id.c_str()) +
+                            " exceeds its " + std::to_string(node.size) + "-byte structure (offset " +
+                            std::to_string(offset) + ", size " + std::to_string(size) + ")");
+                    range(offset, size, node.size ? node.size : (std::numeric_limits<uint32_t>::max)());
                     cursor = offset + size;
                 }
                 // Root sizes may be unspecified. Only the mapped field extent is
@@ -299,7 +306,7 @@ namespace Engine::Map::Spark {
                         auto length = read<int32_t>(source.bytes, at);
                         if (length < 0) fail("negative DataPointer size");
                         if (!length) break;
-                        if (read<uint32_t>(source.bytes, at + 4) || read<uint32_t>(source.bytes, at + 8))
+                        if (read<uint32_t>(source.bytes, at + 4) || !read<uint32_t>(source.bytes, at + 12))
                             fail("external/flagged DataPointer payload is unsupported");
                         pointer(fromGuest, at + 12, static_cast<size_t>(length), space);
                         break;
@@ -308,7 +315,9 @@ namespace Engine::Map::Spark {
                         auto ref = read<TagReference>(source.bytes, at);
                         if (ref.path.offset)
                             patch(fromGuest, at + 4, space, {Section::Names, intern(source.name(ref.path.offset))});
-                        if (ref.tagHandle == nullHandle) break;
+                        // Host handles are not remapped. Compiled maps can retain
+                        // editor-only references whose targets are absent from the table.
+                        if (!fromGuest || ref.tagHandle == nullHandle) break;
                         auto index = source.index(ref.tagHandle);
                         const auto& target = source.tags[index];
                         if (ref.groupID != target.groupID && ref.groupID != target.parentGroupID &&
@@ -357,9 +366,13 @@ namespace Engine::Map::Spark {
                 for (uint32_t i = 0; i < bitmap.bitmapData.count; ++i) {
                     auto at = narrow(block + size_t(i) * sizeof(BitmapData));
                     auto data = read<BitmapData>(source.bytes, at);
-                    if (data.flags & (1u << 8)) fail("external bitmap cache is unsupported");
                     if (fromGuest)
                         patch(true, at + offsetof(BitmapData, bitmapTagHandle), {}, {Section::Literal, handle});
+                    if (data.flags & (1u << 8)) {
+                        if (fromGuest) importedExternalBitmaps = true;
+                        // This offset addresses the shared cache, not either map.
+                        continue;
+                    }
                     if (!data.dataSize) continue;
                     source.fixed(data.data.offset, data.dataSize);
                     if (fromGuest) {
@@ -430,8 +443,19 @@ namespace Engine::Map::Spark {
                     if (found == guest.identities.end()) fail("requested guest tag not found: " + std::string(id.path));
                     resolve(found->second);
                 }
-                for (uint32_t i = 0; i < host.tags.size(); ++i) tag(false, i);
-                for (size_t i = 0; i < imports.size(); ++i) tag(true, imports[i]);
+                auto process = [&](bool fromGuest, uint32_t index) {
+                    try {
+                        tag(fromGuest, index);
+                    } catch (const std::runtime_error& error) {
+                        const auto& source = fromGuest ? guest : host;
+                        const auto& entry = source.tags[index];
+                        throw std::runtime_error(std::string(error.what()) + " (" +
+                            (fromGuest ? "guest" : "host") + " tag [" + Strings::fourccToString(entry.groupID) +
+                            "] " + source.name(entry.path.offset) + ")");
+                    }
+                };
+                for (uint32_t i = 0; i < host.tags.size(); ++i) process(false, i);
+                for (size_t i = 0; i < imports.size(); ++i) process(true, imports[i]);
 
                 Bytes out;
                 append(out, host.bytes.first(host.header.modelData.offset));
@@ -509,12 +533,31 @@ namespace Engine::Map::Spark {
         };
     }
 
+    std::vector<InjectionTag> listInjectionTags(std::span<const uint8_t> bytes) {
+        Source source(bytes);
+        std::vector<InjectionTag> result;
+        result.reserve(source.tags.size());
+        for (const auto& tag : source.tags)
+            result.push_back({tag.groupID, source.name(tag.path.offset)});
+        return result;
+    }
+
     std::vector<uint8_t> injectTags(
         std::span<const uint8_t> hostBytes,
         std::span<const uint8_t> guestBytes,
         const TagList& guestTags,
-        const Schema& schema
+        const Schema& schema,
+        std::vector<std::string>* warnings
     ) {
-        return Injector(hostBytes, guestBytes, schema).run(guestTags);
+        Injector injector(hostBytes, guestBytes, schema);
+        auto output = injector.run(guestTags);
+        if (injector.importedExternalBitmaps) {
+            const std::string warning =
+                "Imported external bitmaps require the same shared bitmap cache as the guest map. "
+                "Cache compatibility has not been verified; a different cache may cause incorrect textures or load failures.";
+            if (warnings) warnings->push_back(warning);
+            else std::clog << "injectTags warning: " << warning << '\n';
+        }
+        return output;
     }
 }

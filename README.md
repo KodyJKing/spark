@@ -40,6 +40,33 @@ Halo MCC will need to be running when you run `run_launcher.ps1`. Note that with
 
 ## Workflow
 
+### Injecting tags in Spool
+
+1. Use **File > Open Map...** to open the host map.
+2. Use **File > Open Guest Map for Injection...** to choose a second map.
+   The picker is also available under **Tools > Tag Injection**.
+3. Filter guest tags by group/path and check the tags to import. **Select filtered**
+   selects all visible matches; selections survive filter changes. Dependencies
+   are included automatically and matching host tags are reused.
+4. Choose **Inject Selected and Save As...** and select an output `.map` file.
+
+The default output name is `<host>.injected.map`. Spool refuses to overwrite
+either input map, including alternate paths/hard links to those files. Other
+existing outputs may be replaced after the native Save As confirmation; the
+output is published only after a complete temporary file has been written.
+Cancelling the dialog does not perform injection or write a file.
+
+Injection uses raw input files rather than unsaved dissector edits. It is
+experimental: unsupported schemas/resource formats are reported as errors, and
+MCC acceptance is not guaranteed. See the
+[Process C implementation notes](planning/tag-injection-process-c.md).
+
+Guest bitmaps that reference shared external pixel data are permitted with a
+warning. They require the same shared bitmap cache as the guest map; Spool does
+not yet verify cache compatibility against mod-author checksums.
+
+### Development
+
 When developing, run `scripts/watch_launcher.ps1` to build/run in watch mode. When you save a source file, this script will uninject, rebuild, and reinject `spark.dll`.
 
 If you're using Cheat Engine as part of your workflow, turn off symbols in the debug build configuration (`spark/premake5.lua`). Otherwise, Cheat Engine will hold on to the PDB file and prevent rebuilding.
