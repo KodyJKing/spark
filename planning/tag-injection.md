@@ -1,8 +1,11 @@
 ### Outline
 
-- Add schema type for pointers to opaque data (called tag_data in CEA decomp).
-    - Integrate into dissector.
-    - Integrate into minimap.
+x Add schema type for pointers to opaque data (called tag_data in CEA decomp).
+    x Integrate into dissector.
+    x Integrate into minimap.
+    - Model internal/external DataPointer
+        ! Raw data can live inline in a tag or in the "Raw Data" section of the map.
+        ! Internal/external distinction determines if we need to update offsets during injection.
 
 - Finish mapping all tag types.
 - Implement injection for raw map files.
@@ -30,38 +33,58 @@ class RawMapFile {
 }
 ```
 
-Process A: (needs full tag schemas)
-1. Rebuild tag array with injected tags. Add relocation links for all tag data and tag path pointers.
-2. Rebuild tag paths array. 
-3. Rebuild all tag data blocks. Add relocation links for all TagReference's and ModelData pointers.
-4. Fullfill tag data links.
-5. Fulfill tag path links.
-6. Rebuild vertex buffer.
-7. Rebuild index buffer.
-8. Fullfill vertex and index buffer links.
+Process C:
 
-Process B: (only needs schemas for injected tags)
-- Scan existing tag array.
-    - Add links for tag's path string.
-    - Add symbol for tag entry.
-    - Copy path strings into newPathStrings temp buffer.
+- Terminology:
+    - Host map: The map we are injecting tags into.
+    - Guest map: The map containing the tags to be injected.
+    - Host tag: Tags that already exist in the host map.
+    - Guest tag: Tags that are being injected from the guest map.
+    
+- Assumptions:
+    1. Engine will allow non-contiguous bitmaps, allowing us to use a separate bitmap-buffer for guest tags.
+    2. Vertex/index buffers are the final portion of the "Raw Data" section.
+    3. Engine will accept broken TagReference.path pointers for SBSP tag data.
 
-    - Scan existing model and bitmap tags. 
-        - Copy data into newTextures, newVertices and newIndices temp buffers.
-- Append injected tag paths to end of newPathStrings temp buffer.
-- Append injected tag entries to end of tag array.
-    - Check that we do not overflow the space freed from oldPathStrings.
-    - Append texture and model data to temp buffers.
-    - Add relocation links for tag path.
-    - Add relocation links for tag data.
-- Append new tag data.
-    - Use space in this order: oldVertices, oldIndices, overflow
-    - Add symbol for new tag data.
-    - Apply relative relocation fixups to block and opaque pointers.
-    - Add links for tag, vertex, index.
-- Write temp buffers to end of file. 
-    - Note destination for linking.
-- Resolve all symbol links.
+- Caveats:
+    - Does not visit SBSP tag data. TagReference.path pointers will be broken. (3)
+
+- Pass 1: Fill out temporary buffers with host and guest data.
+    - Copy existing data into temp buffers:
+        - Vertex buffers
+        - Index buffers
+        - Tag names
+        ! Everything up to the vertex buffer portion of "Raw Data" is copied as-is.
+            ! We'll call this the "fixed-section".
+        - Copy TagData ("Metadata") section to temp buffer.
+    - Create guest bitmap buffer.
+    - For each guest tag:
+        - Push name to name buffer
+        - Push to bitmap buffer
+        - Push to vertex/index buffers
+        - Push tag entry to tag array
+
+- Pass 2: Finalize layout and fix host offsets/pointers.
+    - Copy fixed-section to result buffer.
+    - Append bitmap, vertex and index buffers to result buffer. (2)
+        - Note where these land so we can update TagDataHeader.
+    - Append TagDataHeader to result buffer and update values as needed. (2)
+        - Note where this lands so we can update CacheHeader.
+    - Append TagArray to result buffer.
+    - Append TagNames to result buffer.
+        - Note where this lands so we can update name ptrs in TagArray.
+    - Append old "Metadata" section to result buffer.
+        - Note where this lands so we can update data ptrs in TagArray.
+
+    - Update name and data pointers in TagArray (host tags only).
+    - Apply relocation proceedure to host tags' data.
+        - Apply TagData relocation offset to host tag data's internal pointers.
+        - Apply TagNames relocation offset to host tag data's tag-reference name pointers.
+
+    ! Now we know where every section in the resulting map lands.
+    ! The map should be in a valid and playable state here.
+
+- Pass 3: Append guest tag data.
 
 ```C++
 
@@ -87,54 +110,6 @@ struct Symbol {
 MultiMap<SymbolHash256, uint64_t> links; // A map from a symbol to all referring addresses.
 std::map<SymbolHash256, Symbol> symbols;
 
-void RawMapFile::injectTagsB(RawMapFile& fromMap, TagList& tagsToInject, RawMapFile& newMap) {
-
-}
-
-void RawMapFile::injectTagsA(RawMapFile& fromMap, TagList& tagsToInject, RawMapFile& newMap) {
-    // Three maps to keep separatre in your head:
-    //  - fromMap: The source of the injected tags.
-    //  - toMap/this: The recipient map to be copied.
-    //  - newMap: The resulting map after injection.
-    
-    RawMapFile& fromMap = *this;
-    
-    // Naively copy this to result.
-    newMap.copyBytes(fromMap);
-
-    // Step 1: Rebuild tag array.
-
-    auto insertTagLinks = [&](Tag& tag, char* tagPath, Tag* tagPtr) {
-        SymbolHash256 tagSymbolHash = makeTagDataSymbolHash(tag.groupID, tagPath);
-        links.insert(tagSymbolHash, reinterpret_cast<uint64_t>(tagPtr));
-
-        SymbolHash256 tagPathSymbolHash = makeTagPathSymbolHash(tagPath);
-        links.insert(tagPathSymbolHash, reinterpret_cast<uint64_t>(tagPtr));
-    };
-
-    // Create links's for existing tags in the map.
-    Tag* existingTags = newMap.getTagArray();
-    int existingTagCount = newMap.getTagArraySize();
-    for (int i = 0; i < existingTagCount; i++) {
-        Tag& tag = existingTags[i];
-        char* tagPath = fromMap.getTagPath(tag);
-        insertTagLinks(tag, tagPath, &existingTags[i]);
-    }
-
-    // Add new tag entries.
-    Tag* toTags = newMap.getTagArrayTail();
-    for (int i = 0; i < tagsToInject.size(); i++) {
-        Tag& fromTag = tagsToInject[i];
-        toTags[i] = fromTag;
-
-        // Create links's.
-        char* tagPath = fromMap.getTagPath(fromTag);
-        insertTagLinks(toTags[i], tagPath, &toTags[i]);
-    }
-
-    // Step 2: Rebuild tag paths array.
-    // ...
-}
 
 ```
 

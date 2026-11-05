@@ -54,6 +54,7 @@ namespace Engine::Map {
     };
     static_assert(offsetof(Part, centroid) == 0x14);
     static_assert(offsetof(Part, topology) == 0x44);
+    static_assert(offsetof(Part, indexCount) == 0x48);
     static_assert(offsetof(Part, union0.vertices) == 0x64);
     static_assert(offsetof(Part, union0.bufferSourceIndex) == 0x64);
     static_assert(sizeof(Part) == 0x84);
