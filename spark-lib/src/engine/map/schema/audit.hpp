@@ -40,6 +40,7 @@ namespace Engine::Map::Analysis {
         AuditStatus status = AuditStatus::Running;
         size_t totalTags = 0;
         size_t completedTags = 0;
+        size_t excludedTags = 0;
         size_t problemCount = 0;
         size_t storedProblemCount = 0;
         size_t errorCount = 0;
@@ -54,7 +55,8 @@ namespace Engine::Map::Analysis {
     class AuditJob {
     public:
         AuditJob(std::shared_ptr<MapFile> map, Schema schema,
-            std::optional<uint32_t> group = {}, ProblemOptions options = {});
+            std::optional<uint32_t> group = {}, ProblemOptions options = {},
+            bool excludeMissingSchema = false);
         ~AuditJob();
         AuditJob(const AuditJob&) = delete;
         AuditJob& operator=(const AuditJob&) = delete;
@@ -64,7 +66,7 @@ namespace Engine::Map::Analysis {
 
     private:
         void run(std::shared_ptr<MapFile> map, Schema schema,
-            std::optional<uint32_t> group, ProblemOptions options);
+            std::optional<uint32_t> group, ProblemOptions options, bool excludeMissingSchema);
 
         std::atomic<bool> cancelled_ = false;
         mutable std::mutex mutex_;

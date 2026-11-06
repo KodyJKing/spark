@@ -143,6 +143,38 @@ TEST_CASE("Audit scans all tags including the last and reports missing schemas",
     REQUIRE(results.groups.at(GroupId_Weapon).problemCount == 2);
 }
 
+TEST_CASE("Audit optionally excludes absent and empty schemas from results and progress", "[audit]") {
+    auto map = std::make_shared<TestMap>();
+    map->addTag(GroupId_Weapon, "first", 16);
+    map->addTag(GroupId_Effect, "missing", 16);
+    map->addTag(GroupId_Sound, "empty", 16);
+    map->addTag(GroupId_Weapon, "last", 16);
+    map->trim();
+    auto schema = scalarSchema();
+    auto& empty = schema.structures["empty"];
+    empty.id = "empty";
+    empty.groupId = GroupId_Sound;
+    bool exclude = GENERATE(false, true);
+    AuditJob job(map, schema, {}, {}, exclude);
+    auto results = wait(job);
+    REQUIRE(results.status == AuditStatus::Completed);
+    REQUIRE(results.totalTags == (exclude ? 2 : 4));
+    REQUIRE(results.completedTags == results.totalTags);
+    REQUIRE(results.excludedTags == (exclude ? 2 : 0));
+    REQUIRE(results.errorCount == (exclude ? 0 : 2));
+    REQUIRE(results.groups.size() == (exclude ? 1 : 3));
+    REQUIRE(results.problemCount == 2);
+    REQUIRE(results.tags.front().problems[0].endOffset == 0x1010);
+    REQUIRE(results.tags.back().path == "last");
+
+    AuditJob filtered(map, schema, GroupId_Effect, {}, exclude);
+    auto filteredResults = wait(filtered);
+    REQUIRE(filteredResults.status == AuditStatus::Completed);
+    REQUIRE(filteredResults.totalTags == (exclude ? 0 : 1));
+    REQUIRE(filteredResults.excludedTags == (exclude ? 1 : 0));
+    REQUIRE(filteredResults.errorCount == (exclude ? 0 : 1));
+}
+
 TEST_CASE("Audit filters groups before scanning and handles an empty selection", "[audit]") {
     auto map = std::make_shared<TestMap>();
     map->addTag(GroupId_Weapon, "weapon", 16);

@@ -23,9 +23,10 @@ namespace Engine::Map::Analysis {
     }
 
     AuditJob::AuditJob(std::shared_ptr<MapFile> map, Schema schema,
-        std::optional<uint32_t> group, ProblemOptions options) {
+        std::optional<uint32_t> group, ProblemOptions options, bool excludeMissingSchema) {
         if (!map) throw std::invalid_argument("Audit requires a map snapshot");
-        worker_ = std::thread(&AuditJob::run, this, std::move(map), std::move(schema), group, options);
+        worker_ = std::thread(&AuditJob::run, this, std::move(map), std::move(schema),
+            group, options, excludeMissingSchema);
     }
 
     AuditJob::~AuditJob() {
@@ -41,24 +42,32 @@ namespace Engine::Map::Analysis {
     }
 
     void AuditJob::run(std::shared_ptr<MapFile> map, Schema schema,
-        std::optional<uint32_t> group, ProblemOptions options) {
+        std::optional<uint32_t> group, ProblemOptions options, bool excludeMissingSchema) {
         try {
             auto* cache = map->getCacheHeader();
             const auto fileStart = reinterpret_cast<uintptr_t>(cache);
             const auto fileEnd = fileStart + cache->fileSize;
             std::vector<uint32_t> selected;
             std::vector<uintptr_t> starts;
+            size_t excluded = 0;
             for (uint32_t i = 0; i < map->getTagCount() && !cancelled_; ++i) {
                 auto* tag = map->getTag(i);
                 if (!tag) throw std::runtime_error("Invalid tag table entry");
                 auto address = reinterpret_cast<uintptr_t>(map->getTagData(tag));
                 if (address >= fileStart && address < fileEnd) starts.push_back(address);
-                if (!group || tag->groupID == *group) selected.push_back(i);
+                if (group && tag->groupID != *group) continue;
+                auto* root = schema.structureForGroupId(tag->groupID);
+                if (excludeMissingSchema && (!root || root->fields.empty())) {
+                    ++excluded;
+                    continue;
+                }
+                selected.push_back(i);
             }
             std::sort(starts.begin(), starts.end());
             {
                 std::lock_guard lock(mutex_);
                 results_.totalTags = selected.size();
+                results_.excludedTags = excluded;
             }
             Context ctx{map.get(), &schema};
             for (auto id : selected) {

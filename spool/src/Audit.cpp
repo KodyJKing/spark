@@ -14,7 +14,7 @@ namespace Spool {
             auto* schema = Engine::Map::getMainSchema();
             if (!schema) throw std::runtime_error("No tag schema is loaded");
             audit_ = std::make_unique<Engine::Map::Analysis::AuditJob>(
-                map_->snapshot(), *schema, auditGroup_, auditOptions_);
+                map_->snapshot(), *schema, auditGroup_, auditOptions_, auditExcludeMissingSchema_);
             auditError_.clear();
         } catch (const std::exception& error) {
             auditError_ = std::string("Could not start audit: ") + error.what();
@@ -68,6 +68,8 @@ namespace Spool {
             ImGui::EndCombo();
         }
         ImGui::Checkbox("Ignore gaps after DataPointers", &auditOptions_.ignoreGapsAfterDataPointer);
+        ImGui::Checkbox("Exclude tags with missing schema", &auditExcludeMissingSchema_);
+        ImGui::SetItemTooltip("Skip tag types with no root schema or no mapped fields.");
         bool start = ImGui::Button(audit_ ? "Run Audit Again" : "Start Analysis");
         ImGui::EndDisabled();
         if (start) startAudit();
@@ -86,6 +88,8 @@ namespace Spool {
             ImGui::TextUnformatted("Audit complete.");
         ImGui::Text("%zu problems counted; %zu / %zu stored; %zu tags could not be analyzed",
             results.problemCount, results.storedProblemCount, auditProblemLimit, results.errorCount);
+        if (results.excludedTags)
+            ImGui::TextDisabled("%zu tags excluded due to missing schema", results.excludedTags);
         if (results.problemCount > results.storedProblemCount)
             ImGui::TextWrapped("Storage limit reached. Counts continue; some tags have counts but no stored details.");
 

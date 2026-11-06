@@ -152,7 +152,9 @@ namespace SparkLib::UI::DissectTag {
             renderField(renderCtx, fieldRef);
             head = newHead;
         }
-        renderUntypedRow(renderCtx, structure, (uint8_t*)head, structSize - (head - (uintptr_t)structure.address));
+        size_t renderedSize = head - (uintptr_t)structure.address;
+        if (renderedSize < structSize)
+            renderUntypedRow(renderCtx, structure, (uint8_t*)head, structSize - renderedSize);
 
         ImGui::PopID();
     }
@@ -167,12 +169,6 @@ namespace SparkLib::UI::DissectTag {
             ImGui::SameLine();
             ImGui::SliderFloat("##HintThreshold", &state.hintThreshold, 0.01f, 1.0f);
 
-            ImGui::SameLine();
-            #ifdef DEBUG
-            if (ImGui::Button("Start Debugging")) {
-                Debugging::debug();
-            }
-            #endif
         }
     }
 
@@ -202,13 +198,6 @@ namespace SparkLib::UI::DissectTag {
                 ImGui::SetItemTooltip(
                     "Certifies all relocation-sensitive fields, including nested structures, "
                     "for every tag of this type. Use Save to persist this setting.");
-                if (!ref.node->complete) {
-                    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.75f, 0.25f, 1.0f));
-                    ImGui::TextWrapped(
-                        "Warning: this tag type is not certified complete. "
-                        "Unmapped pointers or references may cause corruption or load failures after relocation.");
-                    ImGui::PopStyleColor();
-                }
             }
             if (!ref.valid()) {
                 ImGui::Text("[invalid structure reference]");
@@ -216,14 +205,38 @@ namespace SparkLib::UI::DissectTag {
                 ImGui::Text("[memory not allocated]");
             } else {
                 size_t guessedTotalSize = window.map->guessTagDataSize(tag->tagHandle);
-                size_t guessedSize = Engine::Map::guessSizeFromFirstBlockElement(ref);
-                if (guessedSize == 0) 
-                    guessedSize = guessedTotalSize;
+                size_t firstChildSize = Engine::Map::guessSizeFromFirstBlockElement(ref);
+                size_t guessedSize = firstChildSize ? firstChildSize : guessedTotalSize;
+
+                if (!ref.node->readonly()) {
+                    uint64_t size = ref.node->size;
+                    ImGui::SetNextItemWidth(ImGui::GetFontSize() * 6);
+                    if (ImGui::InputScalar("Size", ImGuiDataType_U64, &size,
+                        nullptr, nullptr, "%llX", ImGuiInputTextFlags_CharsHexadecimal)) {
+                        ref.node->size = static_cast<size_t>(size);
+                        window.minimapRefreshRequested = true;
+                    }
+                    ImGui::SetItemTooltip(
+                        "Shared by all tags of this type. Zero leaves the size unspecified. Use Save to persist.");
+                    if (firstChildSize > 0) {
+                        ImGui::SameLine();
+                        char label[64];
+                        snprintf(label, sizeof(label), "Use guess: %zX", firstChildSize);
+                        if (ImGui::SmallButton(label)) {
+                            ref.node->size = firstChildSize;
+                            window.minimapRefreshRequested = true;
+                        }
+                    }
+                    ImGui::SameLine();
+                }
 
                 void* tagData = window.map->getTagData(tag);
                 RenderContext renderCtx = { &window, tagData, (uint8_t*)tagData + guessedTotalSize };
 
-                ImGui::Text("Estimated tag data size: %zu", guessedSize);
+                if (firstChildSize > 0)
+                    ImGui::Text("Size estimate: base-structure %zX, total %zX", firstChildSize, guessedTotalSize);
+                else
+                    ImGui::Text("Size estimate: base-structure unknown, total %zX", guessedTotalSize);
 
                 if (ImGui::CollapsingHeader("Parse Minimap", ImGuiTreeNodeFlags_DefaultOpen)) {
                     renderMinimap(renderCtx, ref);

@@ -66,6 +66,7 @@ namespace Spool {
         bool showAudit_ = false;
         std::optional<uint32_t> auditGroup_;
         Engine::Map::Analysis::ProblemOptions auditOptions_;
+        bool auditExcludeMissingSchema_ = false;
         std::unique_ptr<Engine::Map::Analysis::AuditJob> audit_;
         std::string auditError_;
 
