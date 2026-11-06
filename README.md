@@ -65,6 +65,17 @@ Guest bitmaps that reference shared external pixel data are permitted with a
 warning. They require the same shared bitmap cache as the guest map; Spool does
 not yet verify cache compatibility against mod-author checksums.
 
+### Reusing structures in the dissector
+
+Fields of type **Structure** or **BlockPointer** have a structure combo next to
+the field-type picker, even when the block is empty or the field is collapsed.
+Choose an existing structure by name; its ID is shown in muted text to
+distinguish duplicate names. **Create new structure...** in the same combo
+creates and assigns a fresh structure (4 bytes inline, 256 bytes for blocks).
+The expanded structure still provides name and size editing. Reused structures
+are shared, so editing their layout affects every field referencing them.
+Click **Save** to persist assignments and edits.
+
 ### Certifying tag schemas
 
 In a tag's dissector window, **Tag type certified complete** records that all

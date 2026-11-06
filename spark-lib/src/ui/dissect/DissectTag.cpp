@@ -91,6 +91,12 @@ namespace SparkLib::UI::DissectTag {
         ImGui::SameLine();
         renderTypePicker(&field.node->type.type);
 
+        if (field.is(Type::Structure) || field.is(Type::BlockPointer)) {
+            ImGui::SameLine();
+            if (renderStructureTypePicker(field))
+                renderCtx.windowState->minimapRefreshRequested = true;
+        }
+
         std::string valueStr = field.readAsString();
         ImGui::SameLine();
         ImGui::Text("%s", valueStr.c_str());

@@ -29,13 +29,7 @@ namespace SparkLib::UI::DissectTag {
         if (ImGui::CollapsingHeader("##Substructure")) {
             if (field.is(Type::DataPointer)) {
                 // Do nothing. DataPointers are never typed.
-            } else if (structure.node->id == NullId) {
-                if (ImGui::Button("Create Structure")) {
-                    // Use smaller size when creating inline structure to avoid jarring shifts.
-                    size_t size = field.is(Type::Structure) ? 0x4 : 0x100;
-                    field.createStructure(size);
-                }
-            } else {
+            } else if (!structure.node->readonly()) {
                 ImGui::SetNextItemWidth(ImGui::GetFontSize() * 16);
                 ImGui::InputText("Structure Name", structure.node->name, IM_ARRAYSIZE(structure.node->name));
                 ImGui::SameLine();
