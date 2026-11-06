@@ -75,6 +75,9 @@ namespace Spool {
     }
 
     void App::closeFile() {
+        audit_.reset();
+        auditError_.clear();
+        auditGroup_.reset();
         guestPath_.clear();
         guestBytes_.clear();
         guestTags_.clear();
@@ -106,6 +109,8 @@ namespace Spool {
                 SparkLib::UI::showTagBrowserWindow();
             if (ImGui::MenuItem("Tag Injection"))
                 showInjection_ = true;
+            if (ImGui::MenuItem("Audit"))
+                showAudit_ = true;
             ImGui::EndMenu();
         }
 
@@ -254,6 +259,7 @@ namespace Spool {
         if (!mapOverride.empty() || session.value("tagBrowser", false))
             SparkLib::UI::showTagBrowserWindow();
 
+        showAudit_ = session.value("audit", false);
         lastSessionJson_ = session.dump();
     }
 
@@ -262,6 +268,7 @@ namespace Spool {
         nlohmann::json session;
         session["map"] = map_ ? map_->getFilePath().string() : "";
         session["tagBrowser"] = SparkLib::UI::isTagBrowserWindowOpen();
+        session["audit"] = showAudit_;
         session["dissect"] = SparkLib::UI::DissectTag::openTagIds();
         WINDOWPLACEMENT wp = { sizeof(wp) };
         if (GetWindowPlacement(window_, &wp) && wp.showCmd != SW_SHOWMINIMIZED) {
@@ -287,6 +294,7 @@ namespace Spool {
         menuBar();
         SparkLib::UI::tagBrowser(*this);
         injectionWindow();
+        auditWindow();
         saveSessionIfChanged();
     }
 

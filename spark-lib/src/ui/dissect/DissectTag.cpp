@@ -186,6 +186,10 @@ namespace SparkLib::UI::DissectTag {
         char title[256];
         snprintf(title, sizeof(title), "[%s] %s - %p", groupId.c_str(), path, tag);
         
+        if (window.focusRequested) {
+            ImGui::SetNextWindowFocus();
+            window.focusRequested = false;
+        }
         ImGui::Begin(title, &window.isOpen);
         windowHeader();
         if (!tag) {

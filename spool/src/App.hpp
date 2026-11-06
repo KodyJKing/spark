@@ -5,6 +5,7 @@
 #include "imgui.h"
 
 #include "engine/map/spark/managed_map_file.hpp"
+#include "engine/map/schema/audit.hpp"
 #include "ui/tag_browser/TagBrowserHost.hpp"
 
 namespace Spool {
@@ -44,6 +45,8 @@ namespace Spool {
         void openGuestMap();
         void injectionWindow();
         void injectAndSave();
+        void auditWindow();
+        void startAudit();
 
         struct GuestTagChoice {
             uint32_t groupId;
@@ -60,6 +63,11 @@ namespace Spool {
         ImGuiTextFilter guestFilter_;
         std::string injectionMessage_;
         bool showInjection_ = false;
+        bool showAudit_ = false;
+        std::optional<uint32_t> auditGroup_;
+        Engine::Map::Analysis::ProblemOptions auditOptions_;
+        std::unique_ptr<Engine::Map::Analysis::AuditJob> audit_;
+        std::string auditError_;
 
         HWND window_;
         Engine::Map::Spark::ManagedMapFilePtr map_;

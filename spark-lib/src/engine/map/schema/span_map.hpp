@@ -4,6 +4,8 @@
 #include "reference.hpp"
 #include <set>
 #include <vector>
+#include <stdexcept>
+#include <atomic>
 
 namespace Engine::Map::Analysis {
 
@@ -28,18 +30,27 @@ namespace Engine::Map::Analysis {
         StructureRef& structure, 
         SpanMap& spanMap, 
         void* startAddress,
-        void* stopAddress
+        void* stopAddress,
+        size_t depth = 0,
+        const std::atomic<bool>* cancel = nullptr
     ) {
         constexpr size_t maxBlocksToScan = 1024;
 
-        MapFile* mapFile = structure.context->mapFile;
-        
         if (!structure.valid()) return;
+        if (depth > 64) throw std::runtime_error("Block structure nesting exceeds 64 levels");
+        MapFile* mapFile = structure.context->mapFile;
         if ((char*)structure.address < (char*)startAddress) return;
         if ((char*)structure.address >= (char*)stopAddress) return;
 
         auto fieldRefs = structure.getFieldRefs();
         for (auto& fieldRef : fieldRefs) {
+            if (cancel && cancel->load()) return;
+            if (!fieldRef.is(Type::DataPointer) && !fieldRef.is(Type::BlockPointer)) continue;
+            auto fieldAddress = reinterpret_cast<uintptr_t>(fieldRef.address);
+            auto start = reinterpret_cast<uintptr_t>(startAddress);
+            auto stop = reinterpret_cast<uintptr_t>(stopAddress);
+            if (fieldAddress < start || fieldAddress > stop || fieldRef.size() > stop - fieldAddress)
+                throw std::runtime_error("Pointer field extends outside the tag data range");
 
             if (fieldRef.is(Type::DataPointer)) {
                 DataPointer* dataPtr = (DataPointer*)fieldRef.address;
@@ -66,13 +77,14 @@ namespace Engine::Map::Analysis {
             }
 
             for (int i = 0; i < count; ++i) {
+                if (cancel && cancel->load()) return;
                 StructureRef blockElement = fieldRef.getBlockElement(i);
                 if ((char*)blockElement.address < (char*)startAddress) break;
                 if ((char*)blockElement.address >= (char*)stopAddress) break;
                 if (blockElement.valid()) {
                     char* start = (char*)blockElement.address;
                     spanMap.spans.insert({start, start + size, type, Type::BlockPointer});
-                    fillSpanMap(blockElement, spanMap, startAddress, stopAddress);
+                    fillSpanMap(blockElement, spanMap, startAddress, stopAddress, depth + 1, cancel);
                 }
             }
         }

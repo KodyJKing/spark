@@ -90,7 +90,32 @@ automatically imported dependencies, but is not blocked by certification alone.
 Missing or invalid schemas still produce errors. Certification is a manual
 assertion, not an automatic validation; uncheck it when edits invalidate it.
 
+### Auditing tags in Spool
+
+Open **Tools > Audit**, optionally choose a tag group, then click **Start Analysis**.
+Opening or restoring the window does not start a scan. The background scan uses
+a snapshot of the open map and schema, including unsaved edits, and runs the same
+overlap, gap, probable BlockPointer, and probable TagReference analysis as the
+dissector minimap.
+
+Progress and results update after each tag. Results are grouped by tag type and
+tag; click a tag path or problem to open/focus its dissector. Problem locations
+are map-relative offsets. At most `0x1000` problem details are retained across
+the entire audit, but all problems continue to be counted, including beyond
+the minimap's usual per-tag display limit. Missing schemas and analysis errors
+are reported separately from clean tags.
+
+**Cancel** keeps partial results. Closing the map cancels the scan and clears
+its results; closing only the audit window leaves it running. Use **Run Audit
+Again** to analyze a fresh snapshot after editing.
+
 ### Development
+
+Hint scoring, caching, and probable-type detection live in
+[`hints.hpp`](spark-lib/src/engine/map/schema/hints.hpp) and
+[`hints.cpp`](spark-lib/src/engine/map/schema/hints.cpp) under `Engine::Map::Hints`.
+The dissector's [`Hints.hpp`](spark-lib/src/ui/dissect/Hints.hpp) contains only
+the UI helpers `renderHints` and `colorAddress`.
 
 When developing, run `scripts/watch_launcher.ps1` to build/run in watch mode. When you save a source file, this script will uninject, rebuild, and reinject `spark.dll`.
 

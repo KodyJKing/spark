@@ -2,6 +2,7 @@
 
 #include "State.hpp"
 #include "engine/map/schema/span_map.hpp"
+#include "engine/map/schema/analysis.hpp"
 #include "imgui.h"
 
 #include <cmath>
@@ -102,21 +103,15 @@ namespace SparkLib::UI::DissectTag {
             auto it = schema->structures.find(rootId);
             if (it != schema->structures.end()) {
                 StructureRef snapshotRoot = { &ctx, &it->second, rootAddress };
-                Analysis::SpanMap spans;
-                // The root struct isn't a block element, so add it explicitly or it
-                // would show up as a gap at the start of the tag.
-                if (snapshotRoot.node->size > 0) {
-                    char* rootStart = (char*)rootAddress;
-                    spans.spans.insert({rootStart, rootStart + snapshotRoot.node->size, snapshotRoot.node, Type::Structure});
-                }
-                Analysis::fillSpanMap(snapshotRoot, spans, tagStart, tagEnd);
                 if (!job->cancel) {
-                    result->overlaps = Analysis::analyzeOverlaps(spans);
-                    result->stripeParity = computeMinimapStripeParity(result->overlaps);
-                    result->problems = Analysis::findProblems(result->overlaps, tagStart, tagEnd, options);
-                }
-                if (!job->cancel) {
-                    Hints::findProbableTypeProblems(&ctx, result->overlaps, tagStart, tagEnd, result->problems);
+                    try {
+                        auto analysis = Analysis::analyzeStructure(snapshotRoot, tagStart, tagEnd, options);
+                        result->overlaps = std::move(analysis.overlaps);
+                        result->problems = std::move(analysis.problems);
+                        result->stripeParity = computeMinimapStripeParity(result->overlaps);
+                    } catch (const std::exception& error) {
+                        result->error = error.what();
+                    }
                 }
             }
 
@@ -166,6 +161,10 @@ namespace SparkLib::UI::DissectTag {
         }
         // Hold a reference so the snapshot stays alive for this frame.
         std::shared_ptr<MinimapAnalysis> analysis = window->minimap;
+        if (!analysis->error.empty()) {
+            ImGui::TextWrapped("Minimap analysis failed: %s", analysis->error.c_str());
+            return;
+        }
         const auto& overlaps = analysis->overlaps;
         const auto& problems = analysis->problems;
         const auto& stripeParity = analysis->stripeParity;

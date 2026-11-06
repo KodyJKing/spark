@@ -12,7 +12,7 @@
 #include "engine/map/schema/span_map.hpp"
 #include "engine/map/schema/problems.hpp"
 
-#include "Hints.hpp"
+#include "engine/map/schema/hints.hpp"
 
 #include "utils/Utils.hpp"
 
@@ -28,6 +28,7 @@ namespace SparkLib::UI::DissectTag {
         std::vector<Analysis::SpanInfo> overlaps;
         std::vector<Analysis::Problem> problems;
         std::vector<uint8_t> stripeParity; // Parallel to overlaps.
+        std::string error;
     };
 
     struct MinimapJob {
@@ -52,6 +53,7 @@ namespace SparkLib::UI::DissectTag {
         std::shared_ptr<MinimapJob> minimapJob; // In-flight job, if any.
         double minimapBuiltTime = -1.0;
         bool minimapRefreshRequested = false;
+        bool focusRequested = false;
 
         // Blocks until any in-flight minimap job has stopped touching map memory.
         inline void waitForMinimapJob() {
@@ -115,6 +117,8 @@ namespace SparkLib::UI::DissectTag {
             if (windows.find(tagId) == windows.end()) {
                 windows[tagId] = WindowState{true, tagId, map};
             }
+            windows[tagId].isOpen = true;
+            windows[tagId].focusRequested = true;
         }
         inline void cleanupWindows() {
             for (auto it = windows.begin(); it != windows.end(); ) {

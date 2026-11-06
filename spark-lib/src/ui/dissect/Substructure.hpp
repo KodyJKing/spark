@@ -5,7 +5,6 @@
 #include "imgui.h"
 #include "State.hpp"
 #include "Constants.hpp"
-#include "Hints.hpp"
 #include "Functions.hpp"
 #include "engine/map/schema/functions.hpp"
 

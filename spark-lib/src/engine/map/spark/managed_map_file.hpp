@@ -37,6 +37,15 @@ namespace Engine::Map::Spark {
         ManagedMapFile& operator=(const ManagedMapFile&) = delete;
         ManagedMapFile(ManagedMapFile&&) = delete;
         ManagedMapFile& operator=(ManagedMapFile&&) = delete;
+
+        // Relative pointers remain valid after copying, including normalized BSP pointers.
+        std::shared_ptr<ManagedMapFile> snapshot() const {
+            auto map = std::make_shared<ManagedMapFile>();
+            map->filePath = filePath;
+            map->buffer = buffer;
+            map->raw = RawMapFile(reinterpret_cast<CacheHeader*>(map->buffer.data()));
+            return map;
+        }
         
         void* getPointerBase(PointerBase b) override {
             return raw.getPointerBase(b);
