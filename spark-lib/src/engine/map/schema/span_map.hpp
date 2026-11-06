@@ -9,11 +9,24 @@
 
 namespace Engine::Map::Analysis {
 
+    struct SpanAncestor {
+        char* address;
+        StructureNode* type;
+        // Position within the parent's block, or -1 for roots. Count is the block's element count.
+        int64_t index = -1;
+        size_t count = 0;
+    };
+
     struct Span {
         char* start;
         char* end;
         StructureNode* type;
         Type fieldType;
+        // Root-to-parent ownership, independent of where the payload was allocated.
+        std::vector<SpanAncestor> ancestors;
+        // Element index within its block, or -1 for non-elements and collapsed multi-element spans.
+        int64_t index = -1;
+        size_t count = 0;
         bool operator<(const Span& other) const {
             return start < other.start;
         }
@@ -32,7 +45,10 @@ namespace Engine::Map::Analysis {
         void* startAddress,
         void* stopAddress,
         size_t depth = 0,
-        const std::atomic<bool>* cancel = nullptr
+        const std::atomic<bool>* cancel = nullptr,
+        std::vector<SpanAncestor> ancestors = {},
+        int64_t elementIndex = -1,
+        size_t elementCount = 0
     ) {
         constexpr size_t maxBlocksToScan = 1024;
 
@@ -41,6 +57,7 @@ namespace Engine::Map::Analysis {
         MapFile* mapFile = structure.context->mapFile;
         if ((char*)structure.address < (char*)startAddress) return;
         if ((char*)structure.address >= (char*)stopAddress) return;
+        ancestors.push_back({static_cast<char*>(structure.address), structure.node, elementIndex, elementCount});
 
         auto fieldRefs = structure.getFieldRefs();
         for (auto& fieldRef : fieldRefs) {
@@ -57,7 +74,7 @@ namespace Engine::Map::Analysis {
                 void* start = mapFile->getDataPointer(*dataPtr);
                 if (!start) continue;
                 void* end = (char*)start + dataPtr->size;
-                spanMap.spans.insert({(char*)start, (char*)end, nullptr, Type::DataPointer});
+                spanMap.spans.insert({(char*)start, (char*)end, nullptr, Type::DataPointer, ancestors});
                 continue;
             }
 
@@ -72,7 +89,7 @@ namespace Engine::Map::Analysis {
             if (count > maxBlocksToScan) {
                 char* start = (char*) fieldRef.getBlockElement(0).address;
                 char* end = start + size * count;
-                spanMap.spans.insert({start, end, type, Type::BlockPointer});
+                spanMap.spans.insert({start, end, type, Type::BlockPointer, ancestors, -1, count});
                 continue; // Skip scanning individual block elements if too many
             }
 
@@ -83,8 +100,8 @@ namespace Engine::Map::Analysis {
                 if ((char*)blockElement.address >= (char*)stopAddress) break;
                 if (blockElement.valid()) {
                     char* start = (char*)blockElement.address;
-                    spanMap.spans.insert({start, start + size, type, Type::BlockPointer});
-                    fillSpanMap(blockElement, spanMap, startAddress, stopAddress, depth + 1, cancel);
+                    spanMap.spans.insert({start, start + size, type, Type::BlockPointer, ancestors, i, count});
+                    fillSpanMap(blockElement, spanMap, startAddress, stopAddress, depth + 1, cancel, ancestors, i, count);
                 }
             }
         }

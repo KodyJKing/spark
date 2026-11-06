@@ -119,6 +119,69 @@ TEST_CASE("Audit bins incremental counts and caps stored details globally", "[au
     REQUIRE(results.groups.at(GroupId_Weapon).problemCount == 0x100A);
 }
 
+TEST_CASE("Spans retain instance ancestry through nested blocks and data payloads", "[spans]") {
+    auto map = std::make_shared<TestMap>();
+    auto at = map->addTag(GroupId_Weapon, "nested", 128);
+    map->trim();
+    auto schema = scalarSchema();
+    auto& root = schema.structures.at("root");
+    root.size = GENERATE(0, 12);
+    root.fields.clear();
+    field(schema, root, 0, Type::BlockPointer);
+    schema.fields.at("root:0").type.ref = "child";
+    auto& child = schema.structures["child"];
+    child.id = "child";
+    child.size = 12;
+    field(schema, child, 0, Type::BlockPointer);
+    schema.fields.at("child:0").type.ref = "leaf";
+    auto& leaf = schema.structures["leaf"];
+    leaf.id = "leaf";
+    leaf.size = 20;
+    field(schema, leaf, 0, Type::DataPointer);
+
+    map->word(at, 2);
+    map->word(at + 4, map->pointer(at + 64));
+    for (uint32_t i = 0; i < 2; ++i) {
+        auto childAt = at + 64 + i * 12;
+        auto leafAt = at + 16 + i * 20;
+        map->word(childAt, 1);
+        map->word(childAt + 4, map->pointer(leafAt));
+        map->word(leafAt, 4);
+        map->word(leafAt + 12, map->pointer(at + 96 + i * 4));
+    }
+    Context ctx{map.get(), &schema};
+    StructureRef ref{&ctx, &root, map->bytes.data() + at};
+    SpanMap spans;
+    fillSpanMap(ref, spans, ref.address, map->bytes.data() + map->cursor);
+    auto flattened = analyzeOverlaps(spans);
+    spans.spans.clear();
+    REQUIRE(flattened.size() == 6);
+    for (uint32_t i = 0; i < 2; ++i) {
+        const auto& leafSpan = flattened[i].span;
+        REQUIRE(leafSpan.type == &leaf);
+        REQUIRE(leafSpan.ancestors.size() == 2);
+        REQUIRE(leafSpan.ancestors[0].type == &root);
+        REQUIRE(leafSpan.ancestors[0].address == ref.address);
+        REQUIRE(leafSpan.ancestors[1].type == &child);
+        REQUIRE(leafSpan.ancestors[1].address == map->bytes.data() + at + 64 + i * 12);
+        REQUIRE(flattened[2 + i].span.ancestors.size() == 1);
+        const auto& payload = flattened[4 + i].span;
+        REQUIRE(payload.fieldType == Type::DataPointer);
+        REQUIRE(payload.ancestors.size() == 3);
+        REQUIRE(payload.ancestors[2].type == &leaf);
+        REQUIRE(payload.ancestors[2].address == leafSpan.start);
+    }
+    for (const auto& info : flattened) REQUIRE_FALSE(info.overlaps);
+
+    map->word(at, 1025);
+    fillSpanMap(ref, spans, ref.address, map->bytes.data() + map->cursor);
+    REQUIRE(spans.spans.size() == 1);
+    const auto& collapsed = *spans.spans.begin();
+    REQUIRE(collapsed.ancestors.size() == 1);
+    REQUIRE(collapsed.ancestors[0].type == &root);
+    REQUIRE(collapsed.end - collapsed.start == 1025 * child.size);
+}
+
 TEST_CASE("Audit scans all tags including the last and reports missing schemas", "[audit]") {
     auto map = std::make_shared<TestMap>();
     map->addTag(GroupId_Weapon, "first", 16);
@@ -208,7 +271,7 @@ TEST_CASE("Audit counts beyond both the minimap and global storage limits", "[au
     }
     map->trim();
     ProblemOptions options;
-    options.ignoreGapsAfterDataPointer = false;
+    options.ignoreAlignmentGaps = false;
     Context ctx{map.get(), &schema};
     StructureRef ref{&ctx, &root, map->bytes.data() + at};
     auto minimap = analyzeStructure(ref, ref.address, map->bytes.data() + map->cursor, options);

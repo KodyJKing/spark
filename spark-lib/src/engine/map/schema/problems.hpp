@@ -60,9 +60,9 @@ namespace Engine::Map::Analysis {
     }
 
     struct ProblemOptions {
-        // DataPointer payloads are opaque and may be followed by padding to
-        // restore 4-byte alignment, so gaps right after them are usually benign.
-        bool ignoreGapsAfterDataPointer = true;
+        // Padding of up to 3 bytes is commonly inserted to restore 4-byte alignment,
+        // so gaps that short and ending on an aligned address are usually benign.
+        bool ignoreAlignmentGaps = true;
     };
 
     // Expects spans sorted by start (as produced by analyzeOverlaps).
@@ -77,11 +77,9 @@ namespace Engine::Map::Analysis {
         if (out.size() >= maxProblems) return;
 
         char* cursor = rangeStart;
-        // The span whose end defines the cursor, i.e. the one a gap would follow.
-        const Span* cursorSpan = nullptr;
         auto reportGap = [&](char* start, char* end) {
-            if (options.ignoreGapsAfterDataPointer && cursorSpan &&
-                cursorSpan->fieldType == Type::DataPointer) return;
+            if (options.ignoreAlignmentGaps && end - start <= 3 &&
+                reinterpret_cast<uintptr_t>(end) % 4 == 0) return;
             out.push_back({ProblemKind::Gap, start, end});
         };
         for (const auto& info : spans) {
@@ -89,10 +87,7 @@ namespace Engine::Map::Analysis {
             char* e = info.span.end;
             if (e <= rangeStart || s >= rangeEnd) continue;
             if (s > cursor) reportGap(cursor, s);
-            if (e > cursor) {
-                cursor = e;
-                cursorSpan = &info.span;
-            }
+            if (e > cursor) cursor = e;
 
             if (out.size() >= maxProblems) return;
         }

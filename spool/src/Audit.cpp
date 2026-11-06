@@ -67,7 +67,8 @@ namespace Spool {
             }
             ImGui::EndCombo();
         }
-        ImGui::Checkbox("Ignore gaps after DataPointers", &auditOptions_.ignoreGapsAfterDataPointer);
+        ImGui::Checkbox("Ignore alignment gaps", &auditOptions_.ignoreAlignmentGaps);
+        ImGui::SetItemTooltip("Ignore gaps of 3 bytes or fewer that end on a 4-byte aligned address.");
         ImGui::Checkbox("Exclude tags with missing schema", &auditExcludeMissingSchema_);
         ImGui::SetItemTooltip("Skip tag types with no root schema or no mapped fields.");
         bool start = ImGui::Button(audit_ ? "Run Audit Again" : "Start Analysis");

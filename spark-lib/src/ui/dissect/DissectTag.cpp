@@ -16,6 +16,7 @@
 
 #include "imgui.h"
 
+#include <algorithm>
 namespace SparkLib::UI::DissectTag {
 
     using namespace Engine::Map;
@@ -23,16 +24,21 @@ namespace SparkLib::UI::DissectTag {
     void openWindow(MapFile* map, uint32_t tagId) {
         state.openWindow(map, tagId);
     }
+
+    void openStructureWindow(MapFile* map, uint32_t tagId, size_t offset, const std::string& structureId, int64_t elementIndex) {
+        state.openWindow(map, tagId, static_cast<int64_t>(offset), structureId, elementIndex);
+    }
     
     std::vector<uint32_t> openTagIds() {
         std::vector<uint32_t> ids;
-        for (auto& [tagId, window] : state.windows)
-            if (window.isOpen) ids.push_back(tagId);
+        // Structure windows aren't restored across sessions.
+        for (auto& [key, window] : state.windows)
+            if (window.isOpen && window.isRoot()) ids.push_back(window.tagId);
         return ids;
     }
 
     void closeWindowsForMap(MapFile* map) {
-        for (auto& [tagId, window] : state.windows) {
+        for (auto& [key, window] : state.windows) {
             if (window.map == map) window.isOpen = false;
         }
         state.cleanupWindows();
@@ -172,6 +178,82 @@ namespace SparkLib::UI::DissectTag {
         }
     }
 
+    constexpr float kMinDrawerHeight = 80.0f;
+    constexpr float kDrawerHandleHeight = 6.0f;
+
+    // One structure view: its offset, an editable size, and the structure's fields.
+    void renderStructureTab(WindowState& root, WindowState& view, Context& ctx, void* tagData, void* tagEnd) {
+        auto ref = view.getStructureRef(ctx);
+        if (!ref.valid()) {
+            ImGui::Text("[invalid structure reference]");
+            return;
+        }
+        if (!Memory::isAllocated(ref.address)) {
+            ImGui::Text("[memory not allocated]");
+            return;
+        }
+
+        ImGui::Text("Offset in tag: 0x%llX", (unsigned long long)view.structureOffset);
+        if (!ref.node->readonly()) {
+            ImGui::SameLine();
+            uint64_t size = ref.node->size;
+            ImGui::SetNextItemWidth(ImGui::GetFontSize() * 6);
+            if (ImGui::InputScalar("Size", ImGuiDataType_U64, &size,
+                nullptr, nullptr, "%llX", ImGuiInputTextFlags_CharsHexadecimal)) {
+                ref.node->size = static_cast<size_t>(size);
+                root.minimapRefreshRequested = true;
+            }
+            ImGui::SetItemTooltip("Shared by every use of this structure. Use Save to persist.");
+        }
+
+        size_t remaining = (uint8_t*)tagEnd > (uint8_t*)ref.address ? (uint8_t*)tagEnd - (uint8_t*)ref.address : 0;
+        RenderContext renderCtx = { &view, tagData, tagEnd };
+        ImGui::BeginChild("StructureScroll", ImVec2(0, 0), ImGuiChildFlags_None, ImGuiWindowFlags_HorizontalScrollbar);
+        renderStructure(renderCtx, ref, (std::min)(remaining, (size_t)0x100));
+        ImGui::EndChild();
+    }
+
+    // Tabbed drawer under a tag's structure view, with a draggable divider above it.
+    void renderStructureDrawer(
+        WindowState& root, std::vector<WindowState*>& views, Context& ctx, void* tagData, void* tagEnd
+    ) {
+        ImVec2 handleStart = ImGui::GetCursorScreenPos();
+        float width = ImGui::GetContentRegionAvail().x;
+        ImGui::InvisibleButton("##drawerResize", ImVec2(width, kDrawerHandleHeight));
+        bool resizing = ImGui::IsItemActive();
+        bool hovered = ImGui::IsItemHovered();
+        if (resizing || hovered) ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeNS);
+        if (resizing) root.drawerHeight -= ImGui::GetIO().MouseDelta.y;
+        float y = handleStart.y + kDrawerHandleHeight * 0.5f;
+        ImGui::GetWindowDrawList()->AddLine(ImVec2(handleStart.x, y), ImVec2(handleStart.x + width, y),
+            ImGui::GetColorU32(resizing ? ImGuiCol_SeparatorActive
+                : hovered ? ImGuiCol_SeparatorHovered : ImGuiCol_Separator), 2.0f);
+
+        ImGui::BeginChild("StructureDrawer", ImVec2(0, 0), ImGuiChildFlags_None);
+        if (ImGui::BeginTabBar("StructureTabs",
+            ImGuiTabBarFlags_AutoSelectNewTabs | ImGuiTabBarFlags_FittingPolicyScroll)) {
+            for (auto* view : views) {
+                auto ref = view->getStructureRef(ctx);
+                const char* name = ref.node && ref.node->name[0] ? ref.node->name : "[unnamed]";
+                char index[32] = "";
+                if (view->elementIndex >= 0)
+                    snprintf(index, sizeof(index), "[%lld]", (long long)view->elementIndex);
+                // The ### suffix keeps the tab identity stable across renames.
+                char label[320];
+                snprintf(label, sizeof(label), "%s%s @0x%llX###%lld", name, index,
+                    (unsigned long long)view->structureOffset, (long long)view->structureOffset);
+                ImGuiTabItemFlags flags = view->focusRequested ? ImGuiTabItemFlags_SetSelected : 0;
+                view->focusRequested = false;
+                if (ImGui::BeginTabItem(label, &view->isOpen, flags)) {
+                    renderStructureTab(root, *view, ctx, tagData, tagEnd);
+                    ImGui::EndTabItem();
+                }
+            }
+            ImGui::EndTabBar();
+        }
+        ImGui::EndChild();
+    }
+
     void renderWindow(WindowState& window) {
         // Implement the rendering logic for a single window
         if (!window.isOpen) return;
@@ -231,7 +313,8 @@ namespace SparkLib::UI::DissectTag {
                 }
 
                 void* tagData = window.map->getTagData(tag);
-                RenderContext renderCtx = { &window, tagData, (uint8_t*)tagData + guessedTotalSize };
+                void* tagEnd = (uint8_t*)tagData + guessedTotalSize;
+                RenderContext renderCtx = { &window, tagData, tagEnd };
 
                 if (firstChildSize > 0)
                     ImGui::Text("Size estimate: base-structure %zX, total %zX", firstChildSize, guessedTotalSize);
@@ -242,9 +325,26 @@ namespace SparkLib::UI::DissectTag {
                     renderMinimap(renderCtx, ref);
                 }
 
-                ImGui::BeginChild("StructureScroll", ImVec2(0, 0), ImGuiChildFlags_None, ImGuiWindowFlags_HorizontalScrollbar);
+                // Structure views opened from the minimap live in a drawer at the bottom of this window.
+                std::vector<WindowState*> views;
+                for (auto it = state.windows.lower_bound(WindowKey{window.tagId, 0});
+                     it != state.windows.end() && it->first.first == window.tagId; ++it)
+                    if (it->second.isOpen) views.push_back(&it->second);
+
+                float scrollHeight = 0.0f;
+                if (!views.empty()) {
+                    float avail = ImGui::GetContentRegionAvail().y;
+                    window.drawerHeight = (std::max)(kMinDrawerHeight,
+                        (std::min)(window.drawerHeight, avail - kMinDrawerHeight - kDrawerHandleHeight));
+                    scrollHeight = (std::max)(1.0f, avail - window.drawerHeight - kDrawerHandleHeight);
+                }
+
+                ImGui::BeginChild("StructureScroll", ImVec2(0, scrollHeight), ImGuiChildFlags_None, ImGuiWindowFlags_HorizontalScrollbar);
                 renderStructure(renderCtx, ref, guessedSize);
                 ImGui::EndChild();
+
+                if (!views.empty())
+                    renderStructureDrawer(window, views, ctx, tagData, tagEnd);
             }
         }
 
@@ -253,8 +353,9 @@ namespace SparkLib::UI::DissectTag {
 
     void render() {
         state.tick();
-        for (auto& [tagId, window] : state.windows) {
-            renderWindow(window);
+        for (auto& [key, window] : state.windows) {
+            // Structure views render as tabs inside their tag's window.
+            if (window.isRoot()) renderWindow(window);
         }
     }
     
