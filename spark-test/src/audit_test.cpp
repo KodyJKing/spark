@@ -1,6 +1,7 @@
 #include <catch_amalgamated.hpp>
 
 #include "engine/map/schema/audit.hpp"
+#include "engine/map/schema/functions.hpp"
 #include "engine/map/schema/hints.hpp"
 #include "engine/map/spark/managed_map_file.hpp"
 #include "ui/dissect/State.hpp"
@@ -137,6 +138,70 @@ TEST_CASE("Audit bins incremental counts and caps stored details globally", "[au
     REQUIRE(results.groups.at(GroupId_Weapon).problemCount == 0x100A);
 }
 
+TEST_CASE("First-child size heuristic searches inline structures in field order", "[size-heuristic]") {
+    auto map = std::make_shared<TestMap>();
+    auto at = map->addTag(GroupId_Weapon, "inline-size", 128);
+    map->trim();
+    auto schema = scalarSchema();
+    auto& root = schema.structures.at("root");
+    root.size = 0;
+    field(schema, root, 4, Type::Structure);
+    schema.fields.at("root:4").type.ref = "embedded";
+    auto& embedded = schema.structures["embedded"];
+    embedded.id = "embedded";
+    embedded.size = 16;
+    field(schema, embedded, 4, Type::Structure);
+    schema.fields.at("embedded:4").type.ref = "leaf";
+    auto& leaf = schema.structures["leaf"];
+    leaf.id = "leaf";
+    leaf.size = 12;
+    field(schema, leaf, 0, Type::BlockPointer);
+    schema.fields.at("leaf:0").type.ref = "payload";
+    auto& payload = schema.structures["payload"];
+    payload.id = "payload";
+    payload.size = 4;
+    field(schema, root, 24, Type::BlockPointer);
+    schema.fields.at("root:24").type.ref = "payload";
+    map->word(at + 8, 1);
+    map->word(at + 12, map->pointer(at + 80));
+    map->word(at + 24, 1);
+    map->word(at + 28, map->pointer(at + 64));
+    Context ctx{map.get(), &schema};
+    StructureRef ref{&ctx, &root, map->bytes.data() + at};
+
+    SECTION("Nested child is relative to the root, not the inline structure") {
+        REQUIRE(guessSizeFromFirstBlockElement(ref) == 80);
+        StructureRef inlineRef{&ctx, &embedded, map->bytes.data() + at + 4};
+        REQUIRE(guessSizeFromFirstBlockElement(inlineRef) == 76);
+    }
+    SECTION("Empty nested blocks allow later root fields to be considered") {
+        map->word(at + 8, 0);
+        REQUIRE(guessSizeFromFirstBlockElement(ref) == 64);
+    }
+    SECTION("No populated blocks means no estimate") {
+        map->word(at + 8, 0);
+        map->word(at + 24, 0);
+        REQUIRE(guessSizeFromFirstBlockElement(ref) == 0);
+    }
+    SECTION("Missing inline schemas allow later root fields to be considered") {
+        schema.fields.at("root:4").type.ref = "missing";
+        REQUIRE(guessSizeFromFirstBlockElement(ref) == 64);
+    }
+    SECTION("Earlier direct blocks retain priority") {
+        field(schema, root, 0, Type::BlockPointer);
+        schema.fields.at("root:0").type.ref = "payload";
+        map->word(at, 1);
+        map->word(at + 4, map->pointer(at + 48));
+        REQUIRE(guessSizeFromFirstBlockElement(ref) == 48);
+    }
+    SECTION("Cyclic inline schemas are bounded and later siblings still work") {
+        embedded.fields.clear();
+        field(schema, embedded, 0, Type::Structure);
+        schema.fields.at("embedded:0").type.ref = "embedded";
+        REQUIRE(guessSizeFromFirstBlockElement(ref) == 64);
+    }
+}
+
 TEST_CASE("Spans retain instance ancestry through nested blocks and data payloads", "[spans]") {
     auto map = std::make_shared<TestMap>();
     auto at = map->addTag(GroupId_Weapon, "nested", 128);
@@ -198,6 +263,90 @@ TEST_CASE("Spans retain instance ancestry through nested blocks and data payload
     REQUIRE(collapsed.ancestors.size() == 1);
     REQUIRE(collapsed.ancestors[0].type == &root);
     REQUIRE(collapsed.end - collapsed.start == 1025 * child.size);
+}
+
+TEST_CASE("Spans traverse inline structures without counting their storage twice", "[spans]") {
+    auto map = std::make_shared<TestMap>();
+    auto at = map->addTag(GroupId_Weapon, "inline", 80);
+    map->trim();
+    auto schema = scalarSchema();
+    auto& root = schema.structures.at("root");
+    root.size = 16;
+    field(schema, root, 4, Type::Structure);
+    schema.fields.at("root:4").type.ref = "inline";
+    auto& embedded = schema.structures["inline"];
+    embedded.id = "inline";
+    embedded.size = 12;
+    field(schema, embedded, 0, Type::BlockPointer);
+    schema.fields.at("inline:0").type.ref = "child";
+    auto& child = schema.structures["child"];
+    child.id = "child";
+    child.size = 24;
+    field(schema, child, 4, Type::Structure);
+    schema.fields.at("child:4").type.ref = "leaf";
+    auto& leaf = schema.structures["leaf"];
+    leaf.id = "leaf";
+    leaf.size = 20;
+    field(schema, leaf, 0, Type::DataPointer);
+
+    map->word(at + 4, 2);
+    map->word(at + 8, map->pointer(at + 16));
+    for (uint32_t i = 0; i < 2; ++i) {
+        auto leafAt = at + 20 + i * 24;
+        map->word(leafAt, 8);
+        map->word(leafAt + 12, map->pointer(at + 64 + i * 8));
+    }
+
+    Context ctx{map.get(), &schema};
+    StructureRef ref{&ctx, &root, map->bytes.data() + at};
+    auto analysis = analyzeStructure(ref, ref.address, map->bytes.data() + map->cursor);
+    REQUIRE(analysis.overlaps.size() == 5);
+    REQUIRE(analysis.problems.empty());
+    for (const auto& info : analysis.overlaps) REQUIRE_FALSE(info.overlaps);
+    for (size_t i = 0; i < 2; ++i) {
+        const auto& block = analysis.overlaps[1 + i].span;
+        REQUIRE(block.type == &child);
+        REQUIRE(block.index == i);
+        REQUIRE(block.count == 2);
+        REQUIRE(block.ancestors.size() == 2);
+        REQUIRE(block.ancestors[1].type == &embedded);
+        REQUIRE(block.ancestors[1].address == reinterpret_cast<char*>(map->bytes.data() + at + 4));
+        REQUIRE(block.ancestors[1].index == -1);
+        const auto& payload = analysis.overlaps[3 + i].span;
+        REQUIRE(payload.fieldType == Type::DataPointer);
+        REQUIRE(payload.start == reinterpret_cast<char*>(map->bytes.data() + at + 64 + i * 8));
+        REQUIRE(payload.ancestors.size() == 4);
+        REQUIRE(payload.ancestors[2].type == &child);
+        REQUIRE(payload.ancestors[2].index == i);
+        REQUIRE(payload.ancestors[2].count == 2);
+        REQUIRE(payload.ancestors[3].type == &leaf);
+        REQUIRE(payload.ancestors[3].address == block.start + 4);
+        REQUIRE(payload.ancestors[3].index == -1);
+        REQUIRE(payload.ancestors[3].count == 0);
+    }
+}
+
+TEST_CASE("Inline span traversal rejects out-of-range and recursive structures", "[spans]") {
+    auto map = std::make_shared<TestMap>();
+    auto at = map->addTag(GroupId_Weapon, "inline", 16);
+    map->trim();
+    auto schema = scalarSchema();
+    auto& root = schema.structures.at("root");
+    field(schema, root, 0, Type::Structure);
+    schema.fields.at("root:0").type.ref = "root";
+    Context ctx{map.get(), &schema};
+    StructureRef ref{&ctx, &root, map->bytes.data() + at};
+    SpanMap spans;
+
+    SECTION("Recursive inline references remain bounded") {
+        REQUIRE_THROWS_WITH(fillSpanMap(ref, spans, ref.address, map->bytes.data() + map->cursor),
+            Catch::Matchers::ContainsSubstring("nesting"));
+    }
+    SECTION("Inline storage must fit within the tag") {
+        root.size = 20;
+        REQUIRE_THROWS_WITH(fillSpanMap(ref, spans, ref.address, map->bytes.data() + map->cursor),
+            "Inline structure extends outside the tag data range");
+    }
 }
 
 TEST_CASE("Audit scans all tags including the last and reports missing schemas", "[audit]") {

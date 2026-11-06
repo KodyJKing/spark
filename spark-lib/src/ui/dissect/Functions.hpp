@@ -117,6 +117,13 @@ namespace SparkLib::UI::DissectTag {
             }
             ImGui::EndComboPreview();
         }
+        if (field.node->type.ref == NullId) {
+            ImGui::SameLine();
+            // New button
+            if (ImGui::Button("New")) {
+                changed = field.createStructure(field.is(Type::Structure) ? 0x4 : 0x100);
+            }
+        }
         return changed;
     }
 

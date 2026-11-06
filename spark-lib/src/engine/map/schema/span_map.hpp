@@ -62,12 +62,15 @@ namespace Engine::Map::Analysis {
         auto fieldRefs = structure.getFieldRefs();
         for (auto& fieldRef : fieldRefs) {
             if (cancel && cancel->load()) return;
-            if (!fieldRef.is(Type::DataPointer) && !fieldRef.is(Type::BlockPointer)) continue;
+            if (!fieldRef.is(Type::DataPointer) && !fieldRef.is(Type::BlockPointer) && !fieldRef.is(Type::Structure)) continue;
             auto fieldAddress = reinterpret_cast<uintptr_t>(fieldRef.address);
             auto start = reinterpret_cast<uintptr_t>(startAddress);
             auto stop = reinterpret_cast<uintptr_t>(stopAddress);
-            if (fieldAddress < start || fieldAddress > stop || fieldRef.size() > stop - fieldAddress)
+            if (fieldAddress < start || fieldAddress > stop || fieldRef.size() > stop - fieldAddress) {
+                if (fieldRef.is(Type::Structure))
+                    throw std::runtime_error("Inline structure extends outside the tag data range");
                 throw std::runtime_error("Pointer field extends outside the tag data range");
+            }
 
             if (fieldRef.is(Type::DataPointer)) {
                 DataPointer* dataPtr = (DataPointer*)fieldRef.address;
@@ -75,6 +78,14 @@ namespace Engine::Map::Analysis {
                 if (!start) continue;
                 void* end = (char*)start + dataPtr->size;
                 spanMap.spans.insert({(char*)start, (char*)end, nullptr, Type::DataPointer, ancestors});
+                continue;
+            }
+
+            if (fieldRef.is(Type::Structure)) {
+                StructureRef subStructure = fieldRef.getStructure();
+                if (subStructure.valid()) {
+                    fillSpanMap(subStructure, spanMap, startAddress, stopAddress, depth + 1, cancel, ancestors);
+                }
                 continue;
             }
 

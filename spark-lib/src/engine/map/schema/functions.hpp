@@ -2,6 +2,7 @@
 
 #include "schema.hpp"
 #include "reference.hpp"
+#include <iostream>
 #include <string>
 #include <random>
 
@@ -24,16 +25,27 @@ namespace Engine::Map {
     }
 
     inline size_t guessSizeFromFirstBlockElement(StructureRef& structure) {
-        if (!structure.valid()) return 0;
-        auto fieldRefs = structure.getFieldRefs();
-        for (auto& fieldRef : fieldRefs) {
-            if (fieldRef.is(Type::BlockPointer) && (fieldRef.getBlockElementCount() > 0)) {
-                StructureRef blockElement = fieldRef.getBlockElement(0);
-                if (blockElement.valid()) {
-                    return (char*)blockElement.address - (char*)structure.address;
+        auto findFirstChild = [](auto&& self, StructureRef& current, size_t depth) -> void* {
+            if (!current.valid() || !current.node) return nullptr;
+            if (depth > 64) {
+                std::cerr << "[Schema] First-child size heuristic: inline structure nesting exceeds 64 levels\n";
+                return nullptr;
+            }
+            auto fieldRefs = current.getFieldRefs();
+            for (auto& fieldRef : fieldRefs) {
+                if (fieldRef.is(Type::Structure)) {
+                    auto embedded = fieldRef.getStructure();
+                    if (auto child = self(self, embedded, depth + 1)) return child;
+                } else if (fieldRef.is(Type::BlockPointer) && fieldRef.getBlockElementCount() > 0) {
+                    auto blockElement = fieldRef.getBlockElement(0);
+                    if (blockElement.valid()) return blockElement.address;
                 }
             }
-        }
+            return nullptr;
+        };
+        // Inline offsets must not change the origin of the size estimate.
+        if (auto child = findFirstChild(findFirstChild, structure, 0))
+            return static_cast<char*>(child) - static_cast<char*>(structure.address);
         return 0;
     }
 
