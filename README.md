@@ -65,6 +65,20 @@ Guest bitmaps that reference shared external pixel data are permitted with a
 warning. They require the same shared bitmap cache as the guest map; Spool does
 not yet verify cache compatibility against mod-author checksums.
 
+### Certifying tag schemas
+
+In a tag's dissector window, **Tag type certified complete** records that all
+relocation-sensitive fields, including those in nested structures, have been
+accounted for. It applies to every tag of that top-level type, not just the open
+tag. Click **Save** to persist the flag in the schema's `complete` JSON property.
+Older schemas without this property default to uncertified.
+
+Uncertified types show warnings in the dissector and injection picker. Injection
+also warns once per uncertified type actually processed, including host tags and
+automatically imported dependencies, but is not blocked by certification alone.
+Missing or invalid schemas still produce errors. Certification is a manual
+assertion, not an automatic validation; uncheck it when edits invalidate it.
+
 ### Development
 
 When developing, run `scripts/watch_launcher.ps1` to build/run in watch mode. When you save a source file, this script will uninject, rebuild, and reinject `spark.dll`.

@@ -25,6 +25,7 @@ namespace Engine::Map::Spark {
     // Throws std::runtime_error for invalid or unsupported maps/schemas.
     // Inputs are immutable; the returned buffer owns the complete serialized map.
     // Warnings are appended on success, or logged when no collector is supplied.
+    // Uncertified root schemas warn once per tag type, including host tags and imported dependencies.
     std::vector<uint8_t> injectTags(
         std::span<const uint8_t> hostBytes,
         std::span<const uint8_t> guestBytes,

@@ -153,6 +153,7 @@ namespace Engine::Map::Spark {
             std::vector<uint32_t> imports;
             std::set<std::tuple<bool, uint32_t, Id, uint32_t>> visited;
             std::map<Id, size_t> structureExtents;
+            std::set<uint32_t> uncertifiedGroups;
             std::vector<uint32_t> tableNames;
             std::vector<uint32_t> tableData;
             uint32_t importedParts = 0;
@@ -419,14 +420,14 @@ namespace Engine::Map::Spark {
                 const auto& source = fromGuest ? guest : host;
                 const auto& entry = source.tags[index];
                 tableNames.push_back(intern(source.name(entry.path.offset)));
+                const auto& node = root(entry.groupID);
+                if (!node.complete) uncertifiedGroups.insert(entry.groupID);
                 if (entry.groupID == GroupId_BSP) {
                     auto space = bspSpace(entry);
                     auto header = read<StructureBspHeader>(host.bytes, space.file);
-                    auto& node = root(entry.groupID);
                     walk(false, address(host, header.structureBsp.offset, checkSchema(node), space), node, space);
                     tableData.push_back(0);
                 } else {
-                    const auto& node = root(entry.groupID);
                     auto file = source.meta(entry.data.offset, checkSchema(node));
                     tableData.push_back(entry.data.offset - tagBase);
                     walk(fromGuest, file, node, {});
@@ -551,12 +552,19 @@ namespace Engine::Map::Spark {
     ) {
         Injector injector(hostBytes, guestBytes, schema);
         auto output = injector.run(guestTags);
-        if (injector.importedExternalBitmaps) {
-            const std::string warning =
-                "Imported external bitmaps require the same shared bitmap cache as the guest map. "
-                "Cache compatibility has not been verified; a different cache may cause incorrect textures or load failures.";
+        auto warn = [&](const std::string& warning) {
             if (warnings) warnings->push_back(warning);
             else std::clog << "injectTags warning: " << warning << '\n';
+        };
+        for (auto group : injector.uncertifiedGroups) {
+            warn("Tag type [" + Strings::fourccToString(group) +
+                "] is not certified complete. Relocated host or imported tags of this type may contain "
+                "unmapped pointers or references, causing corruption or load failures.");
+        }
+        if (injector.importedExternalBitmaps) {
+            warn(
+                "Imported external bitmaps require the same shared bitmap cache as the guest map. "
+                "Cache compatibility has not been verified; a different cache may cause incorrect textures or load failures.");
         }
         return output;
     }

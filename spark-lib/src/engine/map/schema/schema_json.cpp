@@ -30,7 +30,8 @@ namespace Engine::Map {
             {"name", std::string(node.name)},
             {"size", node.size},
             {"fields", node.fields},
-            {"groupId", (uint32_t)node.groupId}
+            {"groupId", (uint32_t)node.groupId},
+            {"complete", node.complete}
         };
     }
 
@@ -42,6 +43,7 @@ namespace Engine::Map {
         j.at("size").get_to(node.size);
         j.at("fields").get_to(node.fields);
         node.groupId = (TagGroupId)j.at("groupId").get<uint32_t>();
+        node.complete = j.value("complete", false);
     }
 
     static void to_json(nlohmann::json& j, const FieldNode& node) {

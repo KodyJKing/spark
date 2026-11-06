@@ -200,6 +200,7 @@ namespace Spool {
             for (auto& tag : guestTags_) tag.selected = false;
         ImGui::SameLine();
         ImGui::Text("%zu selected / %zu tags (%zu shown)", selectedCount, guestTags_.size(), filtered.size());
+        auto* schema = Engine::Map::getMainSchema();
         if (ImGui::BeginChild("Guest tags", ImVec2(0, -75), ImGuiChildFlags_Borders)) {
             ImGuiListClipper clipper;
             clipper.Begin(static_cast<int>(filtered.size()));
@@ -211,6 +212,14 @@ namespace Spool {
                     ImGui::Checkbox("##selected", &tag.selected);
                     ImGui::SameLine();
                     ImGui::TextUnformatted(tag.label.c_str());
+                    auto* root = schema->structureForGroupId(tag.groupId);
+                    if (!root || !root->complete) {
+                        ImGui::SameLine();
+                        ImGui::TextColored(ImVec4(1.0f, 0.75f, 0.25f, 1.0f), "[not certified]");
+                        ImGui::SetItemTooltip(
+                            "This tag type is not certified complete. Unmapped pointers or references "
+                            "may cause corruption or load failures after relocation.");
+                    }
                     ImGui::PopID();
                 }
             }

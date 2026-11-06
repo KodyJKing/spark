@@ -99,6 +99,7 @@ namespace {
             result.id = id;
             result.size = size;
             result.groupId = group;
+            result.complete = group != GroupId_Invalid;
             return result;
         }
 
@@ -174,6 +175,77 @@ namespace {
         auto end = static_cast<const char*>(std::memchr(start, 0, bytes.size() - at));
         REQUIRE(end != nullptr);
         return std::string(start, end);
+    }
+}
+
+TEST_CASE("Process C warns once per uncertified type without changing output", "[inject_tags]") {
+    Fixture host, guest;
+    Schemas schema;
+    schema.scalar();
+    host.add(GroupId_Weapon, "host", host.allocate(4));
+    guest.add(GroupId_Weapon, "guest", guest.allocate(4));
+    TagList requested;
+    SECTION("host only") {}
+    SECTION("host and guest of the same type") { requested.push_back({GroupId_Weapon, "guest"}); }
+
+    std::vector<std::string> certifiedWarnings;
+    auto certified = injectTags(host.bytes, guest.bytes, requested, schema.schema, &certifiedWarnings);
+    REQUIRE(certifiedWarnings.empty());
+
+    schema.schema.structures.at("scalar").complete = false;
+    std::vector<std::string> warnings = {"existing warning"};
+    auto uncertified = injectTags(host.bytes, guest.bytes, requested, schema.schema, &warnings);
+    REQUIRE(uncertified == certified);
+    REQUIRE(warnings.size() == 2);
+    REQUIRE(warnings[0] == "existing warning");
+    REQUIRE_THAT(warnings[1], Catch::Matchers::ContainsSubstring("[weap]"));
+    REQUIRE_THAT(warnings[1], Catch::Matchers::ContainsSubstring("not certified complete"));
+}
+
+TEST_CASE("Process C checks certification of imported dependencies but not unused types or nested nodes", "[inject_tags]") {
+    Fixture host, guest;
+    Schemas schema;
+    auto& root = schema.node("root", 12, GroupId_Weapon);
+    schema.field(root, 0, Type::BlockPointer, "child");
+    auto& child = schema.node("child", 16);
+    schema.field(child, 0, Type::TagReference);
+    auto& dependency = schema.node("dependency", 4, GroupId_Effect);
+    schema.field(dependency, 0, Type::U32);
+    dependency.complete = false;
+    auto& unused = schema.node("unused", 4, GroupId_Sound);
+    schema.field(unused, 0, Type::U32);
+    unused.complete = false;
+
+    auto at = guest.allocate(12), childAt = guest.allocate(16);
+    guest.add(GroupId_Weapon, "root", at);
+    auto handle = guest.add(GroupId_Effect, "dependency", guest.allocate(4));
+    guest.add(GroupId_Sound, "unused", guest.allocate(4));
+    put(guest.bytes, at, BlockPointer{1, {guest.pointer(childAt)}, 0});
+    put(guest.bytes, childAt, TagReference{GroupId_Effect, {}, 0, handle});
+    REQUIRE(root.complete);
+    REQUIRE_FALSE(child.complete);
+
+    std::vector<std::string> warnings;
+    SECTION("uncertified dependency") {
+        auto output = injectTags(host.bytes, guest.bytes, {{GroupId_Weapon, "root"}}, schema.schema, &warnings);
+        REQUIRE(header(output).tagCount == 2);
+        REQUIRE(warnings.size() == 1);
+        REQUIRE_THAT(warnings[0], Catch::Matchers::ContainsSubstring("[effe]"));
+        REQUIRE_THAT(warnings[0], Catch::Matchers::ContainsSubstring("not certified complete"));
+    }
+    SECTION("certified dependency") {
+        dependency.complete = true;
+        auto output = injectTags(host.bytes, guest.bytes, {{GroupId_Weapon, "root"}}, schema.schema, &warnings);
+        REQUIRE(header(output).tagCount == 2);
+        REQUIRE(warnings.empty());
+    }
+    SECTION("failed injection leaves warnings unchanged") {
+        schema.field(root, host.bytes.size(), Type::U32);
+        warnings.push_back("existing warning");
+        REQUIRE_THROWS_AS(
+            injectTags(host.bytes, guest.bytes, {{GroupId_Weapon, "root"}}, schema.schema, &warnings),
+            std::runtime_error);
+        REQUIRE(warnings == std::vector<std::string>{"existing warning"});
     }
 }
 

@@ -187,6 +187,19 @@ namespace SparkLib::UI::DissectTag {
         } else {
             Context ctx = { window.map, state.schema };
             auto ref = window.getStructureRef(ctx);
+            if (ref.node && !ref.node->readonly()) {
+                ImGui::Checkbox("Tag type certified complete", &ref.node->complete);
+                ImGui::SetItemTooltip(
+                    "Certifies all relocation-sensitive fields, including nested structures, "
+                    "for every tag of this type. Use Save to persist this setting.");
+                if (!ref.node->complete) {
+                    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.75f, 0.25f, 1.0f));
+                    ImGui::TextWrapped(
+                        "Warning: this tag type is not certified complete. "
+                        "Unmapped pointers or references may cause corruption or load failures after relocation.");
+                    ImGui::PopStyleColor();
+                }
+            }
             if (!ref.valid()) {
                 ImGui::Text("[invalid structure reference]");
             } else if (!Memory::isAllocated(ref.address)) {
