@@ -4,14 +4,29 @@
 #include "reference.hpp"
 #include <set>
 #include <vector>
+#include <stdexcept>
+#include <atomic>
 
 namespace Engine::Map::Analysis {
+
+    struct SpanAncestor {
+        char* address;
+        StructureNode* type;
+        // Position within the parent's block, or -1 for roots. Count is the block's element count.
+        int64_t index = -1;
+        size_t count = 0;
+    };
 
     struct Span {
         char* start;
         char* end;
         StructureNode* type;
         Type fieldType;
+        // Root-to-parent ownership, independent of where the payload was allocated.
+        std::vector<SpanAncestor> ancestors;
+        // Element index within its block, or -1 for non-elements and collapsed multi-element spans.
+        int64_t index = -1;
+        size_t count = 0;
         bool operator<(const Span& other) const {
             return start < other.start;
         }
@@ -28,25 +43,49 @@ namespace Engine::Map::Analysis {
         StructureRef& structure, 
         SpanMap& spanMap, 
         void* startAddress,
-        void* stopAddress
+        void* stopAddress,
+        size_t depth = 0,
+        const std::atomic<bool>* cancel = nullptr,
+        std::vector<SpanAncestor> ancestors = {},
+        int64_t elementIndex = -1,
+        size_t elementCount = 0
     ) {
         constexpr size_t maxBlocksToScan = 1024;
 
-        MapFile* mapFile = structure.context->mapFile;
-        
         if (!structure.valid()) return;
+        if (depth > 64) throw std::runtime_error("Block structure nesting exceeds 64 levels");
+        MapFile* mapFile = structure.context->mapFile;
         if ((char*)structure.address < (char*)startAddress) return;
         if ((char*)structure.address >= (char*)stopAddress) return;
+        ancestors.push_back({static_cast<char*>(structure.address), structure.node, elementIndex, elementCount});
 
         auto fieldRefs = structure.getFieldRefs();
         for (auto& fieldRef : fieldRefs) {
+            if (cancel && cancel->load()) return;
+            if (!fieldRef.is(Type::DataPointer) && !fieldRef.is(Type::BlockPointer) && !fieldRef.is(Type::Structure)) continue;
+            auto fieldAddress = reinterpret_cast<uintptr_t>(fieldRef.address);
+            auto start = reinterpret_cast<uintptr_t>(startAddress);
+            auto stop = reinterpret_cast<uintptr_t>(stopAddress);
+            if (fieldAddress < start || fieldAddress > stop || fieldRef.size() > stop - fieldAddress) {
+                if (fieldRef.is(Type::Structure))
+                    throw std::runtime_error("Inline structure extends outside the tag data range");
+                throw std::runtime_error("Pointer field extends outside the tag data range");
+            }
 
             if (fieldRef.is(Type::DataPointer)) {
                 DataPointer* dataPtr = (DataPointer*)fieldRef.address;
                 void* start = mapFile->getDataPointer(*dataPtr);
                 if (!start) continue;
                 void* end = (char*)start + dataPtr->size;
-                spanMap.spans.insert({(char*)start, (char*)end, nullptr, Type::DataPointer});
+                spanMap.spans.insert({(char*)start, (char*)end, nullptr, Type::DataPointer, ancestors});
+                continue;
+            }
+
+            if (fieldRef.is(Type::Structure)) {
+                StructureRef subStructure = fieldRef.getStructure();
+                if (subStructure.valid()) {
+                    fillSpanMap(subStructure, spanMap, startAddress, stopAddress, depth + 1, cancel, ancestors);
+                }
                 continue;
             }
 
@@ -61,18 +100,19 @@ namespace Engine::Map::Analysis {
             if (count > maxBlocksToScan) {
                 char* start = (char*) fieldRef.getBlockElement(0).address;
                 char* end = start + size * count;
-                spanMap.spans.insert({start, end, type, Type::BlockPointer});
+                spanMap.spans.insert({start, end, type, Type::BlockPointer, ancestors, -1, count});
                 continue; // Skip scanning individual block elements if too many
             }
 
             for (int i = 0; i < count; ++i) {
+                if (cancel && cancel->load()) return;
                 StructureRef blockElement = fieldRef.getBlockElement(i);
                 if ((char*)blockElement.address < (char*)startAddress) break;
                 if ((char*)blockElement.address >= (char*)stopAddress) break;
                 if (blockElement.valid()) {
                     char* start = (char*)blockElement.address;
-                    spanMap.spans.insert({start, start + size, type, Type::BlockPointer});
-                    fillSpanMap(blockElement, spanMap, startAddress, stopAddress);
+                    spanMap.spans.insert({start, start + size, type, Type::BlockPointer, ancestors, i, count});
+                    fillSpanMap(blockElement, spanMap, startAddress, stopAddress, depth + 1, cancel, ancestors, i, count);
                 }
             }
         }

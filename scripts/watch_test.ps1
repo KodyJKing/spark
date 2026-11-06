@@ -4,7 +4,8 @@ param(
     [string]$Arguments = ""
 )
 
-$build = "premake5.exe $IDE; MSBuild.exe spark.sln /t:spark-test /p:Configuration=$Config /p:Platform=Win64 /v:m /nologo"
-$run = "& ./bin/$Config-Win64/spark-test/spark-test.exe $Arguments"
+$configArg = $Config.Replace("'", "''")
+$ideArg = $IDE.Replace("'", "''")
+$testArgs = $Arguments.Replace("'", "''")
 
-& "./scripts/watch.ps1" "." "$build; if (`$LASTEXITCODE -eq 0) { $run }"
+& ".\scripts\watch.ps1" "." "& .\scripts\run_test.ps1 -Config '$configArg' -IDE '$ideArg' -Arguments '$testArgs'"

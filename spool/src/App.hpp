@@ -2,8 +2,10 @@
 
 #include <filesystem>
 #include <windows.h>
+#include "imgui.h"
 
 #include "engine/map/spark/managed_map_file.hpp"
+#include "engine/map/schema/audit.hpp"
 #include "ui/tag_browser/TagBrowserHost.hpp"
 
 namespace Spool {
@@ -13,7 +15,7 @@ namespace Spool {
     class App : public SparkLib::UI::TagBrowserHost {
         public:
         explicit App(HWND window);
-        ~App() override { closeFile(); }
+        ~App() override;
 
         // Draws the main menu bar and all open tool windows. Call once per frame.
         void render();
@@ -26,7 +28,7 @@ namespace Spool {
 
         bool wantsExit() const { return wantsExit_; }
 
-        // Reopens the map and tag windows from the previous run. Pass a map path to override the saved map.
+        // Restores the map, tag windows and audit selection. Pass a map path to override the saved map.
         void restoreSession(const std::filesystem::path& mapOverride = {});
 
         // TagBrowserHost
@@ -40,9 +42,37 @@ namespace Spool {
         void menuBar();
         static std::filesystem::path defaultSessionPath();
         void saveSessionIfChanged();
+        void openGuestMap();
+        void injectionWindow();
+        void injectAndSave();
+        void auditWindow();
+        void startAudit();
+        void openAuditTag(size_t mapIndex, uint32_t tagId);
+
+        struct GuestTagChoice {
+            uint32_t groupId;
+            std::string path;
+            std::string label;
+            bool selected = false;
+        };
 
         std::filesystem::path sessionPath_;
         std::string lastSessionJson_;
+        std::filesystem::path guestPath_;
+        std::vector<uint8_t> guestBytes_;
+        std::vector<GuestTagChoice> guestTags_;
+        ImGuiTextFilter guestFilter_;
+        std::string injectionMessage_;
+        bool showInjection_ = false;
+        bool showAudit_ = false;
+        std::optional<uint32_t> auditGroup_;
+        Engine::Map::Analysis::ProblemOptions auditOptions_;
+        bool auditExcludeMissingSchema_ = false;
+        bool auditDiskMaps_ = false;
+        std::vector<std::filesystem::path> auditPaths_;
+        std::unique_ptr<Engine::Map::Analysis::AuditBatchJob> audit_;
+        std::map<size_t, std::weak_ptr<Engine::Map::Spark::ManagedMapFile>> auditViews_;
+        std::string auditError_;
 
         HWND window_;
         Engine::Map::Spark::ManagedMapFilePtr map_;

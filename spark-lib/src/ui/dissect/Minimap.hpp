@@ -2,12 +2,15 @@
 
 #include "State.hpp"
 #include "engine/map/schema/span_map.hpp"
+#include "engine/map/schema/analysis.hpp"
 #include "imgui.h"
 
 #include <cmath>
+#include <algorithm>
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <map>
 #include <string>
 #include <thread>
 #include <unordered_map>
@@ -21,6 +24,9 @@ namespace SparkLib::UI::DissectTag {
     // refresh) so we don't walk the whole block tree every frame.
     constexpr double kMinimapRebuildSeconds = 1.0;
     constexpr float kMinimapHeight = 24.0f;
+    constexpr float kMinimapAncestorHeight = 3.0f;
+    constexpr float kMinimapMinBodyHeight = 6.0f;
+    constexpr float kMinimapResizeHandleHeight = 6.0f;
     constexpr uint32_t kMinimapBgColor = IM_COL32(28, 28, 28, 255);
     constexpr uint32_t kMinimapBorderColor = IM_COL32(80, 80, 80, 255);
     constexpr uint32_t kMinimapOverlapColor = IM_COL32(220, 60, 50, 255);
@@ -73,6 +79,48 @@ namespace SparkLib::UI::DissectTag {
         return parity;
     }
 
+    // "[3/8]" for a block element; empty when the span isn't a block element.
+    inline std::string minimapIndexLabel(int64_t index, size_t count) {
+        if (index < 0) return "";
+        return "[" + std::to_string(index) + "/" + std::to_string(count) + "]";
+    }
+
+    // Opens the structure under a right-click. A click within the thin ancestor
+    // bands above a span selects that ancestor instead. Spans point into the
+    // analysis' schema snapshot, so only ids and offsets are used.
+    inline void openMinimapStructure(
+        WindowState* window, const std::vector<Analysis::SpanInfo>& spans,
+        char* tagStart, char* addr, float ancestorBand
+    ) {
+        const Analysis::Span* best = nullptr;
+        for (const auto& info : spans) {
+            const auto& span = info.span;
+            if (!span.type || addr < span.start || addr >= span.end) continue;
+            if (!best || span.ancestors.size() >= best->ancestors.size()) best = &span;
+        }
+        if (!best) return;
+
+        size_t band = ancestorBand > 0.0f ? static_cast<size_t>(ancestorBand) : 0;
+        if (band + 1 < best->ancestors.size()) {
+            const auto& ancestor = best->ancestors[band + 1];
+            if (ancestor.type)
+                state.openWindow(window->map, window->tagId, ancestor.address - tagStart, ancestor.type->id, ancestor.index);
+            return;
+        }
+        // The tag's own root span is already this window.
+        if (best->ancestors.empty()) return;
+
+        char* address = best->start;
+        int64_t index = best->index;
+        size_t elemSize = best->type->size;
+        // Collapsed spans cover many elements; open the hovered one.
+        if (index < 0 && best->count > 0 && elemSize > 0) {
+            index = static_cast<int64_t>(static_cast<size_t>(addr - best->start) / elemSize);
+            address += static_cast<size_t>(index) * elemSize;
+        }
+        state.openWindow(window->map, window->tagId, address - tagStart, best->type->id, index);
+    }
+
     inline void clampMinimapView(WindowState* window, double maxZoom) {
         if (window->minimapZoom < 1.0) window->minimapZoom = 1.0;
         if (window->minimapZoom > maxZoom) window->minimapZoom = maxZoom;
@@ -102,21 +150,15 @@ namespace SparkLib::UI::DissectTag {
             auto it = schema->structures.find(rootId);
             if (it != schema->structures.end()) {
                 StructureRef snapshotRoot = { &ctx, &it->second, rootAddress };
-                Analysis::SpanMap spans;
-                // The root struct isn't a block element, so add it explicitly or it
-                // would show up as a gap at the start of the tag.
-                if (snapshotRoot.node->size > 0) {
-                    char* rootStart = (char*)rootAddress;
-                    spans.spans.insert({rootStart, rootStart + snapshotRoot.node->size, snapshotRoot.node, Type::Structure});
-                }
-                Analysis::fillSpanMap(snapshotRoot, spans, tagStart, tagEnd);
                 if (!job->cancel) {
-                    result->overlaps = Analysis::analyzeOverlaps(spans);
-                    result->stripeParity = computeMinimapStripeParity(result->overlaps);
-                    result->problems = Analysis::findProblems(result->overlaps, tagStart, tagEnd, options);
-                }
-                if (!job->cancel) {
-                    Hints::findProbableTypeProblems(&ctx, result->overlaps, tagStart, tagEnd, result->problems);
+                    try {
+                        auto analysis = Analysis::analyzeStructure(snapshotRoot, tagStart, tagEnd, options);
+                        result->overlaps = std::move(analysis.overlaps);
+                        result->problems = std::move(analysis.problems);
+                        result->stripeParity = computeMinimapStripeParity(result->overlaps);
+                    } catch (const std::exception& error) {
+                        result->error = error.what();
+                    }
                 }
             }
 
@@ -137,9 +179,9 @@ namespace SparkLib::UI::DissectTag {
             window->minimapViewStart = 0.0;
         }
         ImGui::SameLine();
-        if (ImGui::Checkbox("Ignore gaps after DataPointers", &state.problemOptions.ignoreGapsAfterDataPointer))
+        if (ImGui::Checkbox("Ignore alignment gaps", &state.problemOptions.ignoreAlignmentGaps))
             window->minimapRefreshRequested = true;
-        ImGui::SetItemTooltip("Opaque data (DataPointer payloads) can be followed by padding for 4-byte alignment.");
+        ImGui::SetItemTooltip("Ignore gaps of 3 bytes or fewer that end on a 4-byte aligned address.");
         ImGui::SameLine();
         ImGui::TextDisabled("%.1fx  (wheel: zoom, drag/shift+wheel: pan, double-click: reset)", window->minimapZoom);
 
@@ -166,6 +208,10 @@ namespace SparkLib::UI::DissectTag {
         }
         // Hold a reference so the snapshot stays alive for this frame.
         std::shared_ptr<MinimapAnalysis> analysis = window->minimap;
+        if (!analysis->error.empty()) {
+            ImGui::TextWrapped("Minimap analysis failed: %s", analysis->error.c_str());
+            return;
+        }
         const auto& overlaps = analysis->overlaps;
         const auto& problems = analysis->problems;
         const auto& stripeParity = analysis->stripeParity;
@@ -186,13 +232,26 @@ namespace SparkLib::UI::DissectTag {
         if (maxZoom < 1.0) maxZoom = 1.0;
         clampMinimapView(window, maxZoom);
 
+        size_t maxDepth = 0;
+        std::map<std::pair<StructureNode*, char*>, uint32_t> instanceColors;
+        for (size_t i = 0; i < overlaps.size(); ++i) {
+            const auto& span = overlaps[i].span;
+            size_t visibleDepth = span.ancestors.empty() ? 0 : span.ancestors.size() - 1;
+            maxDepth = (std::max)(maxDepth, visibleDepth);
+            instanceColors[{span.type, span.start}] = minimapStripeColor(
+                minimapColorForType(span.type), i < stripeParity.size() && stripeParity[i]);
+        }
+        float minBarHeight = (std::max)(kMinimapHeight,
+            static_cast<float>(maxDepth) * kMinimapAncestorHeight + kMinimapMinBodyHeight);
+        float barHeight = (std::max)(window->minimapHeight, minBarHeight);
+        float ancestorHeight = kMinimapAncestorHeight * barHeight / minBarHeight;
         ImVec2 p0 = ImGui::GetCursorScreenPos();
-        ImVec2 p1 = ImVec2(p0.x + width, p0.y + kMinimapHeight);
+        ImVec2 p1 = ImVec2(p0.x + width, p0.y + barHeight);
         ImVec2 strip0 = ImVec2(p0.x, p1.y);
         ImVec2 strip1 = ImVec2(p1.x, p1.y + kMinimapProblemStripHeight);
 
         // --- Input on the main bar (and the problem strip beneath it) ---
-        ImGui::InvisibleButton("##minimap", ImVec2(width, kMinimapHeight + kMinimapProblemStripHeight),
+        ImGui::InvisibleButton("##minimap", ImVec2(width, barHeight + kMinimapProblemStripHeight),
             ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonMiddle);
         ImGui::SetItemKeyOwner(ImGuiKey_MouseWheelY);
         ImGui::SetItemKeyOwner(ImGuiKey_MouseWheelX);
@@ -258,6 +317,23 @@ namespace SparkLib::UI::DissectTag {
             uint32_t parity = spanIndex < stripeParity.size()
                 ? stripeParity[spanIndex] : 0;
 
+            float x0 = addrToX(s);
+            float x1 = addrToX(e);
+            if (x0 < p0.x - 1.0f) x0 = p0.x - 1.0f;
+            if (x1 > p1.x + 1.0f) x1 = p1.x + 1.0f;
+            if (x1 < x0 + 1.0f) x1 = x0 + 1.0f;
+
+            float bodyTop = p0.y;
+            for (size_t depth = 1; depth < info.span.ancestors.size(); ++depth) {
+                const auto& ancestor = info.span.ancestors[depth];
+                auto color = instanceColors.find({ancestor.type, ancestor.address});
+                uint32_t ancestorColor = color != instanceColors.end()
+                    ? color->second : minimapColorForType(ancestor.type);
+                dl->AddRectFilled(ImVec2(x0, bodyTop),
+                    ImVec2(x1, bodyTop + ancestorHeight), ancestorColor);
+                bodyTop += ancestorHeight;
+            }
+
             // Collapsed multi-element spans (huge blocks) get striped per element
             // once elements are wide enough on screen to tell apart.
             StructureNode* type = info.span.type;
@@ -276,19 +352,13 @@ namespace SparkLib::UI::DissectTag {
                     if (x0 < p0.x - 1.0f) x0 = p0.x - 1.0f;
                     if (x1 > p1.x + 1.0f) x1 = p1.x + 1.0f;
                     uint32_t color = minimapStripeColor(baseColor, (parity + (uint32_t)i) & 1);
-                    dl->AddRectFilled(ImVec2(x0, p0.y), ImVec2(x1, p1.y), color);
+                    dl->AddRectFilled(ImVec2(x0, bodyTop), ImVec2(x1, p1.y), color);
                 }
                 continue;
             }
 
-            float x0 = addrToX(s);
-            float x1 = addrToX(e);
-            if (x0 < p0.x - 1.0f) x0 = p0.x - 1.0f;
-            if (x1 > p1.x + 1.0f) x1 = p1.x + 1.0f;
-            if (x1 < x0 + 1.0f) x1 = x0 + 1.0f;
-
             uint32_t color = info.overlaps ? baseColor : minimapStripeColor(baseColor, parity & 1);
-            dl->AddRectFilled(ImVec2(x0, p0.y), ImVec2(x1, p1.y), color);
+            dl->AddRectFilled(ImVec2(x0, bodyTop), ImVec2(x1, p1.y), color);
         }
 
         dl->PopClipRect();
@@ -333,18 +403,72 @@ namespace SparkLib::UI::DissectTag {
             char* addr = tagStart + (ptrdiff_t)(viewStartBytes + frac * viewBytes);
             if (addr >= tagEnd) addr = tagEnd - 1;
 
+            if (ImGui::IsMouseClicked(ImGuiMouseButton_Right) && io.MousePos.y <= p1.y)
+                openMinimapStructure(window, overlaps, tagStart, addr, (io.MousePos.y - p0.y) / ancestorHeight);
+
+            // Right-clicking a problem marker zooms to the group of markers touching it.
+            if (ImGui::IsMouseClicked(ImGuiMouseButton_Right) && io.MousePos.y > p1.y) {
+                struct Marker { float x; const Analysis::Problem* problem; };
+                std::vector<Marker> markers;
+                for (auto& problem : problems) {
+                    if (problem.end <= viewStart || problem.start >= viewEnd) continue;
+                    markers.push_back({problemMarkerX(problem), &problem});
+                }
+                std::sort(markers.begin(), markers.end(), [](const Marker& a, const Marker& b) { return a.x < b.x; });
+
+                int seed = -1;
+                float seedDistance = kMinimapProblemTriHalfWidth;
+                for (size_t i = 0; i < markers.size(); ++i) {
+                    float distance = std::fabs(io.MousePos.x - markers[i].x);
+                    if (distance <= seedDistance) { seed = (int)i; seedDistance = distance; }
+                }
+                if (seed >= 0) {
+                    const float touching = kMinimapProblemTriHalfWidth * 2.0f;
+                    size_t lo = seed, hi = seed;
+                    while (lo > 0 && markers[lo].x - markers[lo - 1].x <= touching) --lo;
+                    while (hi + 1 < markers.size() && markers[hi + 1].x - markers[hi].x <= touching) ++hi;
+
+                    char* from = markers[lo].problem->start;
+                    char* to = markers[lo].problem->end;
+                    for (size_t i = lo; i <= hi; ++i) {
+                        from = (std::min)(from, markers[i].problem->start);
+                        to = (std::max)(to, markers[i].problem->end);
+                    }
+                    double fitBytes = (std::max)((double)(to - from) * 1.2, kMinimapMinVisibleBytes);
+                    double center = ((double)(from - tagStart) + (double)(to - tagStart)) * 0.5;
+                    window->minimapZoom = total / fitBytes;
+                    clampMinimapView(window, maxZoom);
+                    window->minimapViewStart = (center - total / window->minimapZoom * 0.5) / total;
+                    clampMinimapView(window, maxZoom);
+                }
+            }
+
             ImGui::BeginTooltip();
             ImGui::Text("Offset: 0x%zx", (size_t)(addr - tagStart));
             bool any = false;
             for (auto& info : overlaps) {
                 if (info.span.start <= addr && addr < info.span.end) {
                     any = true;
+                    for (size_t depth = 1; depth < info.span.ancestors.size(); ++depth) {
+                        const auto& ancestor = info.span.ancestors[depth];
+                        ImGui::TextColored(ImColor(minimapColorForType(ancestor.type)).Value,
+                            "%*s%s%s (parent at 0x%zx)", static_cast<int>((depth - 1) * 2), "",
+                            ancestor.type ? ancestor.type->name : "?",
+                            minimapIndexLabel(ancestor.index, ancestor.count).c_str(),
+                            static_cast<size_t>(ancestor.address - tagStart));
+                    }
                     const char* name = info.span.type ? info.span.type->name : "?";
+                    int64_t index = info.span.index;
+                    size_t elemSize = info.span.type ? info.span.type->size : 0;
+                    // Collapsed spans cover many elements; derive the hovered one.
+                    if (index < 0 && info.span.count > 0 && elemSize > 0)
+                        index = (addr - info.span.start) / (ptrdiff_t)elemSize;
                     ImGui::TextColored(
                         info.overlaps ? ImColor(kMinimapOverlapColor).Value
                                       : ImColor(minimapColorForType(info.span.type)).Value,
-                        "%s [size 0x%zx]%s",
+                        "%s%s [size 0x%zx]%s",
                         name,
+                        minimapIndexLabel(index, info.span.count).c_str(),
                         (size_t)(info.span.end - info.span.start),
                         info.overlaps ? "  (overlap!)" : "");
                 }
@@ -367,6 +491,8 @@ namespace SparkLib::UI::DissectTag {
                     (size_t)(problem.end - tagStart),
                     (size_t)(problem.end - problem.start));
             }
+            if (anyProblem)
+                ImGui::TextDisabled("Right-click the marker to zoom to this group");
             ImGui::EndTooltip();
         }
 
@@ -401,6 +527,21 @@ namespace SparkLib::UI::DissectTag {
             dl->AddRectFilled(s0, s1, ImGui::GetColorU32(ImGuiCol_ScrollbarBg));
             dl->AddRectFilled(ImVec2(thumbX, s0.y), ImVec2(thumbX + thumbW, s1.y), thumbColor, 2.0f);
         }
+
+        ImVec2 handleStart = ImGui::GetCursorScreenPos();
+        ImGui::InvisibleButton("##minimapResize", ImVec2(width, kMinimapResizeHandleHeight));
+        bool resizing = ImGui::IsItemActive();
+        bool resizeHovered = ImGui::IsItemHovered();
+        if (resizing || resizeHovered)
+            ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeNS);
+        if (resizing)
+            window->minimapHeight = (std::max)(minBarHeight, barHeight + io.MouseDelta.y);
+        if (resizeHovered)
+            ImGui::SetTooltip("Drag to resize minimap height");
+        float handleY = handleStart.y + kMinimapResizeHandleHeight * 0.5f;
+        dl->AddLine(ImVec2(handleStart.x, handleY), ImVec2(handleStart.x + width, handleY),
+            ImGui::GetColorU32(resizing ? ImGuiCol_SeparatorActive
+                : resizeHovered ? ImGuiCol_SeparatorHovered : ImGuiCol_Separator), 2.0f);
     }
 
 }
