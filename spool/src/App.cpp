@@ -17,6 +17,12 @@ namespace Spool {
         sessionPath_ = defaultSessionPath();
     }
 
+    App::~App() {
+        audit_.reset();
+        closeFile();
+        SparkLib::UI::DissectTag::closeAllWindows();
+    }
+
     std::filesystem::path App::defaultSessionPath() {
         wchar_t exePath[MAX_PATH];
         GetModuleFileNameW(nullptr, exePath, MAX_PATH);
@@ -75,9 +81,6 @@ namespace Spool {
     }
 
     void App::closeFile() {
-        audit_.reset();
-        auditError_.clear();
-        auditGroup_.reset();
         guestPath_.clear();
         guestBytes_.clear();
         guestTags_.clear();
@@ -260,6 +263,11 @@ namespace Spool {
             SparkLib::UI::showTagBrowserWindow();
 
         showAudit_ = session.value("audit", false);
+        auditDiskMaps_ = session.value("auditDiskMaps", false);
+        auditPaths_.clear();
+        for (const auto& auditPath : session.value("auditPaths", std::vector<std::string>{})) {
+            auditPaths_.emplace_back(auditPath);
+        }
         lastSessionJson_ = session.dump();
     }
 
@@ -269,7 +277,12 @@ namespace Spool {
         session["map"] = map_ ? map_->getFilePath().string() : "";
         session["tagBrowser"] = SparkLib::UI::isTagBrowserWindowOpen();
         session["audit"] = showAudit_;
-        session["dissect"] = SparkLib::UI::DissectTag::openTagIds();
+        session["auditDiskMaps"] = auditDiskMaps_;
+        session["auditPaths"] = nlohmann::json::array();
+        for (const auto& path : auditPaths_) {
+            session["auditPaths"].push_back(path.string());
+        }
+        session["dissect"] = map_ ? SparkLib::UI::DissectTag::openTagIds(map_.get()) : std::vector<uint32_t>{};
         WINDOWPLACEMENT wp = { sizeof(wp) };
         if (GetWindowPlacement(window_, &wp) && wp.showCmd != SW_SHOWMINIMIZED) {
             session["window"] = {

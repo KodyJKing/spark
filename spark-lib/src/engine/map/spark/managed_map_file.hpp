@@ -6,6 +6,8 @@
 #include <fstream>
 #include <vector>
 #include <cstdint>
+#include <limits>
+#include <span>
 
 namespace Engine::Map::Spark {
 
@@ -15,6 +17,8 @@ namespace Engine::Map::Spark {
             return filePath;
         }
 
+        std::span<const uint8_t> bytes() const { return buffer; }
+
         static std::shared_ptr<ManagedMapFile> create(std::filesystem::path f) {
             auto map = std::make_shared<ManagedMapFile>();
 
@@ -22,6 +26,9 @@ namespace Engine::Map::Spark {
             if (!file) return nullptr;
 
             auto size = file.tellg();
+            if (size < static_cast<std::streamoff>(sizeof(CacheHeader)) ||
+                static_cast<uint64_t>(size) > (std::numeric_limits<uint32_t>::max)())
+                return nullptr;
             file.seekg(0);
             map->filePath = f;
             map->buffer.resize(static_cast<size_t>(size));

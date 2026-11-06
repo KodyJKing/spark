@@ -6,6 +6,7 @@
 #include <set>
 #include <memory>
 #include <thread>
+#include <tuple>
 
 #include "engine/map/schema/schema_file.hpp"
 #include "engine/map/schema/reference.hpp"
@@ -40,15 +41,21 @@ namespace SparkLib::UI::DissectTag {
 
     // A window inspects either a tag's root structure (offset -1) or the structure
     // instance at a byte offset from the tag data start.
-    using WindowKey = std::pair<uint32_t, int64_t>;
+    using WindowKey = std::tuple<uintptr_t, uint32_t, int64_t>;
     constexpr int64_t kRootStructureOffset = -1;
+
+    inline WindowKey windowKey(MapFile* map, uint32_t tagId, int64_t offset = kRootStructureOffset) {
+        return {reinterpret_cast<uintptr_t>(map), tagId, offset};
+    }
 
     struct WindowState {
         bool isOpen = false;
         uint32_t tagId = 0;
         
-        // This should *probably* be a smart-pointer.
+        // Borrowed for host maps; standalone inspection windows retain an owner.
         MapFile* map = nullptr;
+        std::shared_ptr<MapFile> mapOwner;
+        std::string mapName;
 
         int64_t structureOffset = kRootStructureOffset;
         Id structureId = NullId; // Only meaningful for structure views.
@@ -111,6 +118,10 @@ namespace SparkLib::UI::DissectTag {
 
     struct State {
 
+        ~State() {
+            for (auto& [key, window] : windows) window.waitForMinimapJob();
+        }
+
         ///////////////////////////
         // Schema
         Schema* schema;
@@ -135,25 +146,36 @@ namespace SparkLib::UI::DissectTag {
         inline void openWindow(MapFile* map, uint32_t tagId,
             int64_t offset = kRootStructureOffset, const Id& structureId = NullId, int64_t elementIndex = -1) {
             if (offset != kRootStructureOffset) openWindow(map, tagId);
-            WindowKey key{tagId, offset};
+            auto key = windowKey(map, tagId, offset);
             auto it = windows.find(key);
             if (it == windows.end()) {
                 WindowState created{true, tagId, map};
                 created.structureOffset = offset;
                 created.structureId = structureId;
                 created.elementIndex = elementIndex;
+                if (offset != kRootStructureOffset) {
+                    const auto& root = windows.at(windowKey(map, tagId));
+                    created.mapOwner = root.mapOwner;
+                    created.mapName = root.mapName;
+                }
                 it = windows.emplace(key, std::move(created)).first;
             }
             it->second.isOpen = true;
             it->second.focusRequested = true;
         }
+        inline void openOwnedWindow(std::shared_ptr<MapFile> map, uint32_t tagId, const std::string& name) {
+            openWindow(map.get(), tagId);
+            auto& root = windows.at(windowKey(map.get(), tagId));
+            root.mapOwner = std::move(map);
+            root.mapName = name;
+        }
         inline void cleanupWindows() {
             // Closing a tag's window closes its structure views too.
-            std::set<uint32_t> closedTags;
+            std::set<WindowKey> closedTags;
             for (auto& [key, window] : windows)
-                if (window.isRoot() && !window.isOpen) closedTags.insert(window.tagId);
+                if (window.isRoot() && !window.isOpen) closedTags.insert(key);
             for (auto& [key, window] : windows)
-                if (closedTags.count(window.tagId)) window.isOpen = false;
+                if (closedTags.count(windowKey(window.map, window.tagId))) window.isOpen = false;
 
             for (auto it = windows.begin(); it != windows.end(); ) {
                 if (!it->second.isOpen) {

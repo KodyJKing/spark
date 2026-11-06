@@ -15,7 +15,7 @@ namespace Spool {
     class App : public SparkLib::UI::TagBrowserHost {
         public:
         explicit App(HWND window);
-        ~App() override { closeFile(); }
+        ~App() override;
 
         // Draws the main menu bar and all open tool windows. Call once per frame.
         void render();
@@ -28,7 +28,7 @@ namespace Spool {
 
         bool wantsExit() const { return wantsExit_; }
 
-        // Reopens the map and tag windows from the previous run. Pass a map path to override the saved map.
+        // Restores the map, tag windows and audit selection. Pass a map path to override the saved map.
         void restoreSession(const std::filesystem::path& mapOverride = {});
 
         // TagBrowserHost
@@ -47,6 +47,7 @@ namespace Spool {
         void injectAndSave();
         void auditWindow();
         void startAudit();
+        void openAuditTag(size_t mapIndex, uint32_t tagId);
 
         struct GuestTagChoice {
             uint32_t groupId;
@@ -67,7 +68,10 @@ namespace Spool {
         std::optional<uint32_t> auditGroup_;
         Engine::Map::Analysis::ProblemOptions auditOptions_;
         bool auditExcludeMissingSchema_ = false;
-        std::unique_ptr<Engine::Map::Analysis::AuditJob> audit_;
+        bool auditDiskMaps_ = false;
+        std::vector<std::filesystem::path> auditPaths_;
+        std::unique_ptr<Engine::Map::Analysis::AuditBatchJob> audit_;
+        std::map<size_t, std::weak_ptr<Engine::Map::Spark::ManagedMapFile>> auditViews_;
         std::string auditError_;
 
         HWND window_;

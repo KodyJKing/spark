@@ -25,15 +25,19 @@ namespace SparkLib::UI::DissectTag {
         state.openWindow(map, tagId);
     }
 
+    void openWindow(std::shared_ptr<MapFile> map, uint32_t tagId, const std::string& mapName) {
+        state.openOwnedWindow(std::move(map), tagId, mapName);
+    }
+
     void openStructureWindow(MapFile* map, uint32_t tagId, size_t offset, const std::string& structureId, int64_t elementIndex) {
         state.openWindow(map, tagId, static_cast<int64_t>(offset), structureId, elementIndex);
     }
     
-    std::vector<uint32_t> openTagIds() {
+    std::vector<uint32_t> openTagIds(MapFile* map) {
         std::vector<uint32_t> ids;
         // Structure windows aren't restored across sessions.
         for (auto& [key, window] : state.windows)
-            if (window.isOpen && window.isRoot()) ids.push_back(window.tagId);
+            if (window.isOpen && window.isRoot() && (!map || window.map == map)) ids.push_back(window.tagId);
         return ids;
     }
 
@@ -41,6 +45,11 @@ namespace SparkLib::UI::DissectTag {
         for (auto& [key, window] : state.windows) {
             if (window.map == map) window.isOpen = false;
         }
+        state.cleanupWindows();
+    }
+
+    void closeAllWindows() {
+        for (auto& [key, window] : state.windows) window.isOpen = false;
         state.cleanupWindows();
     }
 
@@ -260,15 +269,21 @@ namespace SparkLib::UI::DissectTag {
         auto tag = window.getTag();
         auto path = window.map->getTagPath(tag);
 
-        auto groupId = Strings::fourccToString(tag->groupID);
-        char title[256];
-        snprintf(title, sizeof(title), "[%s] %s - %p", groupId.c_str(), path, tag);
+        auto groupId = tag ? Strings::fourccToString(tag->groupID) : "????";
+        auto mapName = window.mapName;
+        if (mapName.empty()) {
+            auto* cache = window.map->getCacheHeader();
+            if (cache) mapName.assign(cache->scenarioName, strnlen(cache->scenarioName, sizeof(cache->scenarioName)));
+        }
+        char identity[80];
+        snprintf(identity, sizeof(identity), "###Dissect:%p:%08X", window.map, window.tagId);
+        auto title = mapName + " - [" + groupId + "] " + (path ? path : "[invalid tag]") + identity;
         
         if (window.focusRequested) {
             ImGui::SetNextWindowFocus();
             window.focusRequested = false;
         }
-        ImGui::Begin(title, &window.isOpen);
+        ImGui::Begin(title.c_str(), &window.isOpen);
         windowHeader();
         if (!tag) {
             ImGui::Text("[invalid tag]");
@@ -327,8 +342,8 @@ namespace SparkLib::UI::DissectTag {
 
                 // Structure views opened from the minimap live in a drawer at the bottom of this window.
                 std::vector<WindowState*> views;
-                for (auto it = state.windows.lower_bound(WindowKey{window.tagId, 0});
-                     it != state.windows.end() && it->first.first == window.tagId; ++it)
+                for (auto it = state.windows.lower_bound(windowKey(window.map, window.tagId, 0));
+                     it != state.windows.end() && it->second.map == window.map && it->second.tagId == window.tagId; ++it)
                     if (it->second.isOpen) views.push_back(&it->second);
 
                 float scrollHeight = 0.0f;

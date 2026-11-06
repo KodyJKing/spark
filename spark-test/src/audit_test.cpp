@@ -3,6 +3,7 @@
 #include "engine/map/schema/audit.hpp"
 #include "engine/map/schema/hints.hpp"
 #include "engine/map/spark/managed_map_file.hpp"
+#include "ui/dissect/State.hpp"
 
 #include <chrono>
 #include <cstring>
@@ -23,6 +24,9 @@ namespace {
             cache->fileSize = static_cast<uint32_t>(size);
             cache->tagData.offset = 0x800;
             cache->tagDataSize = static_cast<uint32_t>(size - 0x800);
+            std::memcpy(cache->magic, "daeh", 4);
+            std::memcpy(cache->footerMagic, "toof", 4);
+            cache->cacheVersion = 13;
             getTagDataHeader()->tagArray.offset = pointer(0x840);
         }
 
@@ -75,7 +79,21 @@ namespace {
         return schema;
     }
 
-    AuditResults wait(AuditJob& job) {
+    struct TemporaryMap {
+        std::filesystem::path path = std::filesystem::temp_directory_path()
+            / ("spark-audit-" + std::to_string(GetCurrentProcessId()) + "-"
+                + std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()) + ".map");
+        ~TemporaryMap() { std::filesystem::remove(path); }
+
+        void write(const TestMap& map) const {
+            std::ofstream out(path, std::ios::binary);
+            out.write(reinterpret_cast<const char*>(map.bytes.data()), map.cursor);
+            REQUIRE(out.good());
+        }
+    };
+
+    template<typename Job>
+    auto wait(Job& job) -> decltype(job.snapshot()) {
         auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(10);
         while (std::chrono::steady_clock::now() < deadline) {
             auto result = job.snapshot();
@@ -163,7 +181,7 @@ TEST_CASE("Spans retain instance ancestry through nested blocks and data payload
         REQUIRE(leafSpan.ancestors[0].type == &root);
         REQUIRE(leafSpan.ancestors[0].address == ref.address);
         REQUIRE(leafSpan.ancestors[1].type == &child);
-        REQUIRE(leafSpan.ancestors[1].address == map->bytes.data() + at + 64 + i * 12);
+        REQUIRE(static_cast<void*>(leafSpan.ancestors[1].address) == map->bytes.data() + at + 64 + i * 12);
         REQUIRE(flattened[2 + i].span.ancestors.size() == 1);
         const auto& payload = flattened[4 + i].span;
         REQUIRE(payload.fieldType == Type::DataPointer);
@@ -321,20 +339,11 @@ TEST_CASE("Audit cancellation retains consistent partial results and joins on de
 }
 
 TEST_CASE("Managed map snapshots retain edits independently of the open map", "[audit]") {
-    struct TemporaryMap {
-        std::filesystem::path path = std::filesystem::temp_directory_path()
-            / ("spark-audit-" + std::to_string(GetCurrentProcessId()) + "-"
-                + std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()) + ".map");
-        ~TemporaryMap() { std::filesystem::remove(path); }
-    } file;
+    TemporaryMap file;
     TestMap source;
     auto at = source.addTag(GroupId_Weapon, "snapshot", 16);
     source.trim();
-    {
-        std::ofstream out(file.path, std::ios::binary);
-        out.write(reinterpret_cast<const char*>(source.bytes.data()), source.cursor);
-        REQUIRE(out.good());
-    }
+    file.write(source);
     auto map = Engine::Map::Spark::ManagedMapFile::create(file.path);
     REQUIRE(map != nullptr);
     auto* value = static_cast<uint32_t*>(map->getTagData(map->getTag(0)));
@@ -356,6 +365,176 @@ TEST_CASE("Managed map snapshots retain edits independently of the open map", "[
     REQUIRE(results.completedTags == 1);
 }
 
+    TEST_CASE("Batch audits keep map-local identities and reload only unchanged files", "[audit][batch-audit]") {
+        TemporaryMap first, second;
+        TestMap source;
+        source.addTag(GroupId_Weapon, "weapon", 16);
+        source.addTag(GroupId_Effect, "effect", 16);
+        source.trim();
+        first.write(source);
+        second.write(source);
+        AuditBatchJob job({{first.path}, {second.path}}, scalarSchema());
+        auto results = wait(job);
+        REQUIRE(results.status == AuditStatus::Completed);
+        REQUIRE(results.completedMaps == 2);
+        REQUIRE(results.failedMaps == 0);
+        REQUIRE(results.completedTags == 4);
+        REQUIRE(results.errorCount == 2);
+        REQUIRE(results.problemCount == 2);
+        REQUIRE(results.storedProblemCount == 2);
+        REQUIRE(results.maps[0].path != results.maps[1].path);
+        REQUIRE(results.maps[0].analysis.tags[0].tagId == results.maps[1].analysis.tags[0].tagId);
+        auto firstView = job.openMap(0);
+        auto secondView = job.openMap(1);
+        REQUIRE(firstView != secondView);
+        REQUIRE(firstView->getFilePath() == first.path);
+        REQUIRE(secondView->getFilePath() == second.path);
+
+        // A same-size edit with the original timestamp must still invalidate disk results.
+        auto modified = std::filesystem::last_write_time(second.path);
+        source.word(0x1000, 42);
+        second.write(source);
+        std::filesystem::last_write_time(second.path, modified);
+        REQUIRE_THROWS_WITH(job.openMap(1), Catch::Matchers::ContainsSubstring("changed"));
+        REQUIRE_NOTHROW(job.openMap(0));
+        std::filesystem::remove(first.path);
+        REQUIRE_THROWS_WITH(job.openMap(0), Catch::Matchers::ContainsSubstring("reopen"));
+    }
+
+    TEST_CASE("Batch audits continue after map errors and apply filters to every map", "[audit][batch-audit]") {
+        TemporaryMap missing, first, second, invalid;
+        TestMap source;
+        source.addTag(GroupId_Weapon, "weapon", 16);
+        source.addTag(GroupId_Effect, "effect", 16);
+        source.trim();
+        first.write(source);
+        second.write(source);
+        source.getTagDataHeader()->tagArray.offset = 0xFFFFFFFF;
+        invalid.write(source);
+        bool excludeMissing = GENERATE(false, true);
+        AuditBatchJob job({{missing.path}, {first.path}, {invalid.path}, {second.path}},
+            scalarSchema(), {}, {}, excludeMissing);
+        auto results = wait(job);
+        REQUIRE(results.completedMaps == 4);
+        REQUIRE(results.failedMaps == 2);
+        REQUIRE(results.maps[0].analysis.status == AuditStatus::Failed);
+        REQUIRE_FALSE(results.maps[0].analysis.error.empty());
+        REQUIRE(results.maps[2].analysis.status == AuditStatus::Failed);
+        REQUIRE(results.maps[3].analysis.status == AuditStatus::Completed);
+        REQUIRE(results.completedTags == (excludeMissing ? 2 : 4));
+        REQUIRE(results.excludedTags == (excludeMissing ? 2 : 0));
+        REQUIRE(results.errorCount == (excludeMissing ? 0 : 2));
+        AuditBatchJob filtered({{first.path}, {second.path}}, scalarSchema(), GroupId_Weapon);
+        auto filteredResults = wait(filtered);
+        REQUIRE(filteredResults.completedTags == 2);
+        REQUIRE(filteredResults.errorCount == 0);
+    }
+
+    TEST_CASE("Batch snapshots survive source closure and open independent inspection copies", "[audit][batch-audit]") {
+        TemporaryMap file;
+        TestMap source;
+        source.addTag(GroupId_Weapon, "snapshot", 16);
+        source.trim();
+        file.write(source);
+        auto map = Engine::Map::Spark::ManagedMapFile::create(file.path);
+        REQUIRE(map != nullptr);
+        auto value = [](const auto& map) { return static_cast<uint32_t*>(map->getTagData(map->getTag(0))); };
+        *value(map) = 123;
+        AuditBatchJob job({{file.path, map->snapshot()}}, scalarSchema());
+        *value(map) = 456;
+        map.reset();
+        std::filesystem::remove(file.path);
+        auto results = wait(job);
+        REQUIRE(results.maps[0].fromSnapshot);
+        REQUIRE(results.completedTags == 1);
+        auto view = job.openMap(0);
+        REQUIRE(*value(view) == 123);
+        *value(view) = 789;
+        REQUIRE(*value(job.openMap(0)) == 123);
+    }
+
+    TEST_CASE("Batch detailed-problem budget is shared while counts continue across maps", "[audit][batch-audit]") {
+        constexpr size_t count = 0x810;
+        TemporaryMap first, second;
+        TestMap map(0x1000 + count * 28);
+        Schema schema;
+        auto& root = schema.structures["data"];
+        root.id = "data";
+        root.groupId = GroupId_Weapon;
+        root.size = count * 20;
+        auto at = map.addTag(GroupId_Weapon, "gaps", count * 28);
+        for (size_t i = 0; i < count; ++i) {
+            field(schema, root, i * 20, Type::DataPointer);
+            map.word(at + i * 20, 4);
+            map.word(at + i * 20 + 12, map.pointer(static_cast<uint32_t>(at + root.size + i * 8)));
+        }
+        map.trim();
+        first.write(map);
+        second.write(map);
+        AuditBatchJob job({{first.path}, {second.path}}, schema);
+        auto results = wait(job);
+        REQUIRE(results.completedMaps == 2);
+        REQUIRE(results.problemCount == count * 2);
+        REQUIRE(results.storedProblemCount == 0x1000);
+        REQUIRE(results.maps[0].analysis.storedProblemCount == count);
+        REQUIRE(results.maps[1].analysis.storedProblemCount == 0x1000 - count);
+        REQUIRE(results.maps[1].analysis.groups.at(GroupId_Weapon).problemCount == count);
+    }
+
+    TEST_CASE("Batch cancellation preserves consistent partial results", "[audit][batch-audit]") {
+        TemporaryMap file;
+        TestMap source;
+        source.addTag(GroupId_Weapon, "cancel", 16);
+        source.trim();
+        file.write(source);
+        AuditBatchJob job(std::vector<AuditSource>(64, {file.path}), scalarSchema());
+        job.cancel();
+        auto results = wait(job);
+        REQUIRE((results.status == AuditStatus::Cancelled || results.status == AuditStatus::Completed));
+        REQUIRE(results.completedMaps <= results.maps.size());
+        REQUIRE(results.completedTags == results.problemCount);
+        REQUIRE(results.problemCount == results.storedProblemCount);
+        for (const auto& map : results.maps) {
+            REQUIRE(map.analysis.status != AuditStatus::Running);
+            REQUIRE(map.analysis.status != AuditStatus::Pending);
+        }
+    }
+
+    TEST_CASE("Dissector identity and ownership isolate identical tags and tabs across maps", "[audit][batch-audit]") {
+        using namespace SparkLib::UI::DissectTag;
+        State state;
+        auto first = std::make_shared<TestMap>();
+        auto second = std::make_shared<TestMap>();
+        std::weak_ptr<TestMap> lifetime = first;
+        auto* firstMap = first.get();
+        state.openOwnedWindow(first, 1, "first");
+        state.openOwnedWindow(second, 1, "second");
+        state.openWindow(first.get(), 1, 16, "child", 0);
+        state.openWindow(second.get(), 1, 16, "child", 0);
+        REQUIRE(state.windows.size() == 4);
+        state.openOwnedWindow(first, 1, "first");
+        REQUIRE(state.windows.size() == 4);
+        first.reset();
+        REQUIRE_FALSE(lifetime.expired());
+        auto job = std::make_shared<MinimapJob>();
+        auto& child = state.windows.at(windowKey(firstMap, 1, 16));
+        REQUIRE(child.mapOwner != nullptr);
+        child.minimapJob = job;
+        std::atomic<bool> aliveUntilCancelled = false;
+        std::thread worker([&] {
+            while (!job->cancel) std::this_thread::yield();
+            aliveUntilCancelled = !lifetime.expired();
+            job->done = true;
+        });
+        state.windows.at(windowKey(firstMap, 1)).isOpen = false;
+        state.cleanupWindows();
+        worker.join();
+        REQUIRE(aliveUntilCancelled);
+        REQUIRE(lifetime.expired());
+        REQUIRE(state.windows.size() == 2);
+        REQUIRE(state.windows.at(windowKey(second.get(), 1)).isOpen);
+        REQUIRE(state.windows.at(windowKey(second.get(), 1, 16)).isOpen);
+    }
 TEST_CASE("Shared analysis rejects recursive block layouts without hanging", "[audit]") {
     auto map = std::make_shared<TestMap>();
     auto at = map->addTag(GroupId_Weapon, "recursive", 12);
