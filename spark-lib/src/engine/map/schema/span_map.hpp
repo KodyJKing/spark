@@ -6,6 +6,7 @@
 #include <vector>
 #include <stdexcept>
 #include <atomic>
+#include <limits>
 
 namespace Engine::Map::Analysis {
 
@@ -38,6 +39,12 @@ namespace Engine::Map::Analysis {
         std::multiset<Span> spans;
     };
 
+    inline char* spanEnd(void* address, size_t size) {
+        auto start = reinterpret_cast<uintptr_t>(address);
+        if (size > (std::numeric_limits<uintptr_t>::max)() - start)
+            throw std::runtime_error("Span address overflow");
+        return reinterpret_cast<char*>(start + size);
+    }
 
     inline void fillSpanMap(
         StructureRef& structure, 
@@ -62,21 +69,21 @@ namespace Engine::Map::Analysis {
         auto fieldRefs = structure.getFieldRefs();
         for (auto& fieldRef : fieldRefs) {
             if (cancel && cancel->load()) return;
-            if (!fieldRef.is(Type::DataPointer) && !fieldRef.is(Type::BlockPointer) && !fieldRef.is(Type::Structure)) continue;
             auto fieldAddress = reinterpret_cast<uintptr_t>(fieldRef.address);
             auto start = reinterpret_cast<uintptr_t>(startAddress);
             auto stop = reinterpret_cast<uintptr_t>(stopAddress);
             if (fieldAddress < start || fieldAddress > stop || fieldRef.size() > stop - fieldAddress) {
-                if (fieldRef.is(Type::Structure))
-                    throw std::runtime_error("Inline structure extends outside the tag data range");
-                throw std::runtime_error("Pointer field extends outside the tag data range");
+                spanMap.spans.insert({static_cast<char*>(fieldRef.address),
+                    spanEnd(fieldRef.address, fieldRef.size()), nullptr, fieldRef.node->type.type, ancestors});
+                continue;
             }
 
-            if (fieldRef.is(Type::DataPointer)) {
+            if (fieldRef.is(Type::DataPointer) && !fieldRef.node->external) {
                 DataPointer* dataPtr = (DataPointer*)fieldRef.address;
+                if (dataPtr->size < 0) throw std::runtime_error("Negative data payload size");
+                if (!dataPtr->size) continue;
                 void* start = mapFile->getDataPointer(*dataPtr);
-                if (!start) continue;
-                void* end = (char*)start + dataPtr->size;
+                void* end = spanEnd(start, static_cast<size_t>(dataPtr->size));
                 spanMap.spans.insert({(char*)start, (char*)end, nullptr, Type::DataPointer, ancestors});
                 continue;
             }
@@ -97,9 +104,11 @@ namespace Engine::Map::Analysis {
             if (size == 0) continue;
 
             auto count = fieldRef.getBlockElementCount();
+            if (count > (std::numeric_limits<size_t>::max)() / size)
+                throw std::runtime_error("Block span size overflow");
             if (count > maxBlocksToScan) {
                 char* start = (char*) fieldRef.getBlockElement(0).address;
-                char* end = start + size * count;
+                char* end = spanEnd(start, size * count);
                 spanMap.spans.insert({start, end, type, Type::BlockPointer, ancestors, -1, count});
                 continue; // Skip scanning individual block elements if too many
             }
@@ -107,11 +116,18 @@ namespace Engine::Map::Analysis {
             for (int i = 0; i < count; ++i) {
                 if (cancel && cancel->load()) return;
                 StructureRef blockElement = fieldRef.getBlockElement(i);
-                if ((char*)blockElement.address < (char*)startAddress) break;
-                if ((char*)blockElement.address >= (char*)stopAddress) break;
+                char* start = static_cast<char*>(blockElement.address);
+                char* end = spanEnd(start, size);
+                auto address = reinterpret_cast<uintptr_t>(start);
+                if (address < reinterpret_cast<uintptr_t>(startAddress) ||
+                    address >= reinterpret_cast<uintptr_t>(stopAddress) ||
+                    size > reinterpret_cast<uintptr_t>(stopAddress) - address) {
+                    // Retain the offending extent, but never dereference it.
+                    spanMap.spans.insert({start, end, type, Type::BlockPointer, ancestors, i, count});
+                    continue;
+                }
                 if (blockElement.valid()) {
-                    char* start = (char*)blockElement.address;
-                    spanMap.spans.insert({start, start + size, type, Type::BlockPointer, ancestors, i, count});
+                    spanMap.spans.insert({start, end, type, Type::BlockPointer, ancestors, i, count});
                     fillSpanMap(blockElement, spanMap, startAddress, stopAddress, depth + 1, cancel, ancestors, i, count);
                 }
             }

@@ -43,6 +43,8 @@ namespace Engine::Map {
     struct FieldNode : public SchemaNode {
         TypeRef type = { Type::U32, NullId };
         size_t offset = 0;
+        // Indicates this field points at a memory region outside the owning tag. Currently only applies to DataPointers.
+        bool external = false;
     };
 
     struct Schema {

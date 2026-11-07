@@ -17,7 +17,7 @@ namespace Engine::Map::Analysis {
         SpanMap spans;
         if (root.node->size > 0) {
             char* start = static_cast<char*>(root.address);
-            spans.spans.insert({start, start + root.node->size, root.node, Type::Structure});
+            spans.spans.insert({start, spanEnd(start, root.node->size), root.node, Type::Structure});
         }
         fillSpanMap(root, spans, tagStart, tagEnd, 0, cancel);
         StructureAnalysis result;

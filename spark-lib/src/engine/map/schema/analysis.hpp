@@ -9,6 +9,8 @@ namespace Engine::Map::Analysis {
         std::vector<Problem> problems;
     };
 
+    // Out-of-range spans remain in the result and produce OutOfBounds problems;
+    // traversal never reads fields or payloads outside [tagStart, tagEnd).
     StructureAnalysis analyzeStructure(
         StructureRef& root,
         void* tagStart,

@@ -23,7 +23,8 @@ namespace Spool {
                 sources.push_back({map_->getFilePath(), map_->snapshot()});
             }
             audit_ = std::make_unique<Engine::Map::Analysis::AuditBatchJob>(
-                std::move(sources), *schema, auditGroup_, auditOptions_, auditExcludeMissingSchema_);
+                std::move(sources), *schema, auditGroup_, auditOptions_, auditExcludeMissingSchema_,
+                auditExcludeBsp_ ? std::optional<uint32_t>(Engine::GroupId_BSP) : std::nullopt);
             auditViews_.clear();
             auditError_.clear();
         } catch (const std::exception& error) {
@@ -121,9 +122,17 @@ namespace Spool {
             ImGui::TextUnformatted("Open a map or choose Maps from disk.");
             if (ImGui::Button("Open Map...")) openFile();
         }
-        std::string groupPreview = auditGroup_ ? Strings::fourccToString(*auditGroup_) : "All tag groups";
+        std::string groupPreview = auditGroup_ ? Strings::fourccToString(*auditGroup_)
+            : auditExcludeBsp_ ? "All but sbsp" : "All tag groups";
         if (ImGui::BeginCombo("Tag group", groupPreview.c_str())) {
-            if (ImGui::Selectable("All tag groups", !auditGroup_)) auditGroup_.reset();
+            if (ImGui::Selectable("All tag groups", !auditGroup_ && !auditExcludeBsp_)) {
+                auditGroup_.reset();
+                auditExcludeBsp_ = false;
+            }
+            if (ImGui::Selectable("All but sbsp", !auditGroup_ && auditExcludeBsp_)) {
+                auditGroup_.reset();
+                auditExcludeBsp_ = true;
+            }
             std::set<uint32_t> groups;
             if (map_) {
                 for (uint32_t i = 0; i < map_->getTagCount(); ++i) {
@@ -141,7 +150,10 @@ namespace Spool {
             for (auto group : groups) {
                 bool selected = auditGroup_ == group;
                 auto label = Strings::fourccToString(group);
-                if (ImGui::Selectable(label.c_str(), selected)) auditGroup_ = group;
+                if (ImGui::Selectable(label.c_str(), selected)) {
+                    auditGroup_ = group;
+                    auditExcludeBsp_ = false;
+                }
                 if (selected) ImGui::SetItemDefaultFocus();
             }
             ImGui::EndCombo();
@@ -177,6 +189,7 @@ namespace Spool {
             ImGui::TextWrapped("Storage limit reached. Counts continue; some tags have counts but no stored details.");
 
         ImGui::Separator();
+        const ImVec4 cleanColor(0.35f, 0.8f, 0.4f, 1.0f);
         if (ImGui::BeginChild("Audit results", ImVec2(0, 0), ImGuiChildFlags_None,
             ImGuiWindowFlags_HorizontalScrollbar)) {
             for (size_t mapIndex = 0; mapIndex < results.maps.size(); ++mapIndex) {
@@ -187,10 +200,14 @@ namespace Spool {
                     : analysis.status == AuditStatus::Cancelled ? "cancelled"
                     : analysis.status == AuditStatus::Failed ? "failed" : "complete";
                 ImGui::PushID(static_cast<int>(mapIndex));
+                bool mapClean = analysis.status == AuditStatus::Completed &&
+                    !analysis.problemCount && !analysis.errorCount && analysis.error.empty();
+                if (mapClean) ImGui::PushStyleColor(ImGuiCol_Text, cleanColor);
                 bool mapOpen = ImGui::TreeNodeEx("Map", ImGuiTreeNodeFlags_DefaultOpen,
                     "%s%s - %s; %zu problems, %zu / %zu tags",
                     map.path.filename().string().c_str(), map.fromSnapshot ? " (snapshot)" : "",
                     status, analysis.problemCount, analysis.completedTags, analysis.totalTags);
+                if (mapClean) ImGui::PopStyleColor();
                 ImGui::SetItemTooltip("%s", map.path.string().c_str());
                 if (mapOpen) {
                     if (!analysis.error.empty()) ImGui::TextWrapped("Map failed: %s", analysis.error.c_str());
@@ -198,9 +215,13 @@ namespace Spool {
             for (const auto& [groupId, group] : analysis.groups) {
                 auto groupName = Strings::fourccToString(groupId);
                 ImGui::PushID(static_cast<int>(groupId));
+                bool groupClean = analysis.status == AuditStatus::Completed &&
+                    analysis.error.empty() && !group.problemCount && !group.errorCount;
+                if (groupClean) ImGui::PushStyleColor(ImGuiCol_Text, cleanColor);
                 bool open = ImGui::TreeNode("Group", "[%s] %zu problems (%zu stored), %zu tags, %zu errors",
                     groupName.c_str(), group.problemCount, group.storedProblemCount,
                     group.tags.size(), group.errorCount);
+                if (groupClean) ImGui::PopStyleColor();
                 if (open) {
                     for (auto index : group.tags) {
                         const auto& tag = analysis.tags[index];

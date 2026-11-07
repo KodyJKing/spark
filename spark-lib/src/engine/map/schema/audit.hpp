@@ -57,7 +57,7 @@ namespace Engine::Map::Analysis {
     public:
         AuditJob(std::shared_ptr<MapFile> map, Schema schema,
             std::optional<uint32_t> group = {}, ProblemOptions options = {},
-            bool excludeMissingSchema = false);
+            bool excludeMissingSchema = false, std::optional<uint32_t> excludedGroup = {});
         ~AuditJob();
         AuditJob(const AuditJob&) = delete;
         AuditJob& operator=(const AuditJob&) = delete;
@@ -67,7 +67,8 @@ namespace Engine::Map::Analysis {
 
     private:
         void run(std::shared_ptr<MapFile> map, Schema schema,
-            std::optional<uint32_t> group, ProblemOptions options, bool excludeMissingSchema);
+            std::optional<uint32_t> group, ProblemOptions options, bool excludeMissingSchema,
+            std::optional<uint32_t> excludedGroup);
 
         std::atomic<bool> cancelled_ = false;
         mutable std::mutex mutex_;
@@ -112,7 +113,7 @@ namespace Engine::Map::Analysis {
     public:
         AuditBatchJob(std::vector<AuditSource> sources, Schema schema,
             std::optional<uint32_t> group = {}, ProblemOptions options = {},
-            bool excludeMissingSchema = false);
+            bool excludeMissingSchema = false, std::optional<uint32_t> excludedGroup = {});
         ~AuditBatchJob();
         AuditBatchJob(const AuditBatchJob&) = delete;
         AuditBatchJob& operator=(const AuditBatchJob&) = delete;
@@ -123,7 +124,8 @@ namespace Engine::Map::Analysis {
         Spark::ManagedMapFilePtr openMap(size_t index) const;
 
     private:
-        void run(std::optional<uint32_t> group, ProblemOptions options, bool excludeMissingSchema);
+        void run(std::optional<uint32_t> group, ProblemOptions options, bool excludeMissingSchema,
+            std::optional<uint32_t> excludedGroup);
 
         std::vector<AuditSource> sources_;
         Schema schema_;

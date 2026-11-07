@@ -66,6 +66,7 @@ namespace Spool {
         bool showInjection_ = false;
         bool showAudit_ = false;
         std::optional<uint32_t> auditGroup_;
+        bool auditExcludeBsp_ = false;
         Engine::Map::Analysis::ProblemOptions auditOptions_;
         bool auditExcludeMissingSchema_ = false;
         bool auditDiskMaps_ = false;

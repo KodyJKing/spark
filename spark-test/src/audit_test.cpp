@@ -326,7 +326,7 @@ TEST_CASE("Spans traverse inline structures without counting their storage twice
     }
 }
 
-TEST_CASE("Inline span traversal rejects out-of-range and recursive structures", "[spans]") {
+TEST_CASE("Inline span traversal reports out-of-range and rejects recursive structures", "[spans]") {
     auto map = std::make_shared<TestMap>();
     auto at = map->addTag(GroupId_Weapon, "inline", 16);
     map->trim();
@@ -344,9 +344,146 @@ TEST_CASE("Inline span traversal rejects out-of-range and recursive structures",
     }
     SECTION("Inline storage must fit within the tag") {
         root.size = 20;
-        REQUIRE_THROWS_WITH(fillSpanMap(ref, spans, ref.address, map->bytes.data() + map->cursor),
-            "Inline structure extends outside the tag data range");
+        REQUIRE_NOTHROW(fillSpanMap(ref, spans, ref.address, map->bytes.data() + map->cursor));
+        auto problems = findProblems(analyzeOverlaps(spans), static_cast<char*>(ref.address),
+            reinterpret_cast<char*>(map->bytes.data() + map->cursor));
+        REQUIRE(problems.front().kind == ProblemKind::OutOfBounds);
+        REQUIRE(problems.front().start == ref.address);
+        REQUIRE(problems.front().end == static_cast<char*>(ref.address) + 20);
     }
+}
+
+TEST_CASE("Span bounds problems retain offending extents and honor limits", "[spans]") {
+    char bytes[128]{};
+    auto* begin = bytes + 32;
+    auto* end = bytes + 96;
+    std::vector<SpanInfo> spans{
+        {{bytes + 8, bytes + 16, nullptr, Type::DataPointer}},
+        {{bytes + 24, bytes + 40, nullptr, Type::DataPointer}},
+        {{begin, end, nullptr, Type::Structure}},
+        {{bytes + 88, bytes + 104, nullptr, Type::DataPointer}},
+        {{end, bytes + 112, nullptr, Type::BlockPointer}},
+        {{end, end, nullptr, Type::DataPointer}},
+    };
+    std::vector<Problem> problems;
+    findOutOfBoundsProblems(spans, begin, end, problems);
+    REQUIRE(problems.size() == 4);
+    REQUIRE(problems.front().start == bytes + 8);
+    REQUIRE(problems.back().end == bytes + 112);
+    REQUIRE(std::string(problemKindName(ProblemKind::OutOfBounds)) == "Outside Tag Range");
+    auto limited = findProblems(spans, begin, end, {}, 1);
+    REQUIRE(limited.size() == 1);
+    REQUIRE(limited[0].kind == ProblemKind::OutOfBounds);
+    REQUIRE(findProblems(spans, begin, end, {}, 0).empty());
+}
+
+TEST_CASE("Dissector analysis and audit report spans outside a tag without reading them", "[audit][spans]") {
+    auto map = std::make_shared<TestMap>();
+    auto at = map->addTag(GroupId_Weapon, "bounded", 64);
+    map->addTag(GroupId_Effect, "neighbor", 64);
+    map->trim();
+    auto schema = scalarSchema();
+    auto& root = schema.structures.at("root");
+    root.size = 0;
+    field(schema, root, 0, Type::BlockPointer);
+    schema.fields.at("root:0").type.ref = "child";
+    auto& child = schema.structures["child"];
+    child.id = "child";
+    child.size = 16;
+    // A recursive field would throw if traversal incorrectly entered the payload.
+    field(schema, child, 0, Type::Structure);
+    schema.fields.at("child:0").type.ref = "child";
+    map->word(at, 1);
+    uint32_t target = at + 64;
+    size_t extent = 16;
+    SECTION("block starts at the end of the tag") {}
+    SECTION("block begins before the tag") { target = at - 8; }
+    SECTION("block crosses the end") { target = at + 56; }
+    SECTION("block entirely before the tag") { target = at - 32; }
+    SECTION("block points beyond allocated map memory") { target = 0x100000; }
+    SECTION("collapsed large block crosses the end") { target = at + 32; extent = 16 * 1025; map->word(at, 1025); }
+    SECTION("opaque payload crosses the end") {
+        schema.fields.at("root:0").type.type = Type::DataPointer;
+        target = at + 56;
+        map->word(at, 16);
+        map->word(at + 12, map->pointer(target));
+    }
+    SECTION("inline structure crosses the end") {
+        schema.fields.at("root:0").type.type = Type::Structure;
+        child.size = 80;
+        target = at;
+        extent = 80;
+    }
+    SECTION("pointer field header crosses the end") {
+        root.fields.clear();
+        field(schema, root, 60, Type::BlockPointer);
+        schema.fields.at("root:60").type.ref = "child";
+        target = at + 60;
+        extent = 12;
+    }
+    SECTION("scalar field crosses the end") {
+        root.fields.clear();
+        field(schema, root, 62, Type::U32);
+        target = at + 62;
+        extent = 4;
+    }
+    map->word(at + 4, map->pointer(target));
+    Context ctx{map.get(), &schema};
+    StructureRef ref{&ctx, &root, map->bytes.data() + at};
+    auto result = analyzeStructure(ref, ref.address, map->bytes.data() + at + 64);
+    auto findOutside = [](const auto& problems) {
+        return std::find_if(problems.begin(), problems.end(), [](const auto& p) {
+            return p.kind == ProblemKind::OutOfBounds;
+        });
+    };
+    auto problem = findOutside(result.problems);
+    REQUIRE(problem != result.problems.end());
+    REQUIRE(reinterpret_cast<uintptr_t>(problem->start) == reinterpret_cast<uintptr_t>(map->bytes.data()) + target);
+    REQUIRE(reinterpret_cast<uintptr_t>(problem->end) == reinterpret_cast<uintptr_t>(problem->start) + extent);
+
+    AuditJob job(map, schema, GroupId_Weapon);
+    auto audit = wait(job);
+    REQUIRE(audit.status == AuditStatus::Completed);
+    REQUIRE(audit.errorCount == 0);
+    REQUIRE(audit.tags.size() == 1);
+    REQUIRE(audit.problemCount == result.problems.size());
+    auto stored = findOutside(audit.tags[0].problems);
+    REQUIRE(stored != audit.tags[0].problems.end());
+    REQUIRE(stored->startOffset == target);
+    REQUIRE(stored->endOffset == target + extent);
+}
+
+TEST_CASE("Span traversal keeps boundary-aligned and empty blocks valid", "[spans]") {
+    auto map = std::make_shared<TestMap>();
+    auto at = map->addTag(GroupId_Weapon, "boundary", 32);
+    map->trim();
+    auto schema = scalarSchema();
+    auto& root = schema.structures.at("root");
+    root.size = 12;
+    field(schema, root, 0, Type::BlockPointer);
+    schema.fields.at("root:0").type.ref = "child";
+    auto& child = schema.structures["child"];
+    child.id = "child";
+    child.size = 16;
+    map->word(at, 1);
+    map->word(at + 4, map->pointer(at + 16));
+    SECTION("Block ends exactly at tag end") {}
+    SECTION("Zero count ignores an invalid payload pointer") {
+        map->word(at, 0);
+        map->word(at + 4, 0xFFFFFFFF);
+    }
+    SECTION("Zero byte payload ignores an invalid payload pointer") {
+        root.size = 20;
+        schema.fields.at("root:0").type.type = Type::DataPointer;
+        map->word(at, 0);
+        map->word(at + 12, 0xFFFFFFFF);
+    }
+    Context ctx{map.get(), &schema};
+    StructureRef ref{&ctx, &root, map->bytes.data() + at};
+    auto result = analyzeStructure(ref, ref.address, map->bytes.data() + map->cursor);
+    REQUIRE(std::none_of(result.problems.begin(), result.problems.end(), [](const auto& p) {
+        return p.kind == ProblemKind::OutOfBounds;
+    }));
 }
 
 TEST_CASE("Audit scans all tags including the last and reports missing schemas", "[audit]") {
@@ -420,6 +557,34 @@ TEST_CASE("Audit filters groups before scanning and handles an empty selection",
     REQUIRE(results.problemCount == results.totalTags);
     if (group == GroupId_Weapon) REQUIRE(results.groups.size() == 1);
     else REQUIRE(results.groups.empty());
+}
+
+TEST_CASE("Audit can select all groups except sbsp", "[audit]") {
+    auto map = std::make_shared<TestMap>();
+    map->addTag(GroupId_Weapon, "first", 16);
+    map->addTag(GroupId_BSP, "bsp", 16);
+    map->addTag(GroupId_Effect, "effect", 16);
+    map->addTag(GroupId_Weapon, "last", 16);
+    map->trim();
+    bool excludeBsp = GENERATE(false, true);
+    bool excludeMissing = GENERATE(false, true);
+    auto excludedGroup = excludeBsp ? std::optional<uint32_t>(GroupId_BSP) : std::nullopt;
+    AuditJob job(map, scalarSchema(), {}, {}, excludeMissing, excludedGroup);
+    auto results = wait(job);
+    REQUIRE(results.status == AuditStatus::Completed);
+    REQUIRE(results.totalTags == (excludeMissing ? 2 : excludeBsp ? 3 : 4));
+    REQUIRE(results.completedTags == results.totalTags);
+    REQUIRE(results.excludedTags == (excludeMissing ? excludeBsp ? 1 : 2 : 0));
+    REQUIRE(results.errorCount == (excludeMissing ? 0 : excludeBsp ? 1 : 2));
+    REQUIRE(results.groups.contains(GroupId_BSP) == (!excludeBsp && !excludeMissing));
+    REQUIRE(results.problemCount == 2);
+    REQUIRE(results.tags.front().problems[0].endOffset == 0x1010);
+    REQUIRE(results.tags.back().path == "last");
+
+    AuditJob bspOnly(map, scalarSchema(), GroupId_BSP);
+    auto bspResults = wait(bspOnly);
+    REQUIRE(bspResults.totalTags == 1);
+    REQUIRE(bspResults.tags.front().groupId == GroupId_BSP);
 }
 
 TEST_CASE("Audit counts beyond both the minimap and global storage limits", "[audit]") {
@@ -577,6 +742,30 @@ TEST_CASE("Managed map snapshots retain edits independently of the open map", "[
         auto filteredResults = wait(filtered);
         REQUIRE(filteredResults.completedTags == 2);
         REQUIRE(filteredResults.errorCount == 0);
+    }
+
+    TEST_CASE("Batch audits exclude sbsp from every disk map", "[audit][batch-audit]") {
+        TemporaryMap first, second;
+        TestMap source;
+        source.addTag(GroupId_Weapon, "weapon", 16);
+        source.addTag(GroupId_BSP, "bsp", 16);
+        source.addTag(GroupId_Effect, "effect", 16);
+        source.trim();
+        first.write(source);
+        second.write(source);
+        bool excludeMissing = GENERATE(false, true);
+        AuditBatchJob job({{first.path}, {second.path}}, scalarSchema(), {}, {}, excludeMissing, GroupId_BSP);
+        auto results = wait(job);
+        REQUIRE(results.status == AuditStatus::Completed);
+        REQUIRE(results.completedMaps == 2);
+        REQUIRE(results.failedMaps == 0);
+        REQUIRE(results.completedTags == (excludeMissing ? 2 : 4));
+        REQUIRE(results.excludedTags == (excludeMissing ? 2 : 0));
+        REQUIRE(results.errorCount == (excludeMissing ? 0 : 2));
+        for (const auto& map : results.maps) {
+            REQUIRE_FALSE(map.analysis.groups.contains(GroupId_BSP));
+            REQUIRE(map.analysis.tags.front().groupId == GroupId_Weapon);
+        }
     }
 
     TEST_CASE("Batch snapshots survive source closure and open independent inspection copies", "[audit][batch-audit]") {

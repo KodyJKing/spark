@@ -23,10 +23,11 @@ namespace Engine::Map::Analysis {
     }
 
     AuditJob::AuditJob(std::shared_ptr<MapFile> map, Schema schema,
-        std::optional<uint32_t> group, ProblemOptions options, bool excludeMissingSchema) {
+        std::optional<uint32_t> group, ProblemOptions options, bool excludeMissingSchema,
+        std::optional<uint32_t> excludedGroup) {
         if (!map) throw std::invalid_argument("Audit requires a map snapshot");
         worker_ = std::thread(&AuditJob::run, this, std::move(map), std::move(schema),
-            group, options, excludeMissingSchema);
+            group, options, excludeMissingSchema, excludedGroup);
     }
 
     AuditJob::~AuditJob() {
@@ -43,6 +44,7 @@ namespace Engine::Map::Analysis {
 
     static void auditMap(std::shared_ptr<MapFile> map, Schema& schema,
         std::optional<uint32_t> group, ProblemOptions options, bool excludeMissingSchema,
+        std::optional<uint32_t> excludedGroup,
         std::atomic<bool>& cancelled_, std::mutex& mutex_, AuditResults& results_, size_t limit) {
         try {
             auto* cache = map->getCacheHeader();
@@ -57,6 +59,7 @@ namespace Engine::Map::Analysis {
                 auto address = reinterpret_cast<uintptr_t>(map->getTagData(tag));
                 if (address >= fileStart && address < fileEnd) starts.push_back(address);
                 if (group && tag->groupID != *group) continue;
+                if (excludedGroup && tag->groupID == *excludedGroup) continue;
                 auto* root = schema.structureForGroupId(tag->groupID);
                 if (excludeMissingSchema && (!root || root->fields.empty())) {
                     ++excluded;
@@ -130,8 +133,9 @@ namespace Engine::Map::Analysis {
     }
 
     void AuditJob::run(std::shared_ptr<MapFile> map, Schema schema,
-        std::optional<uint32_t> group, ProblemOptions options, bool excludeMissingSchema) {
-        auditMap(std::move(map), schema, group, options, excludeMissingSchema,
+        std::optional<uint32_t> group, ProblemOptions options, bool excludeMissingSchema,
+        std::optional<uint32_t> excludedGroup) {
+        auditMap(std::move(map), schema, group, options, excludeMissingSchema, excludedGroup,
             cancelled_, mutex_, results_, auditProblemLimit);
     }
 
@@ -191,7 +195,8 @@ namespace Engine::Map::Analysis {
     }
 
     AuditBatchJob::AuditBatchJob(std::vector<AuditSource> sources, Schema schema,
-        std::optional<uint32_t> group, ProblemOptions options, bool excludeMissingSchema)
+        std::optional<uint32_t> group, ProblemOptions options, bool excludeMissingSchema,
+        std::optional<uint32_t> excludedGroup)
         : sources_(std::move(sources)), schema_(std::move(schema)) {
         if (sources_.empty()) throw std::invalid_argument("Choose at least one map to audit");
         for (auto& source : sources_) {
@@ -202,7 +207,7 @@ namespace Engine::Map::Analysis {
             result.analysis.status = AuditStatus::Pending;
             results_.maps.push_back(std::move(result));
         }
-        worker_ = std::thread(&AuditBatchJob::run, this, group, options, excludeMissingSchema);
+        worker_ = std::thread(&AuditBatchJob::run, this, group, options, excludeMissingSchema, excludedGroup);
     }
 
     AuditBatchJob::~AuditBatchJob() {
@@ -247,7 +252,8 @@ namespace Engine::Map::Analysis {
         return map;
     }
 
-    void AuditBatchJob::run(std::optional<uint32_t> group, ProblemOptions options, bool excludeMissingSchema) {
+    void AuditBatchJob::run(std::optional<uint32_t> group, ProblemOptions options, bool excludeMissingSchema,
+        std::optional<uint32_t> excludedGroup) {
         size_t remaining = auditProblemLimit;
         auto schema = schema_;
         for (size_t i = 0; i < sources_.size(); ++i) {
@@ -269,7 +275,7 @@ namespace Engine::Map::Analysis {
                     std::lock_guard lock(mutex_);
                     result.fileIdentity = identity;
                 }
-                auditMap(map, schema, group, options, excludeMissingSchema,
+                auditMap(map, schema, group, options, excludeMissingSchema, excludedGroup,
                     cancelled_, mutex_, result.analysis, remaining);
                 remaining -= result.analysis.storedProblemCount;
             } catch (const std::exception& error) {

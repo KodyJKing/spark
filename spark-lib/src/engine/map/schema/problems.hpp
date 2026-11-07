@@ -14,6 +14,7 @@ namespace Engine::Map::Analysis {
         Gap,                  // Bytes inside the tag that no parsed span covers.
         ProbableBlockPointer, // Looks like a block pointer but isn't labelled as one.
         ProbableTagReference, // Looks like a tag reference but isn't labelled as one.
+        OutOfBounds,          // A parsed span extends outside the owning tag.
     };
 
     struct Problem {
@@ -28,8 +29,24 @@ namespace Engine::Map::Analysis {
             case ProblemKind::Gap: return "Gap";
             case ProblemKind::ProbableBlockPointer: return "Probable BlockPointer";
             case ProblemKind::ProbableTagReference: return "Probable TagReference";
+            case ProblemKind::OutOfBounds: return "Outside Tag Range";
         }
         return "?";
+    }
+
+    inline void findOutOfBoundsProblems(
+        const std::vector<SpanInfo>& spans, char* rangeStart, char* rangeEnd,
+        std::vector<Problem>& out, size_t maxProblems = defaultMaxProblems
+    ) {
+        const auto start = reinterpret_cast<uintptr_t>(rangeStart);
+        const auto end = reinterpret_cast<uintptr_t>(rangeEnd);
+        for (const auto& info : spans) {
+            if (out.size() >= maxProblems) return;
+            auto s = reinterpret_cast<uintptr_t>(info.span.start);
+            auto e = reinterpret_cast<uintptr_t>(info.span.end);
+            if (e > s && (s < start || e > end))
+                out.push_back({ProblemKind::OutOfBounds, info.span.start, info.span.end});
+        }
     }
 
     // Overlapping regions are reported once per contiguous run, not per span.
@@ -102,6 +119,7 @@ namespace Engine::Map::Analysis {
         size_t maxProblems = defaultMaxProblems
     ) {
         std::vector<Problem> problems;
+        findOutOfBoundsProblems(spans, rangeStart, rangeEnd, problems, maxProblems);
         findOverlapProblems(spans, problems, maxProblems);
         findGapProblems(spans, rangeStart, rangeEnd, problems, options, maxProblems);
         return problems;

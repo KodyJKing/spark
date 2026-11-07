@@ -366,7 +366,18 @@ namespace SparkLib::UI::DissectTag {
 
         // --- Problem markers: an underline across the range plus a triangle
         // pointing up at its center, so even 1-byte problems stay visible. ---
+        auto problemVisible = [&](const Analysis::Problem& p) {
+            if (p.kind == Analysis::ProblemKind::OutOfBounds) {
+                if (p.end <= tagStart) return viewStart == tagStart;
+                if (p.start >= tagEnd) return viewEnd == tagEnd;
+            }
+            return p.end > viewStart && p.start < viewEnd;
+        };
         auto problemMarkerX = [&](const Analysis::Problem& p) {
+            if (p.kind == Analysis::ProblemKind::OutOfBounds) {
+                if (p.end <= tagStart) return p0.x;
+                if (p.start >= tagEnd) return p1.x;
+            }
             float x0 = addrToX(p.start);
             float x1 = addrToX(p.end);
             float cx = (x0 + x1) * 0.5f;
@@ -379,7 +390,7 @@ namespace SparkLib::UI::DissectTag {
         dl->PushClipRect(ImVec2(strip0.x - kMinimapProblemTriHalfWidth, strip0.y), 
                          ImVec2(strip1.x + kMinimapProblemTriHalfWidth, strip1.y), true);
         for (auto& problem : problems) {
-            if (problem.end <= viewStart || problem.start >= viewEnd) continue;
+            if (!problemVisible(problem)) continue;
             float x0 = addrToX(problem.start);
             float x1 = addrToX(problem.end);
             if (x0 < p0.x) x0 = p0.x;
@@ -411,7 +422,7 @@ namespace SparkLib::UI::DissectTag {
                 struct Marker { float x; const Analysis::Problem* problem; };
                 std::vector<Marker> markers;
                 for (auto& problem : problems) {
-                    if (problem.end <= viewStart || problem.start >= viewEnd) continue;
+                    if (!problemVisible(problem)) continue;
                     markers.push_back({problemMarkerX(problem), &problem});
                 }
                 std::sort(markers.begin(), markers.end(), [](const Marker& a, const Marker& b) { return a.x < b.x; });
@@ -434,6 +445,8 @@ namespace SparkLib::UI::DissectTag {
                         from = (std::min)(from, markers[i].problem->start);
                         to = (std::max)(to, markers[i].problem->end);
                     }
+                    from = (std::clamp)(from, tagStart, tagEnd);
+                    to = (std::clamp)(to, tagStart, tagEnd);
                     double fitBytes = (std::max)((double)(to - from) * 1.2, kMinimapMinVisibleBytes);
                     double center = ((double)(from - tagStart) + (double)(to - tagStart)) * 0.5;
                     window->minimapZoom = total / fitBytes;
@@ -478,12 +491,20 @@ namespace SparkLib::UI::DissectTag {
             // Problems at the hovered byte, or whose triangle is under the mouse.
             bool anyProblem = false;
             for (auto& problem : problems) {
-                if (problem.end <= viewStart || problem.start >= viewEnd) continue;
+                if (!problemVisible(problem)) continue;
                 bool contains = problem.start <= addr && addr < problem.end;
                 bool nearMarker = std::fabs(io.MousePos.x - problemMarkerX(problem)) <= kMinimapProblemTriHalfWidth;
                 if (!contains && !nearMarker) continue;
                 if (!anyProblem) ImGui::Separator();
                 anyProblem = true;
+                if (problem.kind == Analysis::ProblemKind::OutOfBounds) {
+                    ImGui::TextColored(ImColor(kMinimapProblemColor).Value,
+                        "%s: %p - %p (tag: %p - %p)",
+                        Analysis::problemKindName(problem.kind),
+                        static_cast<void*>(problem.start), static_cast<void*>(problem.end),
+                        static_cast<void*>(tagStart), static_cast<void*>(tagEnd));
+                    continue;
+                }
                 ImGui::TextColored(ImColor(kMinimapProblemColor).Value,
                     "%s: 0x%zx - 0x%zx [size 0x%zx]",
                     Analysis::problemKindName(problem.kind),

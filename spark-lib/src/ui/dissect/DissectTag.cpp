@@ -87,6 +87,16 @@ namespace SparkLib::UI::DissectTag {
             renderSubstructure(renderCtx, blockElement, field, 0x100);
         }
 
+        if (field.is(Type::DataPointer)) {
+            ImGui::PushID(field.address);
+            bool external = field.node->external;
+            if (ImGui::Checkbox("External", &external)) {
+                field.node->external = external;
+            }
+            ImGui::PopID();
+            ImGui::SameLine();
+        }
+
     }
 
     void renderField(RenderContext& renderCtx, FieldRef& field) {

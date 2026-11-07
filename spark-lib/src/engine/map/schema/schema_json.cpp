@@ -51,7 +51,8 @@ namespace Engine::Map {
             {"id", node.id},
             {"name", std::string(node.name)},
             {"type", node.type},
-            {"offset", node.offset}
+            {"offset", node.offset},
+            {"external", node.external}
         };
     }
 
@@ -62,6 +63,7 @@ namespace Engine::Map {
         node.name[sizeof(node.name) - 1] = '\0';
         j.at("type").get_to(node.type);
         j.at("offset").get_to(node.offset);
+        node.external = j.value("external", false);
     }
 
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Schema, structures, fields)
