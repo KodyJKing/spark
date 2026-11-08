@@ -41,6 +41,10 @@ semantic completeness, and gaps alone do not demonstrate an incomplete mapping.
 2. Walk schema-described host and imported guest metadata. Record fixups using
    section-relative integer locations, never pointers into growable buffers.
    Check block extents, schema field bounds/overlaps, fixups and pointer ranges.
+   Shared relocation-sensitivity checks cover data/block pointers, embedded
+   structures and tag references. Scalar-only structures stop traversal after
+   validation; scalar-only blocks still validate their schema and complete extent
+   and relocate the block pointer, without walking each element.
    Intern names by their full string, not a hash alone.
 3. Build the output in this order:
    - Host fixed prefix, ending at the old model-data offset.
@@ -52,7 +56,9 @@ semantic completeness, and gaps alone do not demonstrate an incomplete mapping.
    - Aligned copies of the original host tag-data section and, when needed,
      guest tag-data section as metadata backing storage.
 4. Link names, metadata pointers, handles and bitmap offsets. Guest model offsets
-   are displaced within their respective vertex/index buffers. Host model offsets
+   are displaced within their respective vertex/index buffers, including both
+   part index offsets at `+0x4C` and `+0x50`. Both index ranges are validated.
+   Host model offsets
    do not change relative to those buffers. Update counts and all section/file
    sizes only after the final layout is known.
 
@@ -69,11 +75,16 @@ displacement alone is not a valid pointer delta.
 - Host BSP tag data pointers remain zero. BSP payloads stay in the fixed prefix;
   their block/data pointers use the scenario's BSP runtime-address base and are
   not relocated. Their tag-reference names are linked to the new name table.
+  The bundled `RuntimeDecal` schema uses a 16-byte stride: position at `+0x00`,
+  palette/unused bytes at `+0x0C`, and yaw/pitch bytes at `+0x0E`/`+0x0F`.
 - Imported scenarios and BSPs are rejected, unless resolved to an existing host
   tag before import. Adding BSPs requires a separate scenario/BSP layout design.
 - Inline DataPointer payloads are supported using the 20-byte disk layout, not
-  the native pointer-sized C++ structure. Nonempty payloads with nonzero flags or
-  null data addresses take separate host/guest external-data paths.
+  the native pointer-sized C++ structure. Nonempty payloads with null data
+  addresses take separate host/guest external-data paths. The descriptor word
+  at `+0x04` is padding, not an external-cache pointer or a reliable flag:
+  real `antr` animation data includes `0xE18D0019` there with valid inline payloads.
+  Nonzero padding must not suppress metadata-address validation or relocation.
   Host descriptors remain byte-for-byte unchanged without reading their payloads
   or validating external offsets against this map. External offsets may exceed
   the entire map size (observed for sound samples); they cannot all be treated
@@ -82,6 +93,7 @@ displacement alone is not a valid pointer delta.
   Guest external payloads fail explicitly: relocation is not implemented.
   Inline payloads may retain nonzero source-file offsets; those offsets are
   preserved while the validated metadata address is relocated.
+  Schema-marked external fields remain excluded from inline relocation.
 - Internal bitmap payloads must reside in the source map's fixed prefix.
   Host external bitmap records are preserved unchanged, including their flags,
   cache offsets, sizes and handles; their pixel data is neither read nor copied.
@@ -136,16 +148,33 @@ Set `MCC_HOME` to the MCC installation and run:
 These opt-in tests read `halo1\maps_backup`. They validate guest-map listing for
 level maps (excluding the separate `bitmaps.map` resource archive), and attempt
 to inject `weapons\shotgun\shotgun` (`mod2`) from `d40.map` into `b30.map`.
+The shotgun test compares vertex formats, vertex/index counts, and the complete
+vertex and index byte ranges for every part in every geometry before and after
+injection, resolving each map's relocated metadata and model-buffer offsets.
+It also matches every imported bitmap tag to its guest tag, checks all bitmap
+records except intentionally remapped offsets/owner handles, and compares each
+complete texture payload byte-for-byte (including its mipmaps). Map-local pixels
+are read at their respective source/output offsets. If an imported image uses
+the shared cache, its unchanged offset is checked and the referenced bytes in
+`maps_backup\bitmaps.map` are compared with `maps\bitmaps.map`; both cache files
+must then be available. Zero-size records retain their original offsets.
 The result is kept in memory. Neither inputs nor any existing output files are
 written; inputs are reread and compared even when injection throws.
+The cyborg animation regression rebuilds `b30` in memory and compares all 656
+nonempty `frame_info`/`default_data`/`frame_data` payloads byte-for-byte, including
+174 descriptors with nonzero padding. It also checks descriptor-word preservation
+and leaves empty descriptor pointers unchanged.
 
-The shotgun test currently exposes a real schema blocker, rather than accepting
-partial output: `StartingLocations` declares a 28-byte stride but maps a 16-byte
-`field_0x1C` at offset 28. It remains a failing opt-in regression until the mapping
-is corrected. Beyond that, 51 groups present in the tested `b30` lack nonempty
-root schemas (including `lens`, `matg`, `scen`, `coll`, and `antr`). Host relocation
-requires those mappings; passing synthetic tests is not campaign-map readiness.
-No unsafe pointer guessing or skipping of those host groups is performed.
+The shotgun test passes with the current bundled schema. CDB traced its former
+host `levels\b30\b30a` SBSP range failure to `runtime_decals` at root offset
+`0x258`: 22 records at BSP-local offset `0x460518` were checked with an incorrect
+36-byte stride, exceeding the `0x460800`-byte BSP section. The corrected 16-byte
+stride matches the mapped fields and engine record layout. Synthetic coverage
+uses the bundled decal schema, checks a block ending exactly at the BSP boundary,
+verifies byte preservation, and rejects a block extending past that boundary.
+Serialization still warns about uncertified tag groups and external resources;
+passing these tests is not proof of campaign-map readiness. No unsafe pointer
+guessing or skipping of host groups is performed.
 
 Before using an output in MCC:
 

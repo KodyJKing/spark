@@ -5,6 +5,7 @@
 #include "engine/map/spark/static_tag_injection/inject_tags.hpp"
 #include "engine/map/bitmap.hpp"
 #include "engine/map/model.hpp"
+#include "engine/map/schema/functions.hpp"
 
 using namespace Engine;
 using namespace Engine::Map;
@@ -178,6 +179,61 @@ namespace {
     }
 }
 
+TEST_CASE("Shared relocation sensitivity includes pointers references and embedded structures", "[inject_tags]") {
+    const std::array sensitive{Type::DataPointer, Type::BlockPointer, Type::Structure, Type::TagReference};
+    Schemas schema;
+    auto& node = schema.node("node", 0);
+    REQUIRE_FALSE(needsProcessing(schema.schema, node));
+    for (size_t i = 0; i < TypeCount; ++i) {
+        const auto type = static_cast<Type>(i);
+        const auto expected = std::find(sensitive.begin(), sensitive.end(), type) != sensitive.end();
+        CAPTURE(type);
+        REQUIRE(relocationSensitive(type) == expected);
+        schema.field(node, 0, type);
+        REQUIRE(needsProcessing(schema.schema, node) == expected);
+        Context context{nullptr, &schema.schema};
+        REQUIRE(needsProcessing(StructureRef{&context, &node, nullptr}) == expected);
+    }
+    REQUIRE_FALSE(needsProcessing(StructureRef{}));
+    Context noSchema{};
+    REQUIRE_FALSE(needsProcessing(StructureRef{&noSchema, &node, nullptr}));
+    node.fields[0] = "missing";
+    REQUIRE_THROWS_AS(needsProcessing(schema.schema, node), std::out_of_range);
+}
+
+TEST_CASE("Process C relocates scalar blocks without changing their payloads", "[inject_tags]") {
+    Fixture host, guest;
+    Schemas schema;
+    auto& root = schema.node("root", sizeof(BlockPointer), GroupId_Weapon);
+    schema.field(root, 0, Type::BlockPointer, "child");
+    auto& child = schema.node("child", 4);
+    schema.field(child, 0, Type::U32);
+    SECTION("scalar elements") {}
+    SECTION("embedded scalar elements") {
+        schema.field(child, 0, Type::Structure, "scalar");
+        auto& scalar = schema.node("scalar", 4);
+        schema.field(scalar, 0, Type::U32);
+    }
+    auto h = host.allocate(sizeof(BlockPointer)), hp = host.allocate(8);
+    auto g = guest.allocate(sizeof(BlockPointer)), gp = guest.allocate(8);
+    host.add(GroupId_Weapon, "host", h);
+    guest.add(GroupId_Weapon, "guest", g);
+    put(host.bytes, h, BlockPointer{2, {host.pointer(hp)}, 0});
+    put(guest.bytes, g, BlockPointer{2, {guest.pointer(gp)}, 0});
+    const std::array<uint32_t, 2> hostData{0x11223344, 0x55667788}, guestData{0xAABBCCDD, 0xEEFF0011};
+    put(host.bytes, hp, hostData);
+    put(guest.bytes, gp, guestData);
+    const auto originalHost = host.bytes, originalGuest = guest.bytes;
+    auto output = injectTags(host.bytes, guest.bytes, {{GroupId_Weapon, "guest"}}, schema.schema);
+    for (uint32_t i = 0; i < 2; ++i) {
+        auto block = get<BlockPointer>(output, file(output, tag(output, i).data.offset));
+        REQUIRE(block.count == 2);
+        REQUIRE(get<std::array<uint32_t, 2>>(output, file(output, block.data.offset)) == (i ? guestData : hostData));
+    }
+    REQUIRE(host.bytes == originalHost);
+    REQUIRE(guest.bytes == originalGuest);
+}
+
 TEST_CASE("Process C warns once per uncertified type without changing output", "[inject_tags]") {
     Fixture host, guest;
     Schemas schema;
@@ -319,6 +375,7 @@ TEST_CASE("Process C closes cyclic dependencies and relocates blocks names and i
     REQUIRE(get<TagReference>(output, destB).tagHandle == tag(output, 1).tagHandle);
     auto block = get<BlockPointer>(output, destA + 16);
     REQUIRE(get<TagReference>(output, file(output, block.data.offset)).tagHandle == tag(output, 2).tagHandle);
+    REQUIRE(path(output, get<TagReference>(output, file(output, block.data.offset)).path.offset) == "b");
     auto data = get<uint32_t>(output, destA + 40);
     REQUIRE(get<uint32_t>(output, file(output, data)) == 0xABCDEF12);
     auto rebuilt = injectTags(output, guest.bytes, {}, schema.schema);
@@ -389,7 +446,10 @@ TEST_CASE("Process C relocates guest model offsets in separate vertex and index 
     part.vertexCount = 2;
     part.union0.vertices.offset = 8;
     part.indices.offset = 4;
+    part.alsoIndices.offset = 4;
     part.indexCount = 3;
+    SECTION("mirrored index offsets") {}
+    SECTION("distinct index offsets are relocated independently") { part.alsoIndices.offset = 8; }
     put(guest.bytes, partAt, part);
     guest.add(GroupId_Model, "model", root);
     std::fill_n(guest.bytes.begin() + 0x980, 0x60, uint8_t(0xBD));
@@ -405,8 +465,10 @@ TEST_CASE("Process C relocates guest model offsets in separate vertex and index 
     auto dest = get<Part>(output, file(output, geom.parts.data.offset));
     REQUIRE(dest.union0.vertices.offset == 0x48);
     REQUIRE(dest.indices.offset == 0x24);
+    REQUIRE(dest.alsoIndices.offset == part.alsoIndices.offset + 0x20);
     REQUIRE(output[mh.modelData.offset + dest.union0.vertices.offset] == 0xBD);
     REQUIRE(output[mh.modelData.offset + mh.vertexDataSize + dest.indices.offset] == 0xBD);
+    REQUIRE(output[mh.modelData.offset + mh.vertexDataSize + dest.alsoIndices.offset] == 0xBD);
     REQUIRE(std::equal(host.bytes.begin() + 0x9C0, host.bytes.begin() + 0x9E0,
         output.begin() + mh.modelData.offset + mh.vertexDataSize));
 }
@@ -420,9 +482,25 @@ TEST_CASE("Process C preserves BSP-local pointers while relinking BSP names", "[
     auto& refSchema = schema.node("bsp-ref", sizeof(StructureBspReference));
     schema.padding(refSchema, 0, 16);
     schema.field(refSchema, 16, Type::TagReference);
-    auto& bspSchema = schema.node("bsp", 28, GroupId_BSP);
+    auto schemaPath = std::filesystem::path(SPARK_TEST_DIR).parent_path()
+        / "spark" / "shipfiles" / "tags.schema2.json";
+    std::ifstream schemaFile(schemaPath);
+    REQUIRE(schemaFile.is_open());
+    auto bundled = Schema::fromJsonString(std::string(std::istreambuf_iterator<char>(schemaFile), {}));
+    auto* bundledBsp = bundled.structureForGroupId(GroupId_BSP);
+    REQUIRE(bundledBsp != nullptr);
+    const auto& decalsField = bundled.fields.at(bundledBsp->fields.at(0x258));
+    REQUIRE(decalsField.type.type == Type::BlockPointer);
+    const auto& decals = bundled.structures.at(decalsField.type.ref);
+    REQUIRE(decals.size == 16);
+    schema.schema.structures.emplace(decals.id, decals);
+    for (const auto& [offset, id] : decals.fields)
+        schema.schema.fields.emplace(id, bundled.fields.at(id));
+
+    auto& bspSchema = schema.node("bsp", 40, GroupId_BSP);
     schema.field(bspSchema, 0, Type::TagReference);
     schema.field(bspSchema, 16, Type::BlockPointer, "bsp-child");
+    schema.field(bspSchema, 28, Type::BlockPointer, decals.id.c_str());
     auto& child = schema.node("bsp-child", 4);
     schema.field(child, 0, Type::U32);
     auto scenarioAt = host.allocate(sizeof(Scenario));
@@ -438,7 +516,7 @@ TEST_CASE("Process C preserves BSP-local pointers while relinking BSP names", "[
     StructureBspReference ref{};
     ref.structureBspHeader.offset = 0x800;
     ref.runtimeAddress.offset = 0x51000000;
-    ref.size = 0x100;
+    ref.size = 0x180;
     ref.tagReference = {GroupId_BSP, {tag(host.bytes, 1).path.offset}, 3, bspHandle};
     put(host.bytes, refAt, ref);
     StructureBspHeader bh{};
@@ -448,12 +526,27 @@ TEST_CASE("Process C preserves BSP-local pointers while relinking BSP names", "[
     put(host.bytes, 0x818, TagReference{GroupId_Scenario, {tag(host.bytes, 0).path.offset}, 8, scenarioHandle});
     put(host.bytes, 0x828, BlockPointer{1, {0x51000060}, 0});
     put(host.bytes, 0x860, uint32_t(123));
+    put(host.bytes, 0x834, BlockPointer{8, {0x51000100}, 0});
+    const auto original = host.bytes;
+
+    SECTION("decals end exactly at the BSP section boundary") {}
+    SECTION("decals extending past the BSP section are rejected") {
+        put(host.bytes, 0x834, BlockPointer{9, {0x51000100}, 0});
+        const auto invalidHost = host.bytes;
+        REQUIRE_THROWS_WITH(injectTags(host.bytes, guest.bytes, {}, schema.schema),
+            Catch::Matchers::ContainsSubstring("range outside its section"));
+        REQUIRE(host.bytes == invalidHost);
+        return;
+    }
 
     auto output = injectTags(host.bytes, guest.bytes, {}, schema.schema);
     REQUIRE(tag(output, 1).data.offset == 0);
     REQUIRE(get<StructureBspHeader>(output, 0x800).structureBsp.offset == bh.structureBsp.offset);
     REQUIRE(get<BlockPointer>(output, 0x828).data.offset == 0x51000060);
     REQUIRE(get<uint32_t>(output, 0x860) == 123);
+    REQUIRE(get<BlockPointer>(output, 0x834).data.offset == 0x51000100);
+    REQUIRE(std::equal(original.begin() + 0x900, original.begin() + 0x980, output.begin() + 0x900));
+    REQUIRE(host.bytes == original);
     auto copiedRef = get<TagReference>(output, 0x818);
     REQUIRE(path(output, copiedRef.path.offset) == "scenario");
     REQUIRE(copiedRef.path.offset != tag(host.bytes, 0).path.offset);
@@ -506,6 +599,12 @@ TEST_CASE("Process C rejects invalid and unsupported inputs atomically", "[injec
         put(host.bytes, at, uint32_t(4));
         put(host.bytes, at + 8, uint32_t(0x980));
         put(host.bytes, at + 12, uint32_t(0xFFFFFFFF));
+    }
+    SECTION("nonzero DataPointer padding does not hide an invalid metadata pointer") {
+        schema.schema.structures.clear();
+        auto& node = schema.node("data", 20, GroupId_Weapon);
+        schema.field(node, 0, Type::DataPointer);
+        put(host.bytes, at, std::array<uint32_t, 5>{4, 0xE18D0019, 0, 0xDEADBEEF, 0});
     }
     SECTION("negative DataPointer size") {
         schema.schema.structures.clear();
@@ -810,6 +909,7 @@ TEST_CASE("Process C validates model formats and buffer extents before copying",
     SECTION("index extent overflow") { part.indexCount = 0xFFFFFFFF; }
     SECTION("vertex buffer overflow") { part.union0.vertices.offset = 0xFFFFFFFF; }
     SECTION("index buffer overflow") { part.indices.offset = 0xFFFFFFFF; }
+    SECTION("secondary index buffer overflow") { part.alsoIndices.offset = 0xFFFFFFFF; }
     SECTION("runtime vertex pointer") { part.runtimeVertices.offset = 1; }
     put(guest.bytes, partAt, part);
     guest.add(GroupId_Model, "model", root);
@@ -920,11 +1020,56 @@ TEST_CASE("Process C still rejects unbounded fields overlaps and unspecified blo
     host.add(GroupId_Weapon, "host", at);
     put(host.bytes, at + 8, BlockPointer{1, {host.pointer(data)}, 0});
     SECTION("unspecified block stride") { child.size = 0; }
+    SECTION("scalar block field exceeds stride") { schema.field(child, 4, Type::U32); }
+    SECTION("scalar block field offsets mismatch") { schema.schema.fields.at(child.fields.at(0)).offset = 1; }
+    SECTION("scalar block fields overlap") { schema.field(child, 1, Type::U8); }
+    SECTION("scalar block field schema is missing") { schema.schema.fields.erase(child.fields.at(0)); }
+    SECTION("scalar block field type is invalid") {
+        schema.schema.fields.at(child.fields.at(0)).type.type = static_cast<Type>(TypeCount);
+    }
+    SECTION("scalar block exceeds metadata bounds") {
+        put(host.bytes, at + 8, BlockPointer{2, {host.pointer(static_cast<uint32_t>(host.bytes.size()) - 4)}, 0});
+    }
     SECTION("overlapping root fields") { schema.field(root, 16, Type::U64); }
     SECTION("field exceeds declared size") { root.size = 16; }
     SECTION("root field exceeds metadata") { schema.field(root, host.bytes.size(), Type::U32); }
     SECTION("field extent overflows") { schema.field(root, std::numeric_limits<size_t>::max(), Type::U32); }
     REQUIRE_THROWS_AS(injectTags(host.bytes, guest.bytes, {}, schema.schema), std::runtime_error);
+}
+
+TEST_CASE("Process C relocates inline DataPointers regardless of padding", "[inject_tags]") {
+    Fixture host, guest;
+    Schemas schema;
+    auto& root = schema.node("data", 20, GroupId_Weapon);
+    schema.field(root, 0, Type::DataPointer);
+    auto h = host.allocate(20), hp = host.allocate(4);
+    auto g = guest.allocate(20), gp = guest.allocate(4);
+    host.add(GroupId_Weapon, "host", h);
+    guest.add(GroupId_Weapon, "guest", g);
+    uint32_t padding = 0;
+    SECTION("zero padding") {}
+    SECTION("one is not an external-cache marker") { padding = 1; }
+    SECTION("observed cyborg animation padding") { padding = 0xE18D0019; }
+    SECTION("all padding bits set") { padding = 0xFFFFFFFF; }
+    put(host.bytes, h, std::array<uint32_t, 5>{4, padding, 0x1234, host.pointer(hp), 0});
+    put(guest.bytes, g, std::array<uint32_t, 5>{4, padding, 0x5678, guest.pointer(gp), 0});
+    put(host.bytes, hp, uint32_t(0x11223344));
+    put(guest.bytes, gp, uint32_t(0x55667788));
+    const auto originalHost = host.bytes, originalGuest = guest.bytes;
+    std::vector<std::string> warnings;
+    auto output = injectTags(host.bytes, guest.bytes, {{GroupId_Weapon, "guest"}}, schema.schema, &warnings);
+    for (uint32_t i = 0; i < 2; ++i) {
+        const auto dest = file(output, tag(output, i).data.offset);
+        const auto descriptor = get<std::array<uint32_t, 5>>(output, dest);
+        REQUIRE(descriptor[0] == 4);
+        REQUIRE(descriptor[1] == padding);
+        REQUIRE(descriptor[2] == (i ? 0x5678 : 0x1234));
+        REQUIRE(descriptor[4] == 0);
+        REQUIRE(get<uint32_t>(output, file(output, descriptor[3])) == (i ? 0x55667788 : 0x11223344));
+    }
+    REQUIRE(warnings.empty());
+    REQUIRE(host.bytes == originalHost);
+    REQUIRE(guest.bytes == originalGuest);
 }
 
 TEST_CASE("Process C preserves host external data with one deferred warning", "[inject_tags]") {
@@ -937,9 +1082,8 @@ TEST_CASE("Process C preserves host external data with one deferred warning", "[
     host.add(GroupId_Sound, "host-sound", at);
     std::array<uint32_t, 5> descriptor{4, 0, 0x820, 0, 0x12345678};
     SECTION("null metadata pointer") {}
-    SECTION("flagged descriptor") {
+    SECTION("nonzero padding with null metadata pointer") {
         descriptor[1] = 1;
-        descriptor[3] = 0xDEADBEEF;
     }
     SECTION("payload ends at fixed boundary") { descriptor[2] = 0x97C; }
     SECTION("observed shield deplete external samples") { descriptor = {24480, 1, 46049749, 0, 0}; }
@@ -970,7 +1114,7 @@ TEST_CASE("Process C rejects guest external data without publishing host warning
     std::array<uint32_t, 5> descriptor{4, 0, 0x820, 0, 0};
     put(host.bytes, h, descriptor);
     SECTION("null metadata pointer") {}
-    SECTION("flagged descriptor") { descriptor[1] = 1; descriptor[3] = guest.pointer(g); }
+    SECTION("nonzero padding with null metadata pointer") { descriptor[1] = 1; }
     put(guest.bytes, g, descriptor);
     auto originalHost = host.bytes, originalGuest = guest.bytes;
     std::vector<std::string> warnings{"existing"};

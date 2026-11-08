@@ -3,6 +3,7 @@
 
 #include "InjectionFiles.hpp"
 #include "engine/map/bitmap.hpp"
+#include "engine/map/model.hpp"
 #include "engine/map/spark/static_tag_injection/inject_tags.hpp"
 
 using namespace Engine;
@@ -30,11 +31,21 @@ namespace {
         return Schema::fromJsonString(std::string(std::istreambuf_iterator<char>(file), {}));
     }
 
-    uint32_t word(std::span<const uint8_t> bytes, size_t offset) {
+    std::span<const uint8_t> checkedBytes(std::span<const uint8_t> bytes, size_t offset, size_t size) {
         REQUIRE(offset <= bytes.size());
-        REQUIRE(sizeof(uint32_t) <= bytes.size() - offset);
-        uint32_t value;
-        std::memcpy(&value, bytes.data() + offset, sizeof(value));
+        REQUIRE(size <= bytes.size() - offset);
+        return bytes.subspan(offset, size);
+    }
+
+    template<class T> T read(std::span<const uint8_t> bytes, size_t offset) {
+        auto data = checkedBytes(bytes, offset, sizeof(T));
+        T value;
+        std::memcpy(&value, data.data(), sizeof(value));
+        return value;
+    }
+
+    uint32_t word(std::span<const uint8_t> bytes, size_t offset) {
+        uint32_t value = read<uint32_t>(bytes, offset);
         return value;
     }
 }
@@ -90,8 +101,218 @@ TEST_CASE("Inject the d40 shotgun model into b30 using backup maps", "[.real_map
     REQUIRE(outputTags.size() > hostTags.size());
     REQUIRE(std::equal(hostTags.begin(), hostTags.end(), outputTags.begin(),
         [](const auto& a, const auto& b) { return a.groupId == b.groupId && a.path == b.path; }));
+
+    auto metadata = [](std::span<const uint8_t> bytes, uint32_t pointer, size_t size) {
+        const auto cache = read<CacheHeader>(bytes, 0);
+        REQUIRE(pointer >= 0x50000000);
+        const auto offset = pointer - 0x50000000;
+        REQUIRE(offset <= cache.tagDataSize);
+        REQUIRE(size <= cache.tagDataSize - offset);
+        return checkedBytes(bytes, size_t(cache.tagData.offset) + offset, size);
+    };
+    auto tagAt = [&](const auto& bytes, size_t index) {
+        const auto header = read<TagDataHeader>(bytes, word(bytes, 0x10));
+        REQUIRE(index < header.tagCount);
+        const auto table = metadata(bytes, header.tagArray.offset, size_t(header.tagCount) * sizeof(Tag));
+        return read<Tag>(table, index * sizeof(Tag));
+    };
+    auto model = [&](const auto& bytes, const auto& tags) {
+        const auto found = std::find_if(tags.begin(), tags.end(), isModel);
+        REQUIRE(found != tags.end());
+        const auto entry = tagAt(bytes, size_t(found - tags.begin()));
+        return read<Model>(metadata(bytes, entry.data.offset, sizeof(Model)), 0);
+    };
+    const auto sourceModel = model(guest, guestTags), copiedModel = model(output, outputTags);
+    const auto sourceHeader = read<TagDataHeader>(guest, word(guest, 0x10));
+    const auto copiedHeader = read<TagDataHeader>(output, word(output, 0x10));
+    REQUIRE(sourceHeader.vertexDataSize <= sourceHeader.modelDataSize);
+    REQUIRE(copiedHeader.vertexDataSize <= copiedHeader.modelDataSize);
+    const auto sourceVertices = checkedBytes(guest, sourceHeader.modelData.offset, sourceHeader.vertexDataSize);
+    const auto copiedVertices = checkedBytes(output, copiedHeader.modelData.offset, copiedHeader.vertexDataSize);
+    const auto sourceIndices = checkedBytes(guest,
+        size_t(sourceHeader.modelData.offset) + sourceHeader.vertexDataSize,
+        sourceHeader.modelDataSize - sourceHeader.vertexDataSize);
+    const auto copiedIndices = checkedBytes(output,
+        size_t(copiedHeader.modelData.offset) + copiedHeader.vertexDataSize,
+        copiedHeader.modelDataSize - copiedHeader.vertexDataSize);
+    REQUIRE(copiedModel.geometries.count == sourceModel.geometries.count);
+    const auto sourceGeometries = metadata(guest, sourceModel.geometries.data.offset,
+        size_t(sourceModel.geometries.count) * sizeof(Geometry));
+    const auto copiedGeometries = metadata(output, copiedModel.geometries.data.offset,
+        size_t(copiedModel.geometries.count) * sizeof(Geometry));
+    size_t comparedParts = 0, vertexBytes = 0, indexBytes = 0;
+    for (uint32_t i = 0; i < sourceModel.geometries.count; ++i) {
+        INFO("shotgun geometry " << i);
+        const auto sourceGeometry = read<Geometry>(sourceGeometries, size_t(i) * sizeof(Geometry));
+        const auto copiedGeometry = read<Geometry>(copiedGeometries, size_t(i) * sizeof(Geometry));
+        REQUIRE(copiedGeometry.parts.count == sourceGeometry.parts.count);
+        if (!sourceGeometry.parts.count) continue;
+        const auto sourceParts = metadata(guest, sourceGeometry.parts.data.offset,
+            size_t(sourceGeometry.parts.count) * sizeof(Part));
+        const auto copiedParts = metadata(output, copiedGeometry.parts.data.offset,
+            size_t(copiedGeometry.parts.count) * sizeof(Part));
+        for (uint32_t j = 0; j < sourceGeometry.parts.count; ++j) {
+            INFO("shotgun part " << j);
+            const auto sourcePart = read<Part>(sourceParts, size_t(j) * sizeof(Part));
+            const auto copiedPart = read<Part>(copiedParts, size_t(j) * sizeof(Part));
+            REQUIRE(sourcePart.vertexFormat < std::size(vertexSizes));
+            REQUIRE(vertexSizes[sourcePart.vertexFormat] > 0);
+            REQUIRE(copiedPart.vertexFormat == sourcePart.vertexFormat);
+            REQUIRE(copiedPart.vertexCount == sourcePart.vertexCount);
+            REQUIRE(copiedPart.indexCount == sourcePart.indexCount);
+            REQUIRE(sourcePart.alsoIndices.offset == sourcePart.indices.offset);
+            REQUIRE(copiedPart.alsoIndices.offset == copiedPart.indices.offset);
+            const auto vertexSize = size_t(vertexSizes[sourcePart.vertexFormat]) * sourcePart.vertexCount;
+            const auto indexSize = sizeof(uint16_t) * size_t(sourcePart.indexCount);
+            const auto originalVertexData = checkedBytes(sourceVertices, sourcePart.union0.vertices.offset, vertexSize);
+            const auto copiedVertexData = checkedBytes(copiedVertices, copiedPart.union0.vertices.offset, vertexSize);
+            const auto originalIndexData = checkedBytes(sourceIndices, sourcePart.indices.offset, indexSize);
+            const auto copiedIndexData = checkedBytes(copiedIndices, copiedPart.indices.offset, indexSize);
+            const auto originalAlsoIndexData = checkedBytes(sourceIndices, sourcePart.alsoIndices.offset, indexSize);
+            const auto copiedAlsoIndexData = checkedBytes(copiedIndices, copiedPart.alsoIndices.offset, indexSize);
+            REQUIRE(std::memcmp(originalVertexData.data(), copiedVertexData.data(), vertexSize) == 0);
+            REQUIRE(std::memcmp(originalIndexData.data(), copiedIndexData.data(), indexSize) == 0);
+            REQUIRE(std::memcmp(originalAlsoIndexData.data(), copiedAlsoIndexData.data(), indexSize) == 0);
+            ++comparedParts;
+            vertexBytes += vertexSize;
+            indexBytes += indexSize;
+        }
+    }
+    REQUIRE(comparedParts > 0);
+    REQUIRE(vertexBytes > 0);
+    REQUIRE(indexBytes > 0);
+
+    auto cachePixels = [](const std::filesystem::path& path, uint32_t offset, uint32_t size) {
+        INFO("shared bitmap cache " << path.string());
+        std::ifstream file(path, std::ios::binary | std::ios::ate);
+        REQUIRE(file.is_open());
+        const auto length = file.tellg();
+        REQUIRE(length >= 0);
+        REQUIRE(uint64_t(offset) + size <= static_cast<uint64_t>(length));
+        file.seekg(offset);
+        REQUIRE(file.good());
+        std::vector<uint8_t> pixels(size);
+        file.read(reinterpret_cast<char*>(pixels.data()), size);
+        REQUIRE(file.gcount() == size);
+        REQUIRE(file.good());
+        return pixels;
+    };
+    size_t comparedBitmaps = 0, comparedImages = 0, pixelBytes = 0;
+    for (size_t i = hostTags.size(); i < outputTags.size(); ++i) {
+        const auto& injected = outputTags[i];
+        if (injected.groupId != GroupId_Bitmap) continue;
+        INFO("injected bitmap " << injected.path);
+        const auto found = std::find_if(guestTags.begin(), guestTags.end(), [&](const InjectionTag& tag) {
+            return tag.groupId == injected.groupId && tag.path == injected.path;
+        });
+        REQUIRE(found != guestTags.end());
+        const auto sourceTag = tagAt(guest, size_t(found - guestTags.begin()));
+        const auto copiedTag = tagAt(output, i);
+        const auto sourceBitmap = read<Bitmap>(metadata(guest, sourceTag.data.offset, sizeof(Bitmap)), 0);
+        const auto copiedBitmap = read<Bitmap>(metadata(output, copiedTag.data.offset, sizeof(Bitmap)), 0);
+        REQUIRE(copiedBitmap.bitmapData.count == sourceBitmap.bitmapData.count);
+        ++comparedBitmaps;
+        if (!sourceBitmap.bitmapData.count) continue;
+        const auto sourceRecords = metadata(guest, sourceBitmap.bitmapData.data.offset,
+            size_t(sourceBitmap.bitmapData.count) * sizeof(BitmapData));
+        const auto copiedRecords = metadata(output, copiedBitmap.bitmapData.data.offset,
+            size_t(copiedBitmap.bitmapData.count) * sizeof(BitmapData));
+        for (uint32_t j = 0; j < sourceBitmap.bitmapData.count; ++j) {
+            INFO("bitmap image " << j);
+            const auto sourceData = read<BitmapData>(sourceRecords, size_t(j) * sizeof(BitmapData));
+            const auto copiedData = read<BitmapData>(copiedRecords, size_t(j) * sizeof(BitmapData));
+            auto expected = sourceData;
+            expected.bitmapTagHandle = copiedTag.tagHandle;
+            if (sourceData.dataSize && !(sourceData.flags & (1u << 8)))
+                expected.data.offset = copiedData.data.offset;
+            REQUIRE(std::memcmp(&expected, &copiedData, sizeof(BitmapData)) == 0);
+            if (!sourceData.dataSize) continue;
+            if (sourceData.flags & (1u << 8)) {
+                const auto originalPixels = cachePixels(directory / "bitmaps.map",
+                    sourceData.data.offset, sourceData.dataSize);
+                const auto copiedPixels = cachePixels(directory.parent_path() / "maps" / "bitmaps.map",
+                    copiedData.data.offset, copiedData.dataSize);
+                REQUIRE(originalPixels == copiedPixels);
+            } else {
+                const auto originalPixels = checkedBytes(guest, sourceData.data.offset, sourceData.dataSize);
+                const auto copiedPixels = checkedBytes(output, copiedData.data.offset, copiedData.dataSize);
+                REQUIRE(std::memcmp(originalPixels.data(), copiedPixels.data(), sourceData.dataSize) == 0);
+            }
+            ++comparedImages;
+            pixelBytes += sourceData.dataSize;
+        }
+    }
+    REQUIRE(comparedBitmaps > 0);
+    REQUIRE(comparedImages > 0);
+    REQUIRE(pixelBytes > 0);
     REQUIRE(Spool::readInjectionMap(directory / "b30.map") == host);
     REQUIRE(Spool::readInjectionMap(directory / "d40.map") == guest);
+}
+
+TEST_CASE("Preserve real b30 cyborg animation DataPointer payloads", "[.real_maps][animation_data]") {
+    const auto path = backupMaps() / "b30.map";
+    const auto host = Spool::readInjectionMap(path);
+    auto schema = injectionSchema();
+    const auto tags = listInjectionTags(host);
+    const auto found = std::find_if(tags.begin(), tags.end(), [](const InjectionTag& tag) {
+        return tag.groupId == GroupId_Animation && tag.path == R"(characters\cyborg\cyborg)";
+    });
+    REQUIRE(found != tags.end());
+    const auto index = static_cast<size_t>(found - tags.begin());
+    auto* rootSchema = schema.structureForGroupId(found->groupId);
+    REQUIRE(rootSchema != nullptr);
+    const auto& animationsField = schema.fields.at(rootSchema->fields.at(0x74));
+    REQUIRE(animationsField.type.type == Type::BlockPointer);
+    const auto& animationSchema = schema.structures.at(animationsField.type.ref);
+    REQUIRE(animationSchema.size == 180);
+
+    std::vector<std::string> warnings;
+    const auto output = injectTags(host, host, {}, schema, &warnings);
+    auto meta = [](const auto& bytes, uint32_t pointer) {
+        REQUIRE(pointer >= 0x50000000);
+        const auto offset = size_t(word(bytes, 0x10)) + pointer - 0x50000000;
+        REQUIRE(offset <= bytes.size());
+        return offset;
+    };
+    auto root = [&](const auto& bytes) {
+        const auto array = meta(bytes, word(bytes, word(bytes, 0x10)));
+        return meta(bytes, word(bytes, array + index * sizeof(Tag) + 20));
+    };
+    const auto sourceRoot = root(host), outputRoot = root(output);
+    const auto count = word(host, sourceRoot + animationsField.offset);
+    REQUIRE(count > 0);
+    REQUIRE(word(output, outputRoot + animationsField.offset) == count);
+    const auto sourceAnimations = meta(host, word(host, sourceRoot + animationsField.offset + 4));
+    const auto outputAnimations = meta(output, word(output, outputRoot + animationsField.offset + 4));
+    size_t payloads = 0, paddedPayloads = 0;
+    for (uint32_t i = 0; i < count; ++i) {
+        for (const auto& [offset, id] : animationSchema.fields) {
+            const auto& field = schema.fields.at(id);
+            if (field.type.type != Type::DataPointer) continue;
+            INFO("animation " << i << ", field " << field.name);
+            REQUIRE_FALSE(field.external);
+            const auto source = sourceAnimations + i * animationSchema.size + offset;
+            const auto dest = outputAnimations + i * animationSchema.size + offset;
+            const auto size = word(host, source);
+            REQUIRE(word(output, dest) == size);
+            for (const auto descriptorOffset : {4, 8, 16})
+                REQUIRE(word(output, dest + descriptorOffset) == word(host, source + descriptorOffset));
+            if (!size) {
+                REQUIRE(word(output, dest + 12) == word(host, source + 12));
+                continue;
+            }
+            const auto originalData = meta(host, word(host, source + 12));
+            const auto copiedData = meta(output, word(output, dest + 12));
+            REQUIRE(size <= host.size() - originalData);
+            REQUIRE(size <= output.size() - copiedData);
+            REQUIRE(std::memcmp(host.data() + originalData, output.data() + copiedData, size) == 0);
+            ++payloads;
+            if (word(host, source + 4)) ++paddedPayloads;
+        }
+    }
+    REQUIRE(payloads == 656);
+    REQUIRE(paddedPayloads == 174);
+    REQUIRE(Spool::readInjectionMap(path) == host);
 }
 
 TEST_CASE("Preserve the real b30 external sky bitmap", "[.real_maps][external_bitmap]") {

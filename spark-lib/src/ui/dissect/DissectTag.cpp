@@ -93,8 +93,32 @@ namespace SparkLib::UI::DissectTag {
             if (ImGui::Checkbox("External", &external)) {
                 field.node->external = external;
             }
-            ImGui::PopID();
             ImGui::SameLine();
+
+            auto dataPointer = (DataPointer*)field.address;
+            uint32_t numPages = dataPointer->size / 0x100; // Assuming each page is 0x100 bytes
+
+            // Page number
+            auto storage = ImGui::GetStateStorage();
+            std::string pageKey = "PageNumber_" + std::to_string((uintptr_t)field.address);
+            ImGuiID pageId = ImGui::GetID(pageKey.c_str());
+            int pageNumber = storage->GetInt(pageId, 0);
+            ImGui::SetNextItemWidth(ImGui::GetFontSize() * 8);
+            ImGui::InputInt("Page", &pageNumber, 1, 10);
+            if (pageNumber < 0) pageNumber = 0;
+            if (pageNumber >= (int)numPages) pageNumber = numPages - 1;
+            storage->SetInt(pageId, pageNumber);
+
+            void* data = (char*) field.derefDataPointer() + pageNumber * 0x100;
+            
+            StructureNode node = {};
+            StructureRef substructure = {
+                field.context,
+                &node,
+                data,
+            };
+            renderSubstructure(renderCtx, substructure, field, 0x100);
+            ImGui::PopID();
         }
 
     }

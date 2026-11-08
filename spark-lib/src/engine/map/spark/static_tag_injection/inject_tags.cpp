@@ -1,6 +1,7 @@
 #include "inject_tags.hpp"
 #include "engine/map/bitmap.hpp"
 #include "engine/map/model.hpp"
+#include "engine/map/schema/functions.hpp"
 
 #include <array>
 #include <cstring>
@@ -292,6 +293,7 @@ namespace Engine::Map::Spark {
                 const size_t size = space.bsp ? space.size : source.cache.tagDataSize;
                 if (file < start) fail("structure outside metadata");
                 range(file - start, checkSchema(node), size);
+                if (!needsProcessing(schema, node)) return;
                 if (!visited.emplace(fromGuest, file, node.id, space.base).second) return;
                 for (const auto& [offset, id] : node.fields) {
                     const auto& field = schema.fields.at(id);
@@ -308,6 +310,8 @@ namespace Engine::Map::Spark {
                         auto value = read<uint32_t>(source.bytes, at + 4);
                         auto block = address(source, value, size_t(count) * child.size, space);
                         pointer(fromGuest, at + 4, size_t(count) * child.size, space);
+                        checkSchema(child);
+                        if (!needsProcessing(schema, child)) break;
                         for (uint32_t i = 0; i < count; ++i)
                             walk(fromGuest, narrow(block + size_t(i) * child.size), child, space, depth + 1);
                         break;
@@ -316,14 +320,13 @@ namespace Engine::Map::Spark {
                         auto length = read<int32_t>(source.bytes, at);
                         if (length < 0) fail("negative DataPointer size");
                         if (!length) break;
-                        uint32_t externalPtr = read<uint32_t>(source.bytes, at + 4); // Pointer into another resource cache file.
                         uint32_t ptr = read<uint32_t>(source.bytes, at + 12);
-                        if (externalPtr || !ptr) {
+                        if (!ptr) {
                             if (fromGuest) relocateGuestExternalData(field);
                             else relocateHostExternalData();
                             break;
                         }
-                        // Don't confuse field.external (points to another region within the cache file) with externalPtr (points into another cache file).
+                        // The word at +4 is padding, not an external-cache pointer.
                         if (!field.external) {
                             pointer(fromGuest, at + 12, static_cast<size_t>(length), space);
                         }
@@ -423,11 +426,15 @@ namespace Engine::Map::Spark {
                             source.header.vertexDataSize);
                         range(part.indices.offset, size_t(part.indexCount) * sizeof(uint16_t),
                             source.header.modelDataSize - source.header.vertexDataSize);
+                        range(part.alsoIndices.offset, size_t(part.indexCount) * sizeof(uint16_t),
+                            source.header.modelDataSize - source.header.vertexDataSize);
                         if (fromGuest) {
                             patch(true, at + offsetof(Part, union0), {}, {Section::Literal,
                                 narrow(size_t(part.union0.vertices.offset) + host.header.vertexDataSize)});
                             patch(true, at + offsetof(Part, indices), {}, {Section::Literal,
                                 narrow(size_t(part.indices.offset) + host.header.modelDataSize - host.header.vertexDataSize)});
+                            patch(true, at + offsetof(Part, alsoIndices), {}, {Section::Literal,
+                                narrow(size_t(part.alsoIndices.offset) + host.header.modelDataSize - host.header.vertexDataSize)});
                         }
                     }
                 }
@@ -580,7 +587,7 @@ namespace Engine::Map::Spark {
         }
         if (injector.preservedHostExternalData) {
             warn(
-                "Host external/flagged DataPointer descriptors were preserved unchanged. "
+                "Host external DataPointer descriptors were preserved unchanged. "
                 "External offsets are not validated against this map; payload storage and resource "
                 "compatibility have not been verified.");
         }

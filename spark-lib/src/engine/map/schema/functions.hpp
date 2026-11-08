@@ -8,6 +8,17 @@
 
 namespace Engine::Map {
     
+    inline bool needsProcessing(const Schema& schema, const StructureNode& node) {
+        for (const auto& [offset, id] : node.fields)
+            if (relocationSensitive(schema.fields.at(id).type.type)) return true;
+        return false;
+    }
+
+    inline bool needsProcessing(const StructureRef& ref) {
+        return ref.context && ref.context->schema && ref.node &&
+            needsProcessing(*ref.context->schema, *ref.node);
+    }
+
     inline char randomHexChar() {
         static const char hexChars[] = "0123456789abcdef";
         static std::random_device rd;
