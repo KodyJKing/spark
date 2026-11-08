@@ -73,7 +73,13 @@ displacement alone is not a valid pointer delta.
   tag before import. Adding BSPs requires a separate scenario/BSP layout design.
 - Inline DataPointer payloads are supported using the 20-byte disk layout, not
   the native pointer-sized C++ structure. Nonempty payloads with nonzero flags or
-  null data addresses are rejected until their storage semantics are established.
+  null data addresses take separate host/guest external-data paths.
+  Host descriptors remain byte-for-byte unchanged without reading their payloads
+  or validating external offsets against this map. External offsets may exceed
+  the entire map size (observed for sound samples); they cannot all be treated
+  as offsets into the fixed raw-data section. Successful serialization emits one
+  warning that payload storage and resource compatibility have not been verified.
+  Guest external payloads fail explicitly: relocation is not implemented.
   Inline payloads may retain nonzero source-file offsets; those offsets are
   preserved while the validated metadata address is relocated.
 - Internal bitmap payloads must reside in the source map's fixed prefix.

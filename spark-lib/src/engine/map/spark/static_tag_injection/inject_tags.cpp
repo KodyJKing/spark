@@ -159,6 +159,7 @@ namespace Engine::Map::Spark {
             uint32_t importedParts = 0;
             bool copyGuestModels = false;
             bool importedExternalBitmaps = false;
+            bool preservedHostExternalData = false;
 
             Injector(std::span<const uint8_t> h, std::span<const uint8_t> g, const Schema& s)
                 : host(h), guest(g), schema(s) {
@@ -174,11 +175,11 @@ namespace Engine::Map::Spark {
                 return offset;
             }
 
-            const StructureNode& structure(const Id& id) const {
+            const StructureNode& structure(const Id& id, const char* context) const {
                 auto found = schema.structures.find(id);
                 if (found == schema.structures.end() || found->second.size == 0)
-                    fail("missing or empty structure schema: " + id);
-                if (id.empty() || found->second.id != id) fail("inconsistent structure schema ID");
+                    fail("missing or empty structure schema: " + id + " in " + context);
+                if (id.empty() || found->second.id != id) fail("inconsistent structure schema ID in " + std::string(context));
                 return found->second;
             }
 
@@ -205,9 +206,9 @@ namespace Engine::Map::Spark {
                     auto type = static_cast<size_t>(field.type.type);
                     if (type >= TypeCount) fail("invalid schema field type");
                     if (field.offset != offset || offset < cursor)
-                        fail("schema offset mismatch or overlap in " + node.id);
+                        fail("schema offset mismatch or overlap in " + node.id + " - " + node.name + "@ " + field.name);
                     size_t size = field.type.type == Type::Structure
-                        ? structure(field.type.ref).size : TypeSizes[type];
+                        ? structure(field.type.ref, field.name).size : TypeSizes[type];
                     if (node.size && (offset > node.size || size > node.size - offset))
                         fail("schema field " + std::string(node.name[0] ? node.name : node.id.c_str()) +
                             "." + (field.name[0] ? field.name : field.id.c_str()) +
@@ -276,6 +277,14 @@ namespace Engine::Map::Spark {
                     patch(fromGuest, file, space, {fromGuest ? Section::Guest : Section::Host, value - tagBase});
             }
 
+            void relocateHostExternalData() {
+                preservedHostExternalData = true;
+            }
+
+            void relocateGuestExternalData(const FieldNode& field) {
+                fail("guest external DataPointer relocation is not implemented: " + std::string(field.name));
+            }
+
             void walk(bool fromGuest, uint32_t file, const StructureNode& node, AddressSpace space, size_t depth = 0) {
                 if (depth > 256) fail("metadata nesting exceeds 256");
                 const auto& source = fromGuest ? guest : host;
@@ -289,12 +298,12 @@ namespace Engine::Map::Spark {
                     auto at = narrow(size_t(file) + offset);
                     switch (field.type.type) {
                     case Type::Structure:
-                        walk(fromGuest, at, structure(field.type.ref), space, depth + 1);
+                        walk(fromGuest, at, structure(field.type.ref, field.name), space, depth + 1);
                         break;
                     case Type::BlockPointer: {
                         auto count = read<uint32_t>(source.bytes, at);
                         if (!count) break;
-                        const auto& child = structure(field.type.ref);
+                        const auto& child = structure(field.type.ref, field.name);
                         if (child.size > size || count > size / child.size) fail("block extent overflow");
                         auto value = read<uint32_t>(source.bytes, at + 4);
                         auto block = address(source, value, size_t(count) * child.size, space);
@@ -307,9 +316,17 @@ namespace Engine::Map::Spark {
                         auto length = read<int32_t>(source.bytes, at);
                         if (length < 0) fail("negative DataPointer size");
                         if (!length) break;
-                        if (read<uint32_t>(source.bytes, at + 4) || !read<uint32_t>(source.bytes, at + 12))
-                            fail("external/flagged DataPointer payload is unsupported");
-                        pointer(fromGuest, at + 12, static_cast<size_t>(length), space);
+                        uint32_t externalPtr = read<uint32_t>(source.bytes, at + 4); // Pointer into another resource cache file.
+                        uint32_t ptr = read<uint32_t>(source.bytes, at + 12);
+                        if (externalPtr || !ptr) {
+                            if (fromGuest) relocateGuestExternalData(field);
+                            else relocateHostExternalData();
+                            break;
+                        }
+                        // Don't confuse field.external (points to another region within the cache file) with externalPtr (points into another cache file).
+                        if (!field.external) {
+                            pointer(fromGuest, at + 12, static_cast<size_t>(length), space);
+                        }
                         break;
                     }
                     case Type::TagReference: {
@@ -560,6 +577,12 @@ namespace Engine::Map::Spark {
             warn("Tag type [" + Strings::fourccToString(group) +
                 "] is not certified complete. Relocated host or imported tags of this type may contain "
                 "unmapped pointers or references, causing corruption or load failures.");
+        }
+        if (injector.preservedHostExternalData) {
+            warn(
+                "Host external/flagged DataPointer descriptors were preserved unchanged. "
+                "External offsets are not validated against this map; payload storage and resource "
+                "compatibility have not been verified.");
         }
         if (injector.importedExternalBitmaps) {
             warn(

@@ -499,12 +499,13 @@ TEST_CASE("Process C rejects invalid and unsupported inputs atomically", "[injec
         cache.paddingLength = 4;
         put(host.bytes, 0, cache);
     }
-    SECTION("external DataPointer") {
+    SECTION("inline DataPointer outside metadata") {
         schema.schema.structures.clear();
         auto& node = schema.node("data", 20, GroupId_Weapon);
         schema.field(node, 0, Type::DataPointer);
         put(host.bytes, at, uint32_t(4));
-        put(host.bytes, at + 8, uint32_t(0x820));
+        put(host.bytes, at + 8, uint32_t(0x980));
+        put(host.bytes, at + 12, uint32_t(0xFFFFFFFF));
     }
     SECTION("negative DataPointer size") {
         schema.schema.structures.clear();
@@ -847,7 +848,8 @@ TEST_CASE("Process C uses the bundled mapped scenario schema with an unspecified
     auto schema = Schema::fromJsonString(std::string(std::istreambuf_iterator<char>(schemaFile), {}));
     auto* root = schema.structureForGroupId(GroupId_Scenario);
     REQUIRE(root != nullptr);
-    REQUIRE(root->size == 0);
+    // Exercise unspecified-size roots even when the saved schema has an explicit size.
+    root->size = 0;
     REQUIRE_FALSE(root->fields.empty());
     Fixture host, guest;
     auto rootAt = host.allocate(sizeof(Scenario));
@@ -923,6 +925,93 @@ TEST_CASE("Process C still rejects unbounded fields overlaps and unspecified blo
     SECTION("root field exceeds metadata") { schema.field(root, host.bytes.size(), Type::U32); }
     SECTION("field extent overflows") { schema.field(root, std::numeric_limits<size_t>::max(), Type::U32); }
     REQUIRE_THROWS_AS(injectTags(host.bytes, guest.bytes, {}, schema.schema), std::runtime_error);
+}
+
+TEST_CASE("Process C preserves host external data with one deferred warning", "[inject_tags]") {
+    Fixture host, guest;
+    Schemas schema;
+    auto& root = schema.node("external", 40, GroupId_Sound);
+    schema.field(root, 0, Type::DataPointer);
+    schema.field(root, 20, Type::DataPointer);
+    auto at = host.allocate(40);
+    host.add(GroupId_Sound, "host-sound", at);
+    std::array<uint32_t, 5> descriptor{4, 0, 0x820, 0, 0x12345678};
+    SECTION("null metadata pointer") {}
+    SECTION("flagged descriptor") {
+        descriptor[1] = 1;
+        descriptor[3] = 0xDEADBEEF;
+    }
+    SECTION("payload ends at fixed boundary") { descriptor[2] = 0x97C; }
+    SECTION("observed shield deplete external samples") { descriptor = {24480, 1, 46049749, 0, 0}; }
+    put(host.bytes, at, descriptor);
+    put(host.bytes, at + 20, descriptor);
+    auto original = host.bytes;
+    std::vector<std::string> warnings{"existing"};
+    auto output = injectTags(host.bytes, guest.bytes, {}, schema.schema, &warnings);
+    REQUIRE(host.bytes == original);
+    auto dest = file(output, tag(output, 0).data.offset);
+    REQUIRE(std::memcmp(output.data() + dest, original.data() + at, 40) == 0);
+    REQUIRE(std::equal(original.begin() + 0x800, original.begin() + 0x980, output.begin() + 0x800));
+    REQUIRE(warnings.size() == 2);
+    REQUIRE(warnings[0] == "existing");
+    REQUIRE_THAT(warnings[1], Catch::Matchers::ContainsSubstring("preserved unchanged"));
+    REQUIRE_THAT(warnings[1], Catch::Matchers::ContainsSubstring("External offsets are not validated against this map"));
+}
+
+TEST_CASE("Process C rejects guest external data without publishing host warnings", "[inject_tags]") {
+    Fixture host, guest;
+    Schemas schema;
+    auto& root = schema.node("external", 20, GroupId_Sound);
+    schema.field(root, 0, Type::DataPointer);
+    std::memcpy(schema.schema.fields.at(root.fields.at(0)).name, "samples", sizeof("samples"));
+    auto h = host.allocate(20), g = guest.allocate(20);
+    host.add(GroupId_Sound, "host-sound", h);
+    guest.add(GroupId_Sound, "guest-sound", g);
+    std::array<uint32_t, 5> descriptor{4, 0, 0x820, 0, 0};
+    put(host.bytes, h, descriptor);
+    SECTION("null metadata pointer") {}
+    SECTION("flagged descriptor") { descriptor[1] = 1; descriptor[3] = guest.pointer(g); }
+    put(guest.bytes, g, descriptor);
+    auto originalHost = host.bytes, originalGuest = guest.bytes;
+    std::vector<std::string> warnings{"existing"};
+    REQUIRE_THROWS_WITH(
+        injectTags(host.bytes, guest.bytes, {{GroupId_Sound, "guest-sound"}}, schema.schema, &warnings),
+        Catch::Matchers::ContainsSubstring("guest external DataPointer relocation is not implemented: samples") &&
+        Catch::Matchers::ContainsSubstring("guest-sound"));
+    REQUIRE(warnings == std::vector<std::string>{"existing"});
+    REQUIRE(host.bytes == originalHost);
+    REQUIRE(guest.bytes == originalGuest);
+}
+
+TEST_CASE("Process C treats host external offsets as opaque and ignores empty descriptors", "[inject_tags]") {
+    Fixture host, guest;
+    Schemas schema;
+    auto& root = schema.node("external", 20, GroupId_Sound);
+    schema.field(root, 0, Type::DataPointer);
+    auto at = host.allocate(20);
+    host.add(GroupId_Sound, "host-sound", at);
+    std::array<uint32_t, 5> descriptor{4, 0, 0x820, 0, 0};
+    bool empty = false;
+    SECTION("header overlap") { descriptor[2] = 0x7FF; }
+    SECTION("model overlap") { descriptor[2] = 0x97F; }
+    SECTION("offset overflow") { descriptor[2] = 0xFFFFFFFE; }
+    SECTION("size outside prefix") { descriptor[0] = 0x7FFFFFFF; }
+    SECTION("empty host and guest") { descriptor = {0, 0xFFFFFFFF, 0xFFFFFFFF, 0, 0}; empty = true; }
+    put(host.bytes, at, descriptor);
+    std::vector<std::string> warnings;
+    if (empty) {
+        auto g = guest.allocate(20);
+        guest.add(GroupId_Sound, "guest-sound", g);
+        put(guest.bytes, g, descriptor);
+        auto output = injectTags(host.bytes, guest.bytes, {{GroupId_Sound, "guest-sound"}}, schema.schema, &warnings);
+        for (uint32_t i = 0; i < 2; ++i)
+            REQUIRE(get<decltype(descriptor)>(output, file(output, tag(output, i).data.offset)) == descriptor);
+        REQUIRE(warnings.empty());
+    } else {
+        auto output = injectTags(host.bytes, guest.bytes, {}, schema.schema, &warnings);
+        REQUIRE(get<decltype(descriptor)>(output, file(output, tag(output, 0).data.offset)) == descriptor);
+        REQUIRE(warnings.size() == 1);
+    }
 }
 
 TEST_CASE("Process C preserves host editor references and inline data source offsets", "[inject_tags]") {
