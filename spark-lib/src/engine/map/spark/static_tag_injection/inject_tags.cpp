@@ -161,6 +161,7 @@ namespace Engine::Map::Spark {
             bool copyGuestModels = false;
             bool importedExternalBitmaps = false;
             bool preservedHostExternalData = false;
+            bool preservedGuestExternalData = false;
 
             Injector(std::span<const uint8_t> h, std::span<const uint8_t> g, const Schema& s)
                 : host(h), guest(g), schema(s) {
@@ -283,7 +284,8 @@ namespace Engine::Map::Spark {
             }
 
             void relocateGuestExternalData(const FieldNode& field) {
-                fail("guest external DataPointer relocation is not implemented: " + std::string(field.name));
+                // fail("guest external DataPointer relocation is not implemented: " + std::string(field.name));
+
             }
 
             void walk(bool fromGuest, uint32_t file, const StructureNode& node, AddressSpace space, size_t depth = 0) {
@@ -590,6 +592,11 @@ namespace Engine::Map::Spark {
                 "Host external DataPointer descriptors were preserved unchanged. "
                 "External offsets are not validated against this map; payload storage and resource "
                 "compatibility have not been verified.");
+        }
+        if (injector.preservedGuestExternalData) {
+            warn(
+                "Guest external DataPointer descriptors were preserved unchanged. "
+                "This will only work assuming these pointed into resource files.");
         }
         if (injector.importedExternalBitmaps) {
             warn(

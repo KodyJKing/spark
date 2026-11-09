@@ -186,6 +186,58 @@ Before using an output in MCC:
    transitions. Non-contiguous bitmap storage still needs runtime confirmation.
 5. Add verified external DataPointer/resource-cache formats and their fixtures.
 
+## Automatic map-open injection
+
+Spark observes `LoadLibraryExW` so `haloCreateFile` is hooked before level reads,
+including when `halo1.dll` is loaded again. The hook is detached before observed
+`FreeLibrary` calls on the engine module, and reattached if a reference keeps it
+loaded. Installation also covers an engine module already present. The supported
+wrapper is at module offset `0xCCFB0`; a prologue check rejects incompatible builds.
+Do not assume this covers direct `LdrLoadDll`/`LdrUnloadDll` calls or other loader APIs.
+
+Place packages beside the MCC executable in `MCC\Binaries\Win64\tags`.
+Each `*.json` manifest has exactly `cache` and `maps` properties:
+
+```json
+{
+  "cache": "mytags.map",
+  "maps": {
+    "*": { "weap": ["weapons\\fuel rod gun\\fuel rod"] },
+    "b30": { "mod2": ["weapons\\shotgun\\shotgun"] }
+  }
+}
+```
+
+The guest cache is relative to the manifest and must stay inside the tags
+directory. Wildcard entries are added to the selected map's entries. Groups are
+case-sensitive four-character tag IDs; map selectors are case-insensitive stems
+without `.map`. Manifests run in filename order, and existing host identities are
+reused rather than replaced, including tags imported by an earlier package.
+
+Only read-only opens directly under `halo1\maps` are candidates. Write/create/
+truncate opens, generated `spark_cache` files, and other directories are untouched.
+`bitmaps.map`, `sounds.map`, `loc.map`, `ui.map`, `mainmenu.map`, `shared.map`,
+`single_player_shared.map` and `campaign.map` are always excluded, even with a
+wildcard. A host must also have a campaign/multiplayer scenario header and a valid
+scenario handle. No installed host or guest cache is overwritten.
+
+Outputs are published atomically under `halo1\maps\spark_cache`, with SHA-256
+input/output hashes in their names. Host, guest, manifest and schema contents are
+checked on every eligible open; unchanged inputs reuse a verified output, changed
+inputs produce a new file, and corrupt outputs are rebuilt. Old generated files
+are not automatically deleted; remove them only when the game is not using them.
+Warnings from successful serialization go to the Spark log.
+
+If preparation or opening the injected file fails, Spark logs the failure, shows
+a warning that content may be missing and the mod may be unstable, and opens the
+original map instead. Identical error messages are displayed once per hook
+installation, but remain logged. A failed hook installation also shows a warning.
+
+Tests tagged `[configured_injection]` need no game files. The opt-in
+`[.configured_real]` test uses the installed `mytags.json` and guest cache against
+an isolated copy of the installed `b30.map`, verifies the requested identities and
+a readable generated cache, and checks the installed inputs remain unchanged.
+
 ## Spool UI
 
 Open a host map normally, then use **File > Open Guest Map for Injection...**

@@ -6,6 +6,10 @@
 #include "engine/map/bitmap.hpp"
 #include "engine/map/model.hpp"
 #include "engine/map/schema/functions.hpp"
+#include "engine/map/spark/static_tag_injection/configured_injection.hpp"
+#include "engine/map/spark/static_tag_injection/injection_files.hpp"
+#include <fstream>
+#include <future>
 
 using namespace Engine;
 using namespace Engine::Map;
@@ -21,6 +25,69 @@ namespace {
         T value;
         std::memcpy(&value, bytes.data() + offset, sizeof(T));
         return value;
+    }
+
+    TEST_CASE("Injection manifests combine wildcard and map selections without duplicates", "[configured_injection]") {
+        const auto manifest = std::filesystem::path(L"C:\\tags\\mytags.json");
+        const auto package = parseInjectionPackage(R"({
+            "cache": "mytags.map",
+            "maps": {
+                "*": {"weap": ["weapons\\fuel rod gun\\fuel rod"]},
+                "b30": {"mod2": ["weapons\\shotgun\\shotgun"], "weap": ["weapons\\fuel rod gun\\fuel rod"]}
+            }
+        })", manifest, "B30");
+        REQUIRE(package.cache == manifest.parent_path() / "mytags.map");
+        REQUIRE(package.tags.size() == 2);
+        REQUIRE(std::count_if(package.tags.begin(), package.tags.end(), [](const auto& tag) {
+            return tag.groupId == GroupId_Model && tag.path == R"(weapons\shotgun\shotgun)";
+        }) == 1);
+        REQUIRE(std::count_if(package.tags.begin(), package.tags.end(), [](const auto& tag) {
+            return tag.groupId == GroupId_Weapon && tag.path == R"(weapons\fuel rod gun\fuel rod)";
+        }) == 1);
+        const auto wildcard = parseInjectionPackage(
+            R"({"cache":"mytags.map","maps":{"*":{"weap":["guest"]},"b30":{"mod2":["model"]}}})", manifest, "a10");
+        REQUIRE(wildcard.tags.size() == 1);
+        REQUIRE(wildcard.tags.front().groupId == GroupId_Weapon);
+    }
+
+    TEST_CASE("Injection manifests reject malformed selections and escaping cache paths", "[configured_injection]") {
+        std::string json;
+        SECTION("invalid JSON") { json = "{"; }
+        SECTION("missing maps") { json = R"({"cache":"guest.map"})"; }
+        SECTION("unknown property") { json = R"({"cache":"guest.map","maps":{},"extra":0})"; }
+        SECTION("non-string cache") { json = R"({"cache":0,"maps":{}})"; }
+        SECTION("escaping cache") { json = R"({"cache":"..\\guest.map","maps":{}})"; }
+        SECTION("absolute cache") { json = R"({"cache":"C:\\guest.map","maps":{}})"; }
+        SECTION("incorrect extension") { json = R"({"cache":"guest.json","maps":{}})"; }
+        SECTION("map selector path") { json = R"({"cache":"guest.map","maps":{"..\\b30":{}}})"; }
+        SECTION("non-object selection") { json = R"({"cache":"guest.map","maps":{"b30":[]}})"; }
+        SECTION("short group") { json = R"({"cache":"guest.map","maps":{"b30":{"mod":[]}}})"; }
+        SECTION("non-array paths") { json = R"({"cache":"guest.map","maps":{"b30":{"mod2":"model"}}})"; }
+        SECTION("non-string path") { json = R"({"cache":"guest.map","maps":{"b30":{"mod2":[0]}}})"; }
+        SECTION("empty path") { json = R"({"cache":"guest.map","maps":{"b30":{"mod2":[""]}}})"; }
+        SECTION("embedded null path") { json = R"({"cache":"guest.map","maps":{"b30":{"mod2":["a\u0000b"]}}})"; }
+        REQUIRE_THROWS(parseInjectionPackage(json, L"C:\\tags\\package.json", "b30"));
+    }
+
+    TEST_CASE("Configured injection skips protected maps and non-read opens before any IO", "[configured_injection]") {
+        ConfiguredInjection service(L"C:\\missing\\halo1\\maps", L"C:\\missing\\tags", L"C:\\missing\\schema.json");
+        for (auto name : {"bitmaps.map", "sounds.map", "loc.map", "ui.map", "MAINMENU.MAP",
+            "shared.map", "single_player_shared.map", "campaign.map"}) {
+            INFO(name);
+            REQUIRE(excludedInjectionMap(name));
+            REQUIRE_FALSE(service.prepare(std::filesystem::path(L"C:\\missing\\halo1\\maps") / name, 1));
+        }
+        REQUIRE_FALSE(excludedInjectionMap("b30.map"));
+        for (uint32_t flags : {0u, 2u, 3u, 9u, 17u, 0xFFFFFFFFu}) {
+            CAPTURE(flags);
+            REQUIRE_FALSE(injectionReadOpen(flags));
+            REQUIRE_FALSE(service.prepare(L"C:\\missing\\halo1\\maps\\b30.map", flags));
+        }
+        REQUIRE(injectionReadOpen(1));
+        REQUIRE(injectionReadOpen(5));
+        REQUIRE_FALSE(service.prepare(L"C:\\missing\\halo1\\maps\\spark_cache\\b30.map", 1));
+        REQUIRE_FALSE(service.prepare(L"C:\\missing\\halo2\\maps\\b30.map", 1));
+        REQUIRE_FALSE(service.prepare(L"C:\\missing\\halo1\\maps\\b30.txt", 1));
     }
 
     template<class T> void put(Bytes& bytes, size_t offset, const T& value) {
@@ -176,6 +243,106 @@ namespace {
         auto end = static_cast<const char*>(std::memchr(start, 0, bytes.size() - at));
         REQUIRE(end != nullptr);
         return std::string(start, end);
+    }
+}
+
+TEST_CASE("Configured injection publishes immutable cache files and invalidates changed inputs", "[configured_injection]") {
+    struct Directory {
+        std::filesystem::path path = std::filesystem::temp_directory_path() /
+            ("spark-config-test-" + std::to_string(GetCurrentProcessId()) + "-" + std::to_string(GetTickCount64()));
+        Directory() { REQUIRE(std::filesystem::create_directory(path)); }
+        ~Directory() {
+            std::error_code error;
+            std::filesystem::remove_all(path, error);
+            if (error) std::cerr << "Cannot clean configured injection test: " << error.message() << '\n';
+        }
+    } temporary;
+    const auto maps = temporary.path / "halo1" / "maps", tags = temporary.path / "tags";
+    std::filesystem::create_directories(maps);
+    std::filesystem::create_directory(tags);
+    auto write = [](const std::filesystem::path& path, std::span<const uint8_t> bytes) {
+        std::ofstream out(path, std::ios::binary | std::ios::trunc);
+        REQUIRE(out.is_open());
+        out.write(reinterpret_cast<const char*>(bytes.data()), bytes.size());
+        REQUIRE(out.good());
+    };
+    auto writeText = [&](const std::filesystem::path& path, const std::string& text) {
+        write(path, {reinterpret_cast<const uint8_t*>(text.data()), text.size()});
+    };
+    Fixture host, guest;
+    Schemas schemas;
+    auto& scenario = schemas.node("scenario", 4, GroupId_Scenario);
+    schemas.field(scenario, 0, Type::U32);
+    schemas.scalar();
+    auto scenarioHandle = host.add(GroupId_Scenario, "scenario", host.allocate(4));
+    auto th = header(host.bytes);
+    th.scenarioId = scenarioHandle;
+    put(host.bytes, Fixture::tagsAt, th);
+    auto g = guest.allocate(4);
+    guest.add(GroupId_Weapon, "guest", g);
+    put(guest.bytes, g, uint32_t(123));
+    const auto hostPath = maps / "b30.map", guestPath = tags / "guest.map", schemaPath = tags / "schema.txt";
+    write(hostPath, host.bytes);
+    write(guestPath, guest.bytes);
+    writeText(schemaPath, schemas.schema.toJsonString());
+    const auto manifest = tags / "package.json";
+    writeText(manifest, R"({"cache":"guest.map","maps":{"*":{"weap":["guest"]}}})");
+    ConfiguredInjection service(maps, tags, schemaPath);
+    const auto first = service.prepare(hostPath, 1);
+    REQUIRE(first.has_value());
+    REQUIRE(first->path.parent_path() == maps / "spark_cache");
+    const auto firstBytes = readInjectionMap(first->path);
+    REQUIRE(listInjectionTags(firstBytes).size() == 2);
+    REQUIRE(get<uint32_t>(firstBytes, file(firstBytes, tag(firstBytes, 1).data.offset)) == 123);
+    REQUIRE(readInjectionMap(hostPath) == host.bytes);
+    REQUIRE(readInjectionMap(guestPath) == guest.bytes);
+    REQUIRE(service.prepare(hostPath, 1)->path == first->path);
+    auto parallel = std::async(std::launch::async, [&] { return service.prepare(hostPath, 1); });
+    REQUIRE(service.prepare(hostPath, 1)->path == parallel.get()->path);
+
+    SECTION("changed guest content") {
+        put(guest.bytes, g, uint32_t(456));
+        write(guestPath, guest.bytes);
+        const auto changed = service.prepare(hostPath, 1);
+        REQUIRE(changed->path != first->path);
+        const auto bytes = readInjectionMap(changed->path);
+        REQUIRE(get<uint32_t>(bytes, file(bytes, tag(bytes, 1).data.offset)) == 456);
+        REQUIRE(readInjectionMap(first->path) == firstBytes);
+    }
+    SECTION("changed host content") {
+        host.bytes.back() ^= 1;
+        write(hostPath, host.bytes);
+        REQUIRE(service.prepare(hostPath, 1)->path != first->path);
+    }
+    SECTION("changed schema content") {
+        schemas.schema.structures.at("scalar").complete = false;
+        writeText(schemaPath, schemas.schema.toJsonString());
+        REQUIRE(service.prepare(hostPath, 1)->path != first->path);
+    }
+    SECTION("changed manifest content") {
+        writeText(manifest, R"({"cache":"guest.map","maps":{"b30":{"weap":["guest"]}}})");
+        REQUIRE(service.prepare(hostPath, 1)->path != first->path);
+    }
+    SECTION("missing dependency is not hidden by a cached output") {
+        std::filesystem::remove(guestPath);
+        REQUIRE_THROWS(service.prepare(hostPath, 1));
+    }
+    SECTION("corrupted cached output is rebuilt") {
+        writeText(first->path, "corrupt");
+        REQUIRE(service.prepare(hostPath, 1)->path == first->path);
+        REQUIRE(readInjectionMap(first->path) == firstBytes);
+    }
+    SECTION("UI scenario type is rejected even with a level filename") {
+        auto cacheHeader = get<CacheHeader>(host.bytes, 0);
+        cacheHeader.scenarioType = 2;
+        put(host.bytes, 0, cacheHeader);
+        write(hostPath, host.bytes);
+        REQUIRE_THROWS(service.prepare(hostPath, 1));
+    }
+    SECTION("multiple manifests reuse an already imported tag") {
+        writeText(tags / "second.json", R"({"cache":"guest.map","maps":{"b30":{"weap":["guest"]}}})");
+        auto result = service.prepare(hostPath, 1);
+        REQUIRE(listInjectionTags(readInjectionMap(result->path)).size() == 2);
     }
 }
 

@@ -1,9 +1,11 @@
 #include <catch_amalgamated.hpp>
+#include <array>
 #include <fstream>
 
 #include "InjectionFiles.hpp"
 #include "engine/map/bitmap.hpp"
 #include "engine/map/model.hpp"
+#include "engine/map/spark/static_tag_injection/configured_injection.hpp"
 #include "engine/map/spark/static_tag_injection/inject_tags.hpp"
 
 using namespace Engine;
@@ -48,6 +50,63 @@ namespace {
         uint32_t value = read<uint32_t>(bytes, offset);
         return value;
     }
+}
+
+TEST_CASE("Prepare the installed tag manifest against an isolated b30 copy", "[.configured_real]") {
+    auto installation = backupMaps().parent_path().parent_path();
+    const auto installedTags = installation / "MCC" / "Binaries" / "Win64" / "tags";
+    const auto manifest = installedTags / "mytags.json";
+    const auto manifestBytes = Spool::readInjectionMap(manifest);
+    const auto manifestText = std::string(manifestBytes.begin(), manifestBytes.end());
+    const auto package = parseInjectionPackage(manifestText, manifest, "b30");
+    REQUIRE_FALSE(package.tags.empty());
+    struct Directory {
+        std::filesystem::path path = std::filesystem::temp_directory_path() /
+            ("spark-real-config-" + std::to_string(GetCurrentProcessId()) + "-" + std::to_string(GetTickCount64()));
+        Directory() { REQUIRE(std::filesystem::create_directory(path)); }
+        ~Directory() {
+            std::error_code error;
+            std::filesystem::remove_all(path, error);
+            if (error) std::cerr << "Cannot clean real configured injection test: " << error.message() << '\n';
+        }
+    } temporary;
+    const auto maps = temporary.path / "halo1" / "maps", tags = temporary.path / "tags";
+    std::filesystem::create_directories(maps);
+    std::filesystem::create_directory(tags);
+    const auto host = installation / "halo1" / "maps" / "b30.map";
+    const auto originalHost = Spool::readInjectionMap(host);
+    const auto originalGuest = Spool::readInjectionMap(package.cache);
+    REQUIRE(std::filesystem::copy_file(host, maps / "b30.map"));
+    REQUIRE(std::filesystem::copy_file(manifest, tags / manifest.filename()));
+    const auto relativeGuest = package.cache.lexically_relative(installedTags);
+    std::filesystem::create_directories((tags / relativeGuest).parent_path());
+    REQUIRE(std::filesystem::copy_file(package.cache, tags / relativeGuest));
+    const auto schemaPath = std::filesystem::path(SPARK_TEST_DIR).parent_path() /
+        "spark" / "shipfiles" / "tags.schema2.json";
+    ConfiguredInjection service(maps, tags, schemaPath);
+    auto prepared = service.prepare(maps / "b30.map", 1);
+    REQUIRE(prepared.has_value());
+    auto output = Spool::readInjectionMap(prepared->path);
+    auto outputTags = listInjectionTags(output);
+    for (const auto& selected : package.tags) {
+        INFO(selected.path);
+        REQUIRE(std::count_if(outputTags.begin(), outputTags.end(), [&](const InjectionTag& tag) {
+            return tag.groupId == selected.groupId && tag.path == selected.path;
+        }) == 1);
+    }
+    REQUIRE(service.prepare(maps / "b30.map", 1)->path == prepared->path);
+    const auto handle = CreateFileW(prepared->path.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr,
+        OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+    REQUIRE(handle != INVALID_HANDLE_VALUE);
+    std::array<uint8_t, 4> magic{};
+    DWORD read = 0;
+    const auto succeeded = ReadFile(handle, magic.data(), static_cast<DWORD>(magic.size()), &read, nullptr);
+    REQUIRE(CloseHandle(handle));
+    REQUIRE(succeeded);
+    REQUIRE(read == magic.size());
+    REQUIRE(std::memcmp(magic.data(), "daeh", magic.size()) == 0);
+    REQUIRE(Spool::readInjectionMap(host) == originalHost);
+    REQUIRE(Spool::readInjectionMap(package.cache) == originalGuest);
 }
 
 TEST_CASE("Backup maps expose valid scenario handles and guest tag lists", "[.real_maps]") {

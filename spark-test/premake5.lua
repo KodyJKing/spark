@@ -18,7 +18,7 @@ project "spark-test"
     files {
         "src/**.hpp",
         "src/**.cpp",
-        "../spool/src/InjectionFiles.cpp",
+        "../spark/src/spark/tag-injection/CreateFileHook.cpp",
         "../vendor/catch2/catch_amalgamated.hpp",
         "../vendor/catch2/catch_amalgamated.cpp",
         "../vendor/imgui/*.h",

@@ -1,4 +1,4 @@
-#include "InjectionFiles.hpp"
+#include "injection_files.hpp"
 
 #include <Windows.h>
 #include <algorithm>
@@ -9,7 +9,7 @@
 #include <stdexcept>
 #include <system_error>
 
-namespace Spool {
+namespace Engine::Map::Spark {
     namespace {
         [[noreturn]] void fileError(const char* operation) {
             throw std::system_error(static_cast<int>(GetLastError()), std::system_category(), operation);
@@ -39,7 +39,7 @@ namespace Spool {
                 wchar_t name[40];
                 if (!StringFromGUID2(id, name, static_cast<int>(std::size(name))))
                     throw std::runtime_error("Cannot format injection output name");
-                path = directory / (std::wstring(L".spool-") + name + L".tmp");
+                path = directory / (std::wstring(L".spark-") + name + L".tmp");
                 auto raw = CreateFileW(path.c_str(), GENERIC_WRITE, 0, nullptr, CREATE_NEW,
                     FILE_ATTRIBUTE_NORMAL, nullptr);
                 if (raw == INVALID_HANDLE_VALUE) fileError("Cannot create temporary injection output");
@@ -51,7 +51,7 @@ namespace Spool {
                 if (!path.empty() && !DeleteFileW(path.c_str())) {
                     auto error = GetLastError();
                     if (error != ERROR_FILE_NOT_FOUND)
-                        std::cerr << "Spool: cannot remove temporary output " << path << ": " << error << '\n';
+                        std::cerr << "Tag injection: cannot remove temporary output " << path << ": " << error << '\n';
                 }
             }
         };

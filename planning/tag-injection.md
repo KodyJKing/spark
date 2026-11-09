@@ -13,7 +13,7 @@ x Add schema type for pointers to opaque data (called tag_data in CEA decomp).
 - Add injection UI to spool.
 - Sanity test a map with 0 tags injected (tests string and model data relocation).
 
-- Hook __createFile and detour to patched files.
+- Hook haloCreateFile and detour to patched files.
 - Rehook when LoadLibraryExW is called on "halo1.dll"
 
 ### Finish mapping all tag types
