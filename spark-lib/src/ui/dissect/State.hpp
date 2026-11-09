@@ -17,6 +17,7 @@
 #include "engine/map/schema/hints.hpp"
 
 #include "utils/Utils.hpp"
+#include "InstructionAccessWatch.hpp"
 
 namespace SparkLib::UI::DissectTag {
 
@@ -73,6 +74,10 @@ namespace SparkLib::UI::DissectTag {
         double minimapBuiltTime = -1.0;
         bool minimapRefreshRequested = false;
         bool focusRequested = false;
+
+        std::unique_ptr<InstructionAccessWatch> instructionWatch;
+        bool instructionWatchFocusRequested = false;
+        std::string instructionWatchError;
 
         // Blocks until any in-flight minimap job has stopped touching map memory.
         inline void waitForMinimapJob() {
@@ -179,6 +184,7 @@ namespace SparkLib::UI::DissectTag {
 
             for (auto it = windows.begin(); it != windows.end(); ) {
                 if (!it->second.isOpen) {
+                    if (it->second.instructionWatch) it->second.instructionWatch->stop();
                     // The job reads map memory, so it can't outlive the window
                     // (closeWindowsForMap relies on this before the map is freed).
                     it->second.waitForMinimapJob();

@@ -14,6 +14,7 @@
 #include "spark/RenderBuses.hpp"
 #include "engine/halo1.hpp"
 #include "spark/SparkHost.hpp"
+#include "ui/dissect/DissectTag.hpp"
 
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -181,6 +182,8 @@ namespace Spark::Overlay {
 
         if ( paused )
             mainModWindow();
+
+        SparkLib::UI::DissectTag::renderInstructionAccessWindows(paused);
 
         ImGui::EndFrame();
     }

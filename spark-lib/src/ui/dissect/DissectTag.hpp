@@ -14,11 +14,16 @@ namespace SparkLib::UI::DissectTag {
     // elementIndex is its block element index, or -1.
     void openStructureWindow(Engine::Map::MapFile* mapFile, uint32_t tagId, size_t offset, const std::string& structureId, int64_t elementIndex = -1);
     void render();
+#ifndef SPOOL
+    // Called each overlay frame, separately from the pause-menu tag browser.
+    // Unpaused results remain visible without capturing mouse or keyboard input.
+    void renderInstructionAccessWindows(bool interactive);
+#endif
 
     // Root tag ids, optionally restricted to one map (for host session persistence).
     std::vector<uint32_t> openTagIds(Engine::Map::MapFile* mapFile = nullptr);
 
-    // Closes every window that is inspecting a tag from this map. Call before freeing the map.
+    // Stops instruction watches and closes every window inspecting this map. Call before freeing it.
     void closeWindowsForMap(Engine::Map::MapFile* mapFile);
     void closeAllWindows();
 }

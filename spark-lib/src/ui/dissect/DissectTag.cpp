@@ -7,6 +7,7 @@
 #include "Untyped.hpp"
 #include "Substructure.hpp"
 #include "Minimap.hpp"
+#include "InstructionAccessWindow.hpp"
 
 #include "engine/map/schema/reference.hpp"
 #include "engine/tags/tag_group_id.hpp"
@@ -362,6 +363,9 @@ namespace SparkLib::UI::DissectTag {
                 }
 
                 void* tagData = window.map->getTagData(tag);
+#ifndef SPOOL
+                renderInstructionWatchButton(state, window, tagData, guessedTotalSize);
+#endif
                 void* tagEnd = (uint8_t*)tagData + guessedTotalSize;
                 RenderContext renderCtx = { &window, tagData, tagEnd };
 
@@ -401,11 +405,19 @@ namespace SparkLib::UI::DissectTag {
     }
 
     void render() {
+        ScopedAccessCaptureSuppression suppress;
         state.tick();
         for (auto& [key, window] : state.windows) {
             // Structure views render as tabs inside their tag's window.
             if (window.isRoot()) renderWindow(window);
         }
+        state.cleanupWindows();
     }
+
+#ifndef SPOOL
+    void renderInstructionAccessWindows(bool interactive) {
+        renderInstructionAccessWindows(state, interactive);
+    }
+#endif
     
 }

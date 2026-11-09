@@ -143,6 +143,7 @@ namespace SparkLib::UI::DissectTag {
         Analysis::ProblemOptions options = state.problemOptions;
 
         std::thread([=] {
+            ScopedAccessCaptureSuppression suppress;
             auto result = std::make_shared<MinimapAnalysis>();
             result->schema = schema;
             Context ctx = { mapFile, schema.get() };
