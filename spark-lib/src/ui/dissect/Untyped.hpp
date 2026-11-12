@@ -48,7 +48,7 @@ namespace SparkLib::UI::DissectTag {
                 renderCtx.tagEnd,
                 structure
             };
-            bool hintColored = hintCache.colorAddress(hintCtx, byteAddress, state.hintThreshold);
+            bool hintColored = colorAddress(hintCache, hintCtx, byteAddress, state.hintThreshold);
 
             ImGui::Text("%02X", *byteAddress);
             bool showTooltip = ImGui::IsItemHovered();
@@ -69,7 +69,7 @@ namespace SparkLib::UI::DissectTag {
                 ImGui::BeginTooltip();
                 ImGui::Text("Address: %p", (void*)byteAddress);
                 ImGui::Text("Offset: 0x%zx", offset);
-                Hints::renderHints(hintCtx, byteAddress, state.hintThreshold);
+                renderHints(hintCtx, byteAddress, state.hintThreshold);
                 ImGui::EndTooltip();
             }
 

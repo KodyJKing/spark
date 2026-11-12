@@ -59,8 +59,8 @@ namespace Engine::Map {
 
     struct TagDataHeader {
         Pointer<PointerBase_Tags> tagArray;
-        uint32_t checksum;
         uint32_t scenarioId;
+        uint32_t checksum;
         uint32_t tagCount;
         uint32_t modelPartCount;
         
@@ -70,6 +70,8 @@ namespace Engine::Map {
         uint32_t modelDataSize;
         char magic[4]; // Should be "sgat"
     };
+    static_assert(offsetof(TagDataHeader, scenarioId) == 0x04);
+    static_assert(offsetof(TagDataHeader, checksum) == 0x08);
 
     struct CacheHeader {
         char magic[4]; // Should be "deah"
@@ -110,4 +112,3 @@ namespace Engine::Map {
     };
 
 }
-

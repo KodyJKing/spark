@@ -3,8 +3,10 @@
 #include <atomic>
 #include <cstdint>
 #include <map>
+#include <set>
 #include <memory>
 #include <thread>
+#include <tuple>
 
 #include "engine/map/schema/schema_file.hpp"
 #include "engine/map/schema/reference.hpp"
@@ -12,9 +14,10 @@
 #include "engine/map/schema/span_map.hpp"
 #include "engine/map/schema/problems.hpp"
 
-#include "Hints.hpp"
+#include "engine/map/schema/hints.hpp"
 
 #include "utils/Utils.hpp"
+#include "InstructionAccessWatch.hpp"
 
 namespace SparkLib::UI::DissectTag {
 
@@ -28,6 +31,7 @@ namespace SparkLib::UI::DissectTag {
         std::vector<Analysis::SpanInfo> overlaps;
         std::vector<Analysis::Problem> problems;
         std::vector<uint8_t> stripeParity; // Parallel to overlaps.
+        std::string error;
     };
 
     struct MinimapJob {
@@ -36,12 +40,29 @@ namespace SparkLib::UI::DissectTag {
         std::shared_ptr<MinimapAnalysis> result; // Only read once done is set.
     };
 
+    // A window inspects either a tag's root structure (offset -1) or the structure
+    // instance at a byte offset from the tag data start.
+    using WindowKey = std::tuple<uintptr_t, uint32_t, int64_t>;
+    constexpr int64_t kRootStructureOffset = -1;
+
+    inline WindowKey windowKey(MapFile* map, uint32_t tagId, int64_t offset = kRootStructureOffset) {
+        return {reinterpret_cast<uintptr_t>(map), tagId, offset};
+    }
+
     struct WindowState {
         bool isOpen = false;
         uint32_t tagId = 0;
         
-        // This should *probably* be a smart-pointer.
+        // Borrowed for host maps; standalone inspection windows retain an owner.
         MapFile* map = nullptr;
+        std::shared_ptr<MapFile> mapOwner;
+        std::string mapName;
+
+        int64_t structureOffset = kRootStructureOffset;
+        Id structureId = NullId; // Only meaningful for structure views.
+        int64_t elementIndex = -1; // Block element index of a structure view, if any.
+        float drawerHeight = 280.0f; // Root windows: height of the structure-view drawer.
+        inline bool isRoot() const { return structureOffset == kRootStructureOffset; }
 
         Hints::HintCache hintCache;
 
@@ -52,6 +73,11 @@ namespace SparkLib::UI::DissectTag {
         std::shared_ptr<MinimapJob> minimapJob; // In-flight job, if any.
         double minimapBuiltTime = -1.0;
         bool minimapRefreshRequested = false;
+        bool focusRequested = false;
+
+        std::unique_ptr<InstructionAccessWatch> instructionWatch;
+        bool instructionWatchFocusRequested = false;
+        std::string instructionWatchError;
 
         // Blocks until any in-flight minimap job has stopped touching map memory.
         inline void waitForMinimapJob() {
@@ -65,6 +91,7 @@ namespace SparkLib::UI::DissectTag {
         // fraction of the tag range at the left edge of the minimap.
         double minimapZoom = 1.0;
         double minimapViewStart = 0.0;
+        float minimapHeight = 0.0f; // Zero uses the minimum height needed for nesting.
 
         inline Tag* getTag() const {
             return map->getTag(tagId);
@@ -73,12 +100,17 @@ namespace SparkLib::UI::DissectTag {
         inline StructureRef getStructureRef(Context& ctx) const {
             auto tag = getTag();
             if (!tag) return StructureRef{nullptr, nullptr};
+            void* data = map->getTagData(tag);
+            if (!isRoot()) {
+                auto found = ctx.schema->structures.find(structureId);
+                if (!data || found == ctx.schema->structures.end()) return StructureRef{nullptr, nullptr};
+                return StructureRef{&ctx, &found->second, (char*)data + structureOffset};
+            }
             auto structureNode = ctx.schema->structureForGroupId(tag->groupID);
             if (!structureNode) {
                 // Create new structure
                 structureNode = ctx.schema->createStructureForGroupId(tag->groupID);
             }
-            void* data = map->getTagData(tag);
             return StructureRef{&ctx, structureNode, data};
         }
     };
@@ -90,6 +122,10 @@ namespace SparkLib::UI::DissectTag {
     };
 
     struct State {
+
+        ~State() {
+            for (auto& [key, window] : windows) window.waitForMinimapJob();
+        }
 
         ///////////////////////////
         // Schema
@@ -110,15 +146,45 @@ namespace SparkLib::UI::DissectTag {
         ///////////////////////////
         // Windows
 
-        std::map<uint32_t, WindowState> windows;
-        inline void openWindow(MapFile* map, uint32_t tagId) {
-            if (windows.find(tagId) == windows.end()) {
-                windows[tagId] = WindowState{true, tagId, map};
+        std::map<WindowKey, WindowState> windows;
+        // Structure views (offset >= 0) are tabs in their tag's window, so the tag's window opens too.
+        inline void openWindow(MapFile* map, uint32_t tagId,
+            int64_t offset = kRootStructureOffset, const Id& structureId = NullId, int64_t elementIndex = -1) {
+            if (offset != kRootStructureOffset) openWindow(map, tagId);
+            auto key = windowKey(map, tagId, offset);
+            auto it = windows.find(key);
+            if (it == windows.end()) {
+                WindowState created{true, tagId, map};
+                created.structureOffset = offset;
+                created.structureId = structureId;
+                created.elementIndex = elementIndex;
+                if (offset != kRootStructureOffset) {
+                    const auto& root = windows.at(windowKey(map, tagId));
+                    created.mapOwner = root.mapOwner;
+                    created.mapName = root.mapName;
+                }
+                it = windows.emplace(key, std::move(created)).first;
             }
+            it->second.isOpen = true;
+            it->second.focusRequested = true;
+        }
+        inline void openOwnedWindow(std::shared_ptr<MapFile> map, uint32_t tagId, const std::string& name) {
+            openWindow(map.get(), tagId);
+            auto& root = windows.at(windowKey(map.get(), tagId));
+            root.mapOwner = std::move(map);
+            root.mapName = name;
         }
         inline void cleanupWindows() {
+            // Closing a tag's window closes its structure views too.
+            std::set<WindowKey> closedTags;
+            for (auto& [key, window] : windows)
+                if (window.isRoot() && !window.isOpen) closedTags.insert(key);
+            for (auto& [key, window] : windows)
+                if (closedTags.count(windowKey(window.map, window.tagId))) window.isOpen = false;
+
             for (auto it = windows.begin(); it != windows.end(); ) {
                 if (!it->second.isOpen) {
+                    if (it->second.instructionWatch) it->second.instructionWatch->stop();
                     // The job reads map memory, so it can't outlive the window
                     // (closeWindowsForMap relies on this before the map is freed).
                     it->second.waitForMinimapJob();

@@ -276,6 +276,19 @@ namespace Engine::Map {
         return &context->schema->structures[node->type.ref];
     }
 
+    void *FieldRef::derefDataPointer() {
+        if (!valid()) {
+            LOG("FieldRef is not valid");
+            return nullptr;
+        }
+        if (node->type.type != Type::DataPointer) {
+            LOG("FieldRef is not a data pointer");
+            return nullptr;
+        }
+        DataPointer* dataPointer = (DataPointer*)address;
+        return context->mapFile->fromRelative(dataPointer->data);
+    }
+
     void FieldRef::deleteField() {
         if (!valid()) {
             LOG("FieldRef is not valid");

@@ -9,6 +9,7 @@
 #include "MinHook.h"
 #include "spark/overlay/Overlay.hpp"
 #include "spark/CrashHandler.hpp"
+#include "spark/tag-injection/CreateFileHook.hpp"
 
 #ifdef _DEBUG
 #define ENABLE_DEBUG_CONTROLS 1
@@ -31,6 +32,12 @@ DWORD WINAPI MainThread(LPVOID _hModule) {
         SparkHost::bReinit = false;
         
         MH_Initialize();
+        try {
+            Spark::TagInjection::installCreateFileHook();
+        } catch (const std::exception& error) {
+            std::cerr << "Tag injection hook installation failed: " << error.what() << '\n';
+            MessageBoxA(nullptr, error.what(), "Spark - Tag injection hook unavailable", MB_OK | MB_ICONWARNING);
+        }
         Spark::Overlay::init();
         
         while (!SparkHost::bExit && !SparkHost::bReinit) {
@@ -53,6 +60,7 @@ DWORD WINAPI MainThread(LPVOID _hModule) {
         }
         
         waitForSafeUnload();
+        Spark::TagInjection::uninstallCreateFileHook();
         Spark::free();
         Spark::Overlay::free();
         MH_Uninitialize();
