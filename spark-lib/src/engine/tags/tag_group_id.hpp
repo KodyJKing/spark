@@ -9,7 +9,7 @@ namespace Engine {
         ENTRY(Weapon, weap),
         ENTRY(Biped, bipd),
         ENTRY(Character, chr),
-        ENTRY(Scenario, scen),
+        ENTRY(Scenario, scnr),
         ENTRY(Vehicle, veh),
         ENTRY(Effect, effe),
         ENTRY(Joint, jpt!),

@@ -1,0 +1,15 @@
+Tag data for bsps (sbsp or structure_bsp) is handled differently than any other tag data. It does not live in the tag data block and the tag's data pointer is null.
+
+Instead, `scenario.structure_bsp_references` contains references to `cache_file_structure_bsp_header's` which contain references to `structure_bsp`.
+
+See CEA Decomp https://github.com/surreptitiousresearch/halocea
+    - src\blam\scenario\scenario_switch_structure_bsp.c
+    - src\blam\cache\scenario_structure_bsp_load.c
+    - src\headers\scenario_structure_bsp_reference.h
+    - src\headers\cache_file_structure_bsp_header.h
+
+Todos:
+- Write a proceedure, `fixStructureBSPPointers`, to fix block/data pointers so they point into the correct location in the cache file. (normally they are relocated at runtume).
+- Before viewing a map in spool, apply `fixStructureBSPPointers`.
+- Before processing a map for tag injection, apply `fixStructureBSPPointers`.
+- After processing a map, undo the changes made by `fixStructureBSPPointers` to restore the original block/data pointers.

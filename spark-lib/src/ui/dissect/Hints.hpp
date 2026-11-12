@@ -1,6 +1,7 @@
 #pragma once
 
 #include "engine/map/schema/reference.hpp"
+#include "engine/map/schema/problems.hpp"
 #include "imgui.h"
 
 #include <cmath>
@@ -37,12 +38,14 @@ namespace SparkLib::UI::DissectTag::Hints {
         void* address
     ) {
         BlockPointer* blockPointer = reinterpret_cast<BlockPointer*>(address);
-        void* blockBase = ctx.structure.context->mapFile->fromRelative(blockPointer->data);
-        if (!Memory::isAllocated(blockBase)) return 0.0f;
-        bool isWithinTag = blockBase >= ctx.tagStart && blockBase < ctx.tagEnd;
-        if (!isWithinTag) return 0.0f;
         bool isEmpty = blockPointer->count == 0;
         if (isEmpty) return 0.0f;
+        void* blockBase = ctx.structure.context->mapFile->fromRelative(blockPointer->data);
+        // Range check first: it's cheap and rejects nearly everything, whereas
+        // isAllocated costs a syscall.
+        bool isWithinTag = blockBase >= ctx.tagStart && blockBase < ctx.tagEnd;
+        if (!isWithinTag) return 0.0f;
+        if (!Memory::isAllocated(blockBase)) return 0.0f;
         // Counts over 0xFFFF begin to count as negative evidence for being a valid block pointer.
         float saturation = static_cast<float>(blockPointer->count) / 0xFFFF;
         return - logf(saturation);
@@ -87,7 +90,7 @@ namespace SparkLib::UI::DissectTag::Hints {
     ) {
         TagReference* tagRef = reinterpret_cast<TagReference*>(address);
         Tag* tag = ctx.structure.context->mapFile->getTag(tagRef->tagHandle);
-        if (!Memory::isAllocated(tag)) return 0.0f;
+        if (!tag || !Memory::isAllocated(tag)) return 0.0f;
         bool samePath = tagRef->path.offset == tag->path.offset;
         if (!samePath) return 0.0f;
         return 1.0f;
@@ -277,5 +280,114 @@ namespace SparkLib::UI::DissectTag::Hints {
             return static_cast<Type>(bestIndex);
         }
     };
+
+    /////////////////////////////////////////////////////
+    // Problem detection: values that score as a pointer-like type but aren't
+    // labelled as one.
+
+    // Fields whose interior bytes are already accounted for and shouldn't be
+    // re-interpreted. Inline structures are scanned recursively instead.
+    inline bool isOpaqueFieldType(Type type) {
+        switch (type) {
+            case Type::BlockPointer:
+            case Type::TagReference:
+            case Type::DataPointer:
+            case Type::TagString:
+            case Type::Structure:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    inline void findProbableTypeProblemsInStructure(
+        HintContext& ctx,
+        StructureRef& structure,
+        std::vector<Analysis::Problem>& out,
+        int depth = 0
+    ) {
+        constexpr int maxInlineDepth = 8;
+        if (!structure.valid() || !structure.node || structure.node->size == 0) return;
+
+        char* base = (char*)structure.address;
+        char* end = base + structure.node->size;
+        if (base < (char*)ctx.tagStart) return;
+        if (end > (char*)ctx.tagEnd) end = (char*)ctx.tagEnd;
+
+        auto fields = structure.getFieldRefs();
+        size_t fi = 0;
+        HintContext localCtx = { ctx.tagStart, ctx.tagEnd, structure };
+
+        for (char* p = base; p + 4 <= end; ) {
+            // Fields are sorted by offset; skip any that end at or before p.
+            while (fi < fields.size() && (char*)fields[fi].address + fields[fi].size() <= p) ++fi;
+
+            if (fi < fields.size() && (char*)fields[fi].address <= p) {
+                FieldRef& field = fields[fi];
+                Type type = field.node->type.type;
+                if (isOpaqueFieldType(type)) {
+                    if (type == Type::Structure && depth < maxInlineDepth) {
+                        StructureRef inner = field.getStructure();
+                        findProbableTypeProblemsInStructure(ctx, inner, out, depth + 1);
+                    }
+                    char* fieldEnd = (char*)field.address + field.size();
+                    // Stay 4-aligned relative to the structure base.
+                    size_t skip = ((fieldEnd - base) + 3) & ~(size_t)3;
+                    p = base + (skip > (size_t)(p - base) ? skip : (size_t)(p - base) + 4);
+                    ++fi;
+                    continue;
+                }
+            }
+
+            if (p + TypeSizes[(int)Type::TagReference] <= end &&
+                tagReferenceScore(localCtx, p) > 0.0f) {
+                char* e = p + TypeSizes[(int)Type::TagReference];
+                out.push_back({Analysis::ProblemKind::ProbableTagReference, p, e});
+                p = e;
+                continue;
+            }
+            if (p + TypeSizes[(int)Type::BlockPointer] <= end &&
+                blockPointerScore(localCtx, p) > 0.0f) {
+                char* e = p + TypeSizes[(int)Type::BlockPointer];
+                out.push_back({Analysis::ProblemKind::ProbableBlockPointer, p, e});
+                p = e;
+                continue;
+            }
+            p += 4;
+        }
+    }
+
+    // Scans every typed span (i.e. every parsed structure instance) for
+    // unlabelled BlockPointers / TagReferences.
+    inline void findProbableTypeProblems(
+        Context* context,
+        const std::vector<Analysis::SpanInfo>& spans,
+        void* tagStart,
+        void* tagEnd,
+        std::vector<Analysis::Problem>& out
+    ) {
+        size_t firstNew = out.size();
+        for (const auto& info : spans) {
+            StructureNode* type = info.span.type;
+            if (!type || type->size == 0) continue;
+            // Large blocks are collapsed into a single span, so walk elements.
+            for (char* p = info.span.start; p + type->size <= info.span.end; p += type->size) {
+                StructureRef instance = { context, type, p };
+                HintContext ctx = { tagStart, tagEnd, instance };
+                findProbableTypeProblemsInStructure(ctx, instance, out);
+            }
+        }
+
+        // Overlapping spans can scan the same bytes twice.
+        auto byStart = [](const Analysis::Problem& a, const Analysis::Problem& b) {
+            if (a.start != b.start) return a.start < b.start;
+            return (int)a.kind < (int)b.kind;
+        };
+        auto same = [](const Analysis::Problem& a, const Analysis::Problem& b) {
+            return a.start == b.start && a.kind == b.kind;
+        };
+        std::sort(out.begin() + firstNew, out.end(), byStart);
+        out.erase(std::unique(out.begin() + firstNew, out.end(), same), out.end());
+    }
 
 }

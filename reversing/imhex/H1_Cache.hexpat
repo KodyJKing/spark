@@ -31,15 +31,21 @@ namespace TagData {
         u16 type;
         u16 [[hidden]];
         u32 count;
-        u32 runtimeOffset;
         
-        char pad0[4] [[hidden]];
+        // This padding doesn't exist in game. Are they transforming tag data post load? WTF!
+        char pad0[8] [[hidden]];
         
-        u32 offset; // Or bufferSourceIndex in at runtime.
+        u32 offset;
         
         char raw[vertexSizes[type]*count] @ translateVertexDataPointer(offset);
         //Vertex<vertexSizes[type]> vertices[count] @ translateVertexDataPointer(offset) [[inline]];
-    }; 
+    };
+    
+    struct IndexDataPointer {
+        u32 count;
+        u32 offset;
+        u16 raw[count] @ translateIndexDataPointer(offset);
+    };
 
     struct BlockPointer<T> {
         u32 count [[hidden]];
@@ -60,6 +66,7 @@ namespace TagData {
     struct ModelGeometryPart {
         char data[0x84] [[hidden]];
         Vec3 centroid @ THIS+0x14;
+        IndexDataPointer indexData @ THIS+0x48;
         VertexDataPointer vertexData @ THIS+0x54;
     };
     
@@ -72,11 +79,18 @@ namespace TagData {
        char data[0xAC] [[hidden]];
        BlockPointer<ModelGeometry> geometries @ THIS+0xD0;
     };
+    
+    struct BitmapData {
+        char data[0x30] [[hidden]];
+        u32 dataOffset @ THIS+0x18;
+        u32 dataSize @ THIS+0x1C;
+        char raw[dataSize] @ dataOffset;
+    };
 
     struct Bitmap {
-        char data[0x20] [[hidden]]; // Size not known.
-        BlockPointer<u32> unknown0 @ THIS+0x54;
-        BlockPointer<u32> unknown1 @ THIS+0x60;
+        char data[0x6C] [[hidden]];
+        BlockPointer<u32> groupSequences @ THIS+0x54;
+        BlockPointer<BitmapData> bitmapData @ THIS+0x60;
     };
     
 }
@@ -112,7 +126,7 @@ struct TagDataHeader {
     
     u32 modelDataOffset; setModelData(modelDataOffset);
     u32 modelPartCount2 [[hidden]];
-    u32 vertexDataSize;
+    u32 vertexDataSize; setIndexData(modelDataOffset+vertexDataSize);
     u32 modelDataSize;
     char magic[4];
     

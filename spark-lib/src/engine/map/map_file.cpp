@@ -1,4 +1,6 @@
 #include "map_file.hpp"
+#include "engine/tags/tag_group_id.hpp"
+#include "structure_bsp.hpp"
 
 namespace Engine::Map {
 
@@ -26,9 +28,21 @@ namespace Engine::Map {
         return (char*) fromRelative(t->path);
     }
 
-    void* MapFile::getTagData(Tag* t) {
+    void* MapFile::getTagDataNaive(Tag* t) {
         if (!t) return nullptr;
         return fromRelative(t->data);
+    }
+
+    void* MapFile::getTagData(Tag* t) {
+        if (!t) return nullptr;
+        if (!t->data.offset && t->groupID == GroupId_BSP) {
+            StructureBspReference* ref = getStructureBspReference(this, t);
+            if (!ref) return nullptr;
+            char* header = (char*)fromRelative(ref->structureBspHeader);
+            return header + sizeof(StructureBspHeader);
+        } else {
+            return fromRelative(t->data);
+        }
     }
 
     uint32_t MapFile::getVertexDataSize() {
@@ -37,10 +51,18 @@ namespace Engine::Map {
     }
 
     size_t MapFile::guessTagDataSize(uint32_t tagHandle) {
-        uint32_t nextTagHandle = tagHandle + 1;
         Tag* currentTag = getTag(tagHandle);
+        if (!currentTag) return 0;
+        
+        if (currentTag->groupID == GroupId_BSP) {
+            StructureBspReference* ref = getStructureBspReference(this, currentTag);
+            if (!ref) return 0;
+            return ref->size;
+        }
+        
+        uint32_t nextTagHandle = tagHandle + 1;
         Tag* nextTag = getTag(nextTagHandle);
-        if (!currentTag || !nextTag) return 0;
+        if (!nextTag) return 0;
         void* currentData = getTagData(currentTag);
         void* nextData = getTagData(nextTag);
         return (uintptr_t)nextData - (uintptr_t)currentData;

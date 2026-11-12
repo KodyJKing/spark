@@ -155,6 +155,14 @@ namespace Engine::Map {
                 std::string description = structureName + " Block at offset 0x" + Strings::toHex(offset);
                 return description;
             }
+            case Type::DataPointer: {
+                DataPointer* dataPtr = (DataPointer*)address;
+                if (dataPtr->size <= 0) return "[Null DataPointer]";
+                void* data = context->mapFile->getDataPointer(*dataPtr);
+                int64_t offset = (char*)data - (char*)parent.address;
+                std::string description = "DataPointer of size " + std::to_string(dataPtr->size) + " at offset 0x" + Strings::toHex(offset);
+                return description;
+            }
             case Type::TagString: {
                 return std::string((char*)address, 32);
             }
@@ -325,6 +333,24 @@ namespace Engine::Map {
         void* elementAddress = (char*)blockBase + index * structNode->size;
 
         return StructureRef{context, structNode, elementAddress};
+    }
+
+    size_t FieldRef::getBlockElementCount() {
+        if (!valid()) {
+            LOG("FieldRef is not valid");
+            return 0;
+        }
+        if (node->type.type != Type::BlockPointer) {
+            LOG("FieldRef is not a block pointer");
+            return 0;
+        }
+        BlockPointer* blockPointer = (BlockPointer*)address;
+        StructureNode* structNode = getReferencedType();
+        if (!structNode) {
+            LOG("Block pointer type not found");
+            return 0;
+        }
+        return blockPointer->count;
     }
 
     StructureRef FieldRef::getStructure() {

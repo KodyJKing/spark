@@ -1146,28 +1146,6 @@ dealloc(newmem)
       <ZeroTerminate>1</ZeroTerminate>
       <Address>RCX</Address>
     </CheatEntry>
-    <CheatEntry>
-      <ID>152</ID>
-      <Description>"No description"</Description>
-      <ShowAsSigned>0</ShowAsSigned>
-      <VariableType>String</VariableType>
-      <Length>1024</Length>
-      <Unicode>0</Unicode>
-      <CodePage>0</CodePage>
-      <ZeroTerminate>1</ZeroTerminate>
-      <Address>1DB94FD0000 </Address>
-    </CheatEntry>
-    <CheatEntry>
-      <ID>153</ID>
-      <Description>"No description"</Description>
-      <ShowAsSigned>0</ShowAsSigned>
-      <VariableType>String</VariableType>
-      <Length>10</Length>
-      <Unicode>0</Unicode>
-      <CodePage>0</CodePage>
-      <ZeroTerminate>1</ZeroTerminate>
-      <Address>7FF4F243C86F</Address>
-    </CheatEntry>
   </CheatEntries>
   <CheatCodes>
     <CodeEntry>
@@ -5885,6 +5863,34 @@ dealloc(newmem)
         <Byte>C0</Byte>
         <Byte>75</Byte>
         <Byte>07</Byte>
+        <Byte>33</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Panic :and dword ptr [00000000],00</Description>
+      <AddressString>halo1.dll+AD7D58</AddressString>
+      <Before>
+        <Byte>D1</Byte>
+        <Byte>A3</Byte>
+        <Byte>C7</Byte>
+        <Byte>00</Byte>
+        <Byte>CC</Byte>
+      </Before>
+      <Actual>
+        <Byte>83</Byte>
+        <Byte>24</Byte>
+        <Byte>25</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+      </Actual>
+      <After>
+        <Byte>C3</Byte>
+        <Byte>CC</Byte>
+        <Byte>CC</Byte>
+        <Byte>CC</Byte>
         <Byte>33</Byte>
       </After>
     </CodeEntry>

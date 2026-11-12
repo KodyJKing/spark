@@ -50,6 +50,8 @@ namespace Engine::Map {
         BlockPointer* getBlockPointer();
         StructureRef getBlockElement(size_t index);
 
+        size_t getBlockElementCount();
+
         StructureRef getStructure();
 
         // TagReference accessors

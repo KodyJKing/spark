@@ -4,6 +4,7 @@
 
 #include "tag_data_types.hpp"
 #include "memory/Memory.hpp"
+#include "schema/schema.hpp"
 
 #define DEBUG_MAP_FILE
 
@@ -39,11 +40,17 @@ namespace Engine::Map {
             return (T*) &elements[i];
         }
 
+        template<typename T>
+        T* getDataPointer(DataPointerTyped<T>& dataPointer) {
+            return (T*) fromRelative(dataPointer.data);
+        }
+
         CacheHeader* getCacheHeader();
         uint32_t getTagCount();
         Tag* getTag(uint32_t handle);
         char* getTagPath(Tag* t);
-        void* getTagData(Tag* t);
+        void *getTagDataNaive(Tag *t);
+        void *getTagData(Tag *t);
         uint32_t getVertexDataSize();
         size_t guessTagDataSize(uint32_t tagHandle);
 
@@ -64,8 +71,13 @@ namespace Engine::Map {
         void* getPointerBase(PointerBase b) override;
         TagDataHeader* getTagDataHeader() override;
 
-        private:
+        bool normalized() { return isNormalized; }
+        void normalize(Schema* schema);
+        void denormalize(Schema* schema);
+        
         CacheHeader* cache = nullptr;
+        private:
+        bool isNormalized = false;
     };
 
     class RuntimeMapFile : public MapFile {
