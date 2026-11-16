@@ -47,6 +47,8 @@ namespace Engine::Map {
         bool createStructure(size_t size = 0x100);
         StructureNode* getReferencedType();
 
+        void* derefDataPointer();
+
         BlockPointer* getBlockPointer();
         StructureRef getBlockElement(size_t index);
 

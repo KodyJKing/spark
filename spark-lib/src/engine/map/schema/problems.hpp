@@ -3,9 +3,9 @@
 #include "span_map.hpp"
 #include <vector>
 
-#define MAX_PROBLEMS 128
-
 namespace Engine::Map::Analysis {
+
+    inline constexpr size_t defaultMaxProblems = 128;
 
     // Anything suspicious about a tag's parsed layout, tied to a byte range so
     // it can be located in UI. Add new kinds here as new detectors are written.
@@ -14,6 +14,7 @@ namespace Engine::Map::Analysis {
         Gap,                  // Bytes inside the tag that no parsed span covers.
         ProbableBlockPointer, // Looks like a block pointer but isn't labelled as one.
         ProbableTagReference, // Looks like a tag reference but isn't labelled as one.
+        OutOfBounds,          // A parsed span extends outside the owning tag.
     };
 
     struct Problem {
@@ -28,13 +29,32 @@ namespace Engine::Map::Analysis {
             case ProblemKind::Gap: return "Gap";
             case ProblemKind::ProbableBlockPointer: return "Probable BlockPointer";
             case ProblemKind::ProbableTagReference: return "Probable TagReference";
+            case ProblemKind::OutOfBounds: return "Outside Tag Range";
         }
         return "?";
     }
 
+    inline void findOutOfBoundsProblems(
+        const std::vector<SpanInfo>& spans, char* rangeStart, char* rangeEnd,
+        std::vector<Problem>& out, size_t maxProblems = defaultMaxProblems
+    ) {
+        const auto start = reinterpret_cast<uintptr_t>(rangeStart);
+        const auto end = reinterpret_cast<uintptr_t>(rangeEnd);
+        for (const auto& info : spans) {
+            if (out.size() >= maxProblems) return;
+            auto s = reinterpret_cast<uintptr_t>(info.span.start);
+            auto e = reinterpret_cast<uintptr_t>(info.span.end);
+            if (e > s && (s < start || e > end))
+                out.push_back({ProblemKind::OutOfBounds, info.span.start, info.span.end});
+        }
+    }
+
     // Overlapping regions are reported once per contiguous run, not per span.
-    inline void findOverlapProblems(const std::vector<SpanInfo>& spans, std::vector<Problem>& out) {
-        if (out.size() >= MAX_PROBLEMS) return;
+    inline void findOverlapProblems(
+        const std::vector<SpanInfo>& spans, std::vector<Problem>& out,
+        size_t maxProblems = defaultMaxProblems
+    ) {
+        if (out.size() >= maxProblems) return;
         
         char* maxEnd = nullptr;
         Problem* last = nullptr;
@@ -49,7 +69,7 @@ namespace Engine::Map::Analysis {
                     out.push_back({ProblemKind::Overlap, s, oe});
                     last = &out.back();
 
-                    if (out.size() >= MAX_PROBLEMS) return;
+                    if (out.size() >= maxProblems) return;
                 }
             }
             if (maxEnd == nullptr || e > maxEnd) maxEnd = e;
@@ -57,9 +77,9 @@ namespace Engine::Map::Analysis {
     }
 
     struct ProblemOptions {
-        // DataPointer payloads are opaque and may be followed by padding to
-        // restore 4-byte alignment, so gaps right after them are usually benign.
-        bool ignoreGapsAfterDataPointer = true;
+        // Padding of up to 3 bytes is commonly inserted to restore 4-byte alignment,
+        // so gaps that short and ending on an aligned address are usually benign.
+        bool ignoreAlignmentGaps = true;
     };
 
     // Expects spans sorted by start (as produced by analyzeOverlaps).
@@ -68,16 +88,15 @@ namespace Engine::Map::Analysis {
         char* rangeStart,
         char* rangeEnd,
         std::vector<Problem>& out,
-        const ProblemOptions& options = {}
+        const ProblemOptions& options = {},
+        size_t maxProblems = defaultMaxProblems
     ) {
-        if (out.size() >= MAX_PROBLEMS) return;
+        if (out.size() >= maxProblems) return;
 
         char* cursor = rangeStart;
-        // The span whose end defines the cursor, i.e. the one a gap would follow.
-        const Span* cursorSpan = nullptr;
         auto reportGap = [&](char* start, char* end) {
-            if (options.ignoreGapsAfterDataPointer && cursorSpan &&
-                cursorSpan->fieldType == Type::DataPointer) return;
+            if (options.ignoreAlignmentGaps && end - start <= 3 &&
+                reinterpret_cast<uintptr_t>(end) % 4 == 0) return;
             out.push_back({ProblemKind::Gap, start, end});
         };
         for (const auto& info : spans) {
@@ -85,12 +104,9 @@ namespace Engine::Map::Analysis {
             char* e = info.span.end;
             if (e <= rangeStart || s >= rangeEnd) continue;
             if (s > cursor) reportGap(cursor, s);
-            if (e > cursor) {
-                cursor = e;
-                cursorSpan = &info.span;
-            }
+            if (e > cursor) cursor = e;
 
-            if (out.size() >= MAX_PROBLEMS) return;
+            if (out.size() >= maxProblems) return;
         }
         if (cursor < rangeEnd) reportGap(cursor, rangeEnd);
     }
@@ -99,11 +115,13 @@ namespace Engine::Map::Analysis {
         const std::vector<SpanInfo>& spans,
         char* rangeStart,
         char* rangeEnd,
-        const ProblemOptions& options = {}
+        const ProblemOptions& options = {},
+        size_t maxProblems = defaultMaxProblems
     ) {
         std::vector<Problem> problems;
-        findOverlapProblems(spans, problems);
-        findGapProblems(spans, rangeStart, rangeEnd, problems, options);
+        findOutOfBoundsProblems(spans, rangeStart, rangeEnd, problems, maxProblems);
+        findOverlapProblems(spans, problems, maxProblems);
+        findGapProblems(spans, rangeStart, rangeEnd, problems, options, maxProblems);
         return problems;
     }
 

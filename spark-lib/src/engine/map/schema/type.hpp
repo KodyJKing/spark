@@ -8,6 +8,11 @@ namespace Engine::Map {
         #undef SCHEMA_FIELD_TYPE
     };
 
+    inline constexpr bool relocationSensitive(Type type) {
+        return type == Type::DataPointer || type == Type::BlockPointer ||
+            type == Type::Structure || type == Type::TagReference;
+    }
+
     inline const char* TypeNames[] = {
         #define SCHEMA_FIELD_TYPE(name, size) #name,
         #include "type_defs.hpp"

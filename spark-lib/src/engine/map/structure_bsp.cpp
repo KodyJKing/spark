@@ -1,5 +1,6 @@
 #include "structure_bsp.hpp"
 #include "map_file.hpp"
+#include "schema/functions.hpp"
 #include "engine/tags/tag_group_id.hpp"
 
 #include "iostream"
@@ -29,19 +30,6 @@ namespace Engine::Map {
         
         FieldRef field = {0};
         field.parent = ref;
-
-        auto needsProcessing = [&](StructureRef ref) {
-            if (!ref.context || !ref.node) return false;
-            for (const auto& pair : ref.node->fields) {
-                const auto& fieldId = pair.second;
-                auto& fieldNode = ref.context->schema->fields.at(fieldId);
-                auto type = fieldNode.type.type;
-                if (type == Type::DataPointer || type == Type::BlockPointer || type == Type::Structure) {
-                    return true;
-                }
-            }
-            return false;
-        };
 
         for (const auto& pair : ref.node->fields) {
             const auto& fieldId = pair.second;
@@ -73,7 +61,6 @@ namespace Engine::Map {
                     size_t count = field.getBlockElementCount();
                     StructureRef elementRef = field.getBlockElement(0);
 
-                    // elementRef.
                     if (!needsProcessing(elementRef)) {
                         continue;
                     }

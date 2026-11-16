@@ -34,6 +34,8 @@ namespace Engine::Map {
         // Pair of field offset and field ID, used to keep fields sorted by offset
         std::map<size_t, Id> fields;
         TagGroupId groupId = GroupId_Invalid;
+        // User has verified this structure is complete, meaning all relocation sensitive fields are accounted for.
+        bool complete = false;
     };
 
     static inline StructureNode NullStructure = StructureNode{};
@@ -41,6 +43,8 @@ namespace Engine::Map {
     struct FieldNode : public SchemaNode {
         TypeRef type = { Type::U32, NullId };
         size_t offset = 0;
+        // Indicates this field points at a memory region outside the owning tag. Currently only applies to DataPointers.
+        bool external = false;
     };
 
     struct Schema {

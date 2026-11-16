@@ -3,6 +3,10 @@
 #include <cstdint>
 #include <string>
 
+#define H1A_FLAG_USE_SOUND_MAP 0x1
+#define H1A_FLAG_USE_BITMAPS 0x2
+#define H1A_FLAG_NO_REMASTERED_SYNC 0x4
+
 namespace Engine::Map {
 
     enum PointerBase {
@@ -32,8 +36,9 @@ namespace Engine::Map {
         uint32_t bullshit;
         int fileOffset;
         Pointer<PointerBase_Tags, T> data; 
-        void* definition;
+        uint32_t definition;
     };
+    static_assert(sizeof(DataPointerTyped<void>) == 0x14);
 
     using DataPointer = DataPointerTyped<void>;
     
@@ -59,8 +64,8 @@ namespace Engine::Map {
 
     struct TagDataHeader {
         Pointer<PointerBase_Tags> tagArray;
-        uint32_t checksum;
         uint32_t scenarioId;
+        uint32_t checksum;
         uint32_t tagCount;
         uint32_t modelPartCount;
         
@@ -70,6 +75,8 @@ namespace Engine::Map {
         uint32_t modelDataSize;
         char magic[4]; // Should be "sgat"
     };
+    static_assert(offsetof(TagDataHeader, scenarioId) == 0x04);
+    static_assert(offsetof(TagDataHeader, checksum) == 0x08);
 
     struct CacheHeader {
         char magic[4]; // Should be "deah"
@@ -84,9 +91,12 @@ namespace Engine::Map {
         uint16_t scenarioType;
         char pad1[2];
         uint32_t checksum;
-        uint32_t unused[485];
+        uint32_t h1aFlags;
+        uint32_t unused[484];
         char footerMagic[4]; // Should be "toof"
     };
+    static_assert(offsetof(CacheHeader, checksum) == 0x64);
+    static_assert(offsetof(CacheHeader, footerMagic) == 0x7FC);
 
     struct StructureBspHeader {
         Pointer<PointerBase_Tags> structureBsp;
@@ -110,4 +120,3 @@ namespace Engine::Map {
     };
 
 }
-

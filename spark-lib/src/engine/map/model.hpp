@@ -38,7 +38,7 @@ namespace Engine::Map {
         char pad2[0x02];
         uint32_t indexCount;
         Pointer<PointerBase_Indices> indices;
-        char pad3[0x04];
+        Pointer<PointerBase_Indices> alsoIndices;
         uint32_t vertexFormat; // Todo: Enum
         uint32_t vertexCount;
         Pointer<PointerBase_Vertices> runtimeVertices;
@@ -55,6 +55,8 @@ namespace Engine::Map {
     static_assert(offsetof(Part, centroid) == 0x14);
     static_assert(offsetof(Part, topology) == 0x44);
     static_assert(offsetof(Part, indexCount) == 0x48);
+    static_assert(offsetof(Part, indices) == 0x4C);
+    static_assert(offsetof(Part, alsoIndices) == 0x50);
     static_assert(offsetof(Part, union0.vertices) == 0x64);
     static_assert(offsetof(Part, union0.bufferSourceIndex) == 0x64);
     static_assert(sizeof(Part) == 0x84);

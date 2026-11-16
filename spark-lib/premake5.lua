@@ -13,6 +13,7 @@ function sparkLib()
     }
 
     includedirs { libRoot .. "/src" }
+    links { "bcrypt", "ole32" }
 
     -- Shared precompiled header; engine and memory headers expect its contents.
     pchheader "pch.h"
