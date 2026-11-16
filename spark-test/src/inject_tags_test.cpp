@@ -623,6 +623,33 @@ TEST_CASE("Process C rebuilds a zero-injection map without changing its inputs",
     REQUIRE(listed[0].path == "host");
 }
 
+TEST_CASE("Process C disables remastered sync while preserving other host flags", "[inject_tags]") {
+    for (bool importGuest : {false, true}) {
+        for (uint32_t flags : {0u, 3u, 4u, 7u, 0x80000003u}) {
+            CAPTURE(importGuest, flags);
+            Fixture host, guest;
+            Schemas schema;
+            schema.scalar();
+            host.add(GroupId_Weapon, "host", host.allocate(4));
+            guest.add(GroupId_Weapon, "guest", guest.allocate(4));
+            auto cache = get<CacheHeader>(host.bytes, 0);
+            cache.h1aFlags = flags;
+            put(host.bytes, 0, cache);
+            const auto originalHost = host.bytes, originalGuest = guest.bytes;
+            TagList requested;
+            if (importGuest) requested.push_back({GroupId_Weapon, "guest"});
+
+            auto output = injectTags(host.bytes, guest.bytes, requested, schema.schema);
+
+            REQUIRE(get<CacheHeader>(output, 0).h1aFlags == (flags | H1A_FLAG_NO_REMASTERED_SYNC));
+            REQUIRE(host.bytes == originalHost);
+            REQUIRE(guest.bytes == originalGuest);
+            auto rebuilt = injectTags(output, guest.bytes, {}, schema.schema);
+            REQUIRE(get<CacheHeader>(rebuilt, 0).h1aFlags == (flags | H1A_FLAG_NO_REMASTERED_SYNC));
+        }
+    }
+}
+
 TEST_CASE("Process C closes cyclic dependencies and relocates blocks names and inline data", "[inject_tags]") {
     Fixture host, guest;
     Schemas schema;

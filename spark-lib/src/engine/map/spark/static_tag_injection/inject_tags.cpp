@@ -574,6 +574,7 @@ namespace Engine::Map::Spark {
                 cache.tagDataSize = narrow(out.size() - tagOffset);
                 cache.fileSize = narrow(out.size());
                 cache.paddingLength = 0;
+                cache.h1aFlags |= H1A_FLAG_NO_REMASTERED_SYNC;
                 write(out, 0, cache);
                 Source validated(out);
                 return out;
