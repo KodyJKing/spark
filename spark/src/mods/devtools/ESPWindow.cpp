@@ -60,7 +60,24 @@ namespace Mod::DevTools {
             auto category = entity->entityCategory;
             VIEW_TOGGLE(tagCategory);
             if (paused || view.tagCategory)
-                ImGui::Text("Category: %d", category);   
+            ImGui::Text("Category: %d", category);   
+
+            // Tag ID setter button
+            if (paused) {
+                if (ImGui::Button("Set Tag ID")) {
+                    ImGui::OpenPopup("Set Tag ID");
+                }
+                if (ImGui::BeginPopup("Set Tag ID")) {
+                    static int newTagID = 0;
+                    ImGui::InputInt("New Tag ID", &newTagID, 1, 16, ImGuiInputTextFlags_CharsHexadecimal);
+                    
+                    if (ImGui::Button("Apply")) {
+                        entity->tagID = newTagID;
+                        ImGui::CloseCurrentPopup();
+                    }
+                    ImGui::EndPopup();
+                }
+            }
         }
 
         if (!paused || ImGui::CollapsingHeader("Entity")) {

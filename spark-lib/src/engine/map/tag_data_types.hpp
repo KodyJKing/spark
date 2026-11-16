@@ -32,8 +32,9 @@ namespace Engine::Map {
         uint32_t bullshit;
         int fileOffset;
         Pointer<PointerBase_Tags, T> data; 
-        void* definition;
+        uint32_t definition;
     };
+    static_assert(sizeof(DataPointerTyped<void>) == 0x14);
 
     using DataPointer = DataPointerTyped<void>;
     

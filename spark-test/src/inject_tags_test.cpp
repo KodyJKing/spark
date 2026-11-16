@@ -5,6 +5,7 @@
 #include "engine/map/spark/static_tag_injection/inject_tags.hpp"
 #include "engine/map/bitmap.hpp"
 #include "engine/map/model.hpp"
+#include "engine/map/sound.hpp"
 #include "engine/map/schema/functions.hpp"
 #include "engine/map/spark/static_tag_injection/configured_injection.hpp"
 #include "engine/map/spark/static_tag_injection/injection_files.hpp"
@@ -204,6 +205,20 @@ namespace {
             padding(data, 0, data.size);
         }
 
+        void sound() {
+            auto& root = node("sound", sizeof(Sound), GroupId_Sound);
+            padding(root, 0, offsetof(Sound, pitchRanges));
+            field(root, offsetof(Sound, pitchRanges), Type::BlockPointer, "pitch-range");
+            auto& pitch = node("pitch-range", sizeof(PitchRange));
+            padding(pitch, 0, offsetof(PitchRange, permutations));
+            field(pitch, offsetof(PitchRange, permutations), Type::BlockPointer, "sound-permutation");
+            auto& permutation = node("sound-permutation", sizeof(SoundPermutation));
+            padding(permutation, 0, offsetof(SoundPermutation, samples));
+            field(permutation, offsetof(SoundPermutation, samples), Type::DataPointer);
+            field(permutation, offsetof(SoundPermutation, mouthData), Type::DataPointer);
+            field(permutation, offsetof(SoundPermutation, subtitleData), Type::DataPointer);
+        }
+
         void model() {
             auto& root = node("model", sizeof(Model), GroupId_Model);
             padding(root, 0, 0xAC);
@@ -244,6 +259,110 @@ namespace {
         REQUIRE(end != nullptr);
         return std::string(start, end);
     }
+}
+
+TEST_CASE("Sound fixups remap every imported permutation without changing host handles or descriptors", "[inject_tags][sound]") {
+    Fixture host, guest;
+    Schemas schema;
+    schema.sound();
+    auto addSound = [](Fixture& fixture, const char* name, uint32_t salt) {
+        auto at = fixture.allocate(sizeof(Sound));
+        auto ranges = fixture.allocate(3 * sizeof(PitchRange));
+        Sound sound{};
+        sound.pitchRanges = {3, {fixture.pointer(ranges)}, 0};
+        put(fixture.bytes, at, sound);
+        for (uint32_t i = 0; i < 3; ++i) {
+            PitchRange pitch{};
+            if (i == 1) {
+                pitch.permutations.data.offset = invalid;
+            } else {
+                auto permutations = fixture.allocate(2 * sizeof(SoundPermutation));
+                pitch.permutations = {2, {fixture.pointer(permutations)}, 0};
+                for (uint32_t j = 0; j < 2; ++j) {
+                    SoundPermutation permutation{};
+                    permutation.name[0] = static_cast<char>('a' + i + j);
+                    permutation.soundTagHandle = salt | 0x1234;
+                    permutation.samples = {0, 1, 123, {invalid}, 456};
+                    permutation.mouthData = {0, 2, 789, {invalid}, 321};
+                    permutation.subtitleData = {0, 3, 654, {invalid}, 987};
+                    put(fixture.bytes, permutations + j * sizeof(SoundPermutation), permutation);
+                }
+            }
+            put(fixture.bytes, ranges + i * sizeof(PitchRange), pitch);
+        }
+        fixture.add(GroupId_Sound, name, at, salt);
+    };
+    addSound(host, "host-sound", 0x11110000);
+    addSound(guest, "guest-sound", 0x22220000);
+    const auto originalHost = host.bytes, originalGuest = guest.bytes;
+    auto output = injectTags(host.bytes, guest.bytes, {{GroupId_Sound, "guest-sound"}}, schema.schema);
+    REQUIRE(header(output).tagCount == 2);
+    REQUIRE(tag(output, 1).tagHandle == 0x22220001);
+    for (uint32_t t = 0; t < 2; ++t) {
+        const auto& original = t ? originalGuest : originalHost;
+        auto before = get<Sound>(original, file(original, tag(original, 0).data.offset));
+        auto after = get<Sound>(output, file(output, tag(output, t).data.offset));
+        REQUIRE(after.pitchRanges.count == 3);
+        for (uint32_t i = 0; i < 3; ++i) {
+            auto pitchBefore = get<PitchRange>(original, file(original, before.pitchRanges.data.offset) + i * sizeof(PitchRange));
+            auto pitchAfter = get<PitchRange>(output, file(output, after.pitchRanges.data.offset) + i * sizeof(PitchRange));
+            REQUIRE(pitchAfter.permutations.count == pitchBefore.permutations.count);
+            if (!pitchBefore.permutations.count) {
+                REQUIRE(pitchAfter.permutations.data.offset == invalid);
+                continue;
+            }
+            for (uint32_t j = 0; j < 2; ++j) {
+                auto expected = get<SoundPermutation>(original,
+                    file(original, pitchBefore.permutations.data.offset) + j * sizeof(SoundPermutation));
+                if (t) expected.soundTagHandle = tag(output, t).tagHandle;
+                auto actual = get<SoundPermutation>(output,
+                    file(output, pitchAfter.permutations.data.offset) + j * sizeof(SoundPermutation));
+                REQUIRE(std::memcmp(&actual, &expected, sizeof(actual)) == 0);
+            }
+        }
+    }
+    REQUIRE(host.bytes == originalHost);
+    REQUIRE(guest.bytes == originalGuest);
+}
+
+TEST_CASE("Sound fixups handle empty and invalid nested blocks", "[inject_tags][sound]") {
+    Fixture host, guest;
+    Schemas schema;
+    schema.sound();
+    auto at = guest.allocate(sizeof(Sound));
+    auto ranges = guest.allocate(sizeof(PitchRange));
+    auto permutations = guest.allocate(sizeof(SoundPermutation));
+    Sound sound{};
+    sound.pitchRanges = {1, {guest.pointer(ranges)}, 0};
+    PitchRange pitch{};
+    pitch.permutations = {1, {guest.pointer(permutations)}, 0};
+    bool valid = false;
+    SECTION("empty sound ignores unused pointer") {
+        sound.pitchRanges = {0, {invalid}, 0};
+        valid = true;
+    }
+    SECTION("empty pitch range ignores unused pointer") {
+        pitch.permutations = {0, {invalid}, 0};
+        valid = true;
+    }
+    SECTION("invalid pitch-range pointer") { sound.pitchRanges.data.offset = base - 1; }
+    SECTION("pitch-range count exceeds metadata") { sound.pitchRanges.count = invalid; }
+    SECTION("invalid permutation pointer") { pitch.permutations.data.offset = base - 1; }
+    SECTION("permutation count exceeds metadata") { pitch.permutations.count = invalid; }
+    SECTION("truncated permutation") { pitch.permutations.data.offset = guest.pointer(static_cast<uint32_t>(guest.bytes.size()) - 1); }
+    put(guest.bytes, at, sound);
+    put(guest.bytes, ranges, pitch);
+    guest.add(GroupId_Sound, "guest-sound", at);
+    const auto original = guest.bytes;
+    if (valid) {
+        auto output = injectTags(host.bytes, guest.bytes, {{GroupId_Sound, "guest-sound"}}, schema.schema);
+        REQUIRE(header(output).tagCount == 1);
+    } else {
+        REQUIRE_THROWS_WITH(
+            injectTags(host.bytes, guest.bytes, {{GroupId_Sound, "guest-sound"}}, schema.schema),
+            Catch::Matchers::ContainsSubstring("guest-sound"));
+    }
+    REQUIRE(guest.bytes == original);
 }
 
 TEST_CASE("Configured injection publishes immutable cache files and invalidates changed inputs", "[configured_injection]") {

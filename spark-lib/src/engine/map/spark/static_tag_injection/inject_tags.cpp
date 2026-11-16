@@ -1,6 +1,7 @@
 #include "inject_tags.hpp"
 #include "engine/map/bitmap.hpp"
 #include "engine/map/model.hpp"
+#include "engine/map/sound.hpp"
 #include "engine/map/schema/functions.hpp"
 
 #include <array>
@@ -406,6 +407,24 @@ namespace Engine::Map::Spark {
                 }
             }
 
+            void sound(bool fromGuest, uint32_t file, uint32_t handle) {
+                if (!fromGuest) return;
+                guest.meta(tagBase + file - guest.cache.tagData.offset, sizeof(Sound));
+                auto sound = read<Sound>(guest.bytes, file);
+                if (!sound.pitchRanges.count) return;
+                auto ranges = guest.meta(sound.pitchRanges.data.offset, size_t(sound.pitchRanges.count) * sizeof(PitchRange));
+                for (uint32_t i = 0; i < sound.pitchRanges.count; ++i) {
+                    auto pitch = read<PitchRange>(guest.bytes, ranges + size_t(i) * sizeof(PitchRange));
+                    if (!pitch.permutations.count) continue;
+                    auto permutations = guest.meta(pitch.permutations.data.offset,
+                        size_t(pitch.permutations.count) * sizeof(SoundPermutation));
+                    for (uint32_t j = 0; j < pitch.permutations.count; ++j) {
+                        auto at = narrow(permutations + size_t(j) * sizeof(SoundPermutation));
+                        patch(true, at + offsetof(SoundPermutation, soundTagHandle), {}, {Section::Literal, handle});
+                    }
+                }
+            }
+
             void model(bool fromGuest, uint32_t file) {
                 const auto& source = fromGuest ? guest : host;
                 source.meta(tagBase + file - source.cache.tagData.offset, sizeof(Model));
@@ -459,6 +478,8 @@ namespace Engine::Map::Spark {
                     walk(fromGuest, file, node, {});
                     if (entry.groupID == GroupId_Bitmap)
                         bitmap(fromGuest, file, fromGuest ? guestHandles.at(index) : entry.tagHandle);
+                    if (entry.groupID == GroupId_Sound)
+                        sound(fromGuest, file, fromGuest ? guestHandles.at(index) : entry.tagHandle);
                     if (entry.groupID == GroupId_Model) model(fromGuest, file);
                 }
             }

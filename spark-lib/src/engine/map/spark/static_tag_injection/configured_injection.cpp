@@ -127,6 +127,7 @@ namespace Engine::Map::Spark {
     std::optional<PreparedInjection> ConfiguredInjection::prepare(const std::filesystem::path& host, uint32_t flags) {
         if (!injectionReadOpen(flags) || excludedInjectionMap(host) || lower(host.extension().string()) != ".map")
             return {};
+        Beep(750, 300);
         auto absolute = std::filesystem::absolute(host).lexically_normal();
         if (!samePath(absolute.parent_path(), mapsDirectory_.lexically_normal())) return {};
         std::lock_guard lock(mutex_);
